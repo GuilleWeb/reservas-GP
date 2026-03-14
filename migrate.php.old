@@ -1,0 +1,32 @@
+<?php
+require_once __DIR__.'/helpers.php';
+
+try {
+    $pdo->exec("
+    CREATE TABLE IF NOT EXISTS equipo (
+      id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+      empresa_id BIGINT UNSIGNED NOT NULL,
+      nombre VARCHAR(150) NOT NULL,
+      especialidad VARCHAR(150) NULL,
+      descripcion TEXT NULL,
+      imagen_path VARCHAR(255) NULL,
+      orden INT DEFAULT 0,
+      visible_en_home TINYINT(1) NOT NULL DEFAULT 1,
+      activo TINYINT(1) NOT NULL DEFAULT 1,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (id),
+      KEY idx_equipo_empresa (empresa_id),
+      CONSTRAINT fk_equipo_empresa FOREIGN KEY (empresa_id) REFERENCES empresas(id)
+        ON UPDATE CASCADE ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ");
+
+    try {
+        $pdo->exec("ALTER TABLE resenas ADD COLUMN autor_nombre VARCHAR(150) NULL AFTER cliente_id;");
+    } catch(Exception $e) {}
+
+    echo "Migracion completada.";
+} catch (Exception $e) {
+    echo "Error: " . $e->getMessage();
+}

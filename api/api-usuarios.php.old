@@ -1,0 +1,306 @@
+<?php
+require_once __DIR__ . '/../helpers.php';
+header('Content-Type: application/json; charset=utf-8');
+
+$action = $_REQUEST['action'] ?? '';
+$csrf = $_REQUEST['csrf_token'] ?? '';
+$user = current_user();
+
+/*if(!check_csrf($csrf)){
+    json_response(['error'=>'csrf_invalid'],403);
+}*/
+
+// Endpoints (nuevo esquema)
+if (in_array($action, ['list_sa', 'get_sa', 'save_sa', 'delete_sa'], true)) {
+    if (!$user) json_response(['error' => 'unauthorized'], 403);
+    if ($user['rol'] !== 'superadmin') {
+        if (!in_array($user['rol'], ['admin','gerente','empleado'])) json_response(['error' => 'unauthorized'], 403);
+        
+        // Enforce tenant bindings
+        if (empty($user['empresa_id'])) json_response(['error'=>'unauthorized'], 403);
+        $_GET['empresa_id'] = $user['empresa_id'];
+        $_POST['empresa_id'] = $user['empresa_id'];
+    }
+}
+
+if (!in_array($action, ['list_sa', 'get_sa', 'save_sa', 'delete_sa'], true)) {
+    if(!$user || !has_permission('permiso_leer')) json_response(['error'=>'unauthorized'],403);
+}
+
+switch($action){
+    case 'list_sa':
+        $page = max(1, intval($_GET['page'] ?? 1));
+        $per = max(1, intval($_GET['per'] ?? 10));
+        $search = trim($_GET['search'] ?? '');
+        $empresa_id = intval($_GET['empresa_id'] ?? 0);
+        $rol = trim($_GET['rol'] ?? '');
+        $activo = $_GET['activo'] ?? '';
+        $sort = trim($_GET['sort'] ?? 'id');
+        $dir = strtolower(trim($_GET['dir'] ?? 'desc'));
+        $dir = in_array($dir, ['asc', 'desc'], true) ? $dir : 'desc';
+
+        $sortMap = [
+            'id' => 'u.id',
+            'nombre' => 'u.nombre',
+            'email' => 'u.email',
+            'rol' => 'u.rol',
+            'activo' => 'u.activo',
+            'empresa' => 'e.nombre',
+        ];
+        $orderBy = $sortMap[$sort] ?? 'u.id';
+
+        $where = [];
+        $params = [];
+        if ($search !== '') {
+            $where[] = '(u.nombre LIKE :s OR u.email LIKE :s)';
+            $params[':s'] = "%$search%";
+        }
+        if ($empresa_id > 0) {
+            $where[] = 'u.empresa_id = :eid';
+            $params[':eid'] = $empresa_id;
+        }
+        if ($rol !== '' && in_array($rol, ['admin','gerente','empleado','cliente'], true)) {
+            $where[] = 'u.rol = :rol';
+            $params[':rol'] = $rol;
+        }
+        if ($activo !== '' && ($activo === '0' || $activo === '1')) {
+            $where[] = 'u.activo = :a';
+            $params[':a'] = (int)$activo;
+        }
+        $whereSql = $where ? ('WHERE ' . implode(' AND ', $where)) : '';
+
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM usuarios u $whereSql");
+        foreach ($params as $k => $v) {
+            $stmt->bindValue($k, $v, is_int($v) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        $stmt->execute();
+        $total = (int)$stmt->fetchColumn();
+        $total_pages = (int)ceil($total / $per);
+
+        $offset = ($page - 1) * $per;
+        $sql = "
+            SELECT u.id, u.nombre, u.email, u.telefono, u.rol, u.activo, u.empresa_id, u.sucursal_id,
+                   e.nombre AS empresa_nombre,
+                   s.nombre AS sucursal_nombre
+            FROM usuarios u
+            LEFT JOIN empresas e ON e.id = u.empresa_id
+            LEFT JOIN sucursales s ON s.id = u.sucursal_id
+            $whereSql
+            ORDER BY $orderBy $dir
+            LIMIT :o,:p
+        ";
+        $stmt = $pdo->prepare($sql);
+        foreach ($params as $k => $v) {
+            $stmt->bindValue($k, $v, is_int($v) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        $stmt->bindValue(':o', $offset, PDO::PARAM_INT);
+        $stmt->bindValue(':p', $per, PDO::PARAM_INT);
+        $stmt->execute();
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        json_response(['success' => true, 'data' => $data, 'total' => $total, 'total_pages' => $total_pages]);
+        break;
+
+    case 'get_sa':
+        $id = intval($_GET['id'] ?? 0);
+        $stmt = $pdo->prepare('SELECT id, empresa_id, sucursal_id, rol, nombre, email, telefono, activo FROM usuarios WHERE id=? LIMIT 1');
+        $stmt->execute([$id]);
+        $data = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+        
+        if ($user['rol'] !== 'superadmin' && $data) {
+            if ((int)$data['empresa_id'] !== (int)$user['empresa_id']) {
+                $data = []; // Restrict access
+            }
+        }
+        
+        json_response(['success' => true, 'data' => $data]);
+        break;
+
+    case 'save_sa':
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') json_response(['error' => 'invalid_method'], 405);
+
+        $id = intval($_POST['id'] ?? 0);
+        $nombre = trim($_POST['nombre'] ?? '');
+        $email = trim($_POST['email'] ?? '');
+        $telefono = trim($_POST['telefono'] ?? '');
+        $rol = trim($_POST['rol'] ?? '');
+        $empresa_id = $_POST['empresa_id'] ?? null;
+        $empresa_id = ($empresa_id === '' || $empresa_id === null) ? null : intval($empresa_id);
+        
+        // Tenant override security
+        if ($user['rol'] !== 'superadmin') {
+            $empresa_id = $user['empresa_id'];
+        }
+
+        $sucursal_id = $_POST['sucursal_id'] ?? null;
+        $sucursal_id = ($sucursal_id === '' || $sucursal_id === null) ? null : intval($sucursal_id);
+        $activoRaw = $_POST['activo'] ?? '';
+        $activo = ($activoRaw === '0' || $activoRaw === 0) ? 0 : 1;
+        $password = trim($_POST['password'] ?? '');
+
+        if ($nombre === '' || $email === '') json_response(['success' => false, 'message' => 'Nombre y email son obligatorios.'], 200);
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) json_response(['success' => false, 'message' => 'Email inválido.'], 200);
+        if (!in_array($rol, ['admin','gerente','empleado','cliente'], true)) json_response(['success' => false, 'message' => 'Rol inválido.'], 200);
+
+        if ($empresa_id !== null && $empresa_id > 0) {
+            $stmt = $pdo->prepare('SELECT id FROM empresas WHERE id=? LIMIT 1');
+            $stmt->execute([$empresa_id]);
+            if (!$stmt->fetchColumn()) json_response(['success' => false, 'message' => 'Empresa inválida.'], 200);
+        }
+        if ($sucursal_id !== null && $sucursal_id > 0) {
+            $stmt = $pdo->prepare('SELECT id, empresa_id FROM sucursales WHERE id=? LIMIT 1');
+            $stmt->execute([$sucursal_id]);
+            $s = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$s) json_response(['success' => false, 'message' => 'Sucursal inválida.'], 200);
+            if ($empresa_id !== null && $empresa_id > 0 && (int)$s['empresa_id'] !== (int)$empresa_id) {
+                json_response(['success' => false, 'message' => 'La sucursal no pertenece a la empresa.'], 200);
+            }
+        }
+
+        try {
+            if ($id > 0) {
+                $stmt = $pdo->prepare('SELECT id, empresa_id, rol, nombre, email FROM usuarios WHERE id=? LIMIT 1');
+                $stmt->execute([$id]);
+                $before = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                $stmt = $pdo->prepare('UPDATE usuarios SET empresa_id=?, sucursal_id=?, rol=?, nombre=?, email=?, telefono=?, activo=? WHERE id=?');
+                $stmt->execute([$empresa_id, $sucursal_id, $rol, $nombre, $email, $telefono ?: null, $activo, $id]);
+
+                if ($password !== '') {
+                    $hash = password_hash($password, PASSWORD_BCRYPT);
+                    $stmt = $pdo->prepare('UPDATE usuarios SET password_hash=? WHERE id=?');
+                    $stmt->execute([$hash, $id]);
+                }
+
+                audit_event('update', 'usuario', $id, 'Usuario actualizado', $empresa_id, ['before' => $before, 'after' => ['empresa_id' => $empresa_id, 'sucursal_id' => $sucursal_id, 'rol' => $rol, 'nombre' => $nombre, 'email' => $email, 'activo' => $activo]]);
+            } else {
+                if ($password === '') {
+                    $password = bin2hex(random_bytes(4));
+                }
+                $hash = password_hash($password, PASSWORD_BCRYPT);
+                $stmt = $pdo->prepare("INSERT INTO usuarios (empresa_id, sucursal_id, rol, nombre, email, telefono, password_hash, activo) VALUES (?,?,?,?,?,?,?,?)");
+                $stmt->execute([$empresa_id, $sucursal_id, $rol, $nombre, $email, $telefono ?: null, $hash, $activo]);
+                $id = (int)$pdo->lastInsertId();
+
+                audit_event('create', 'usuario', $id, 'Usuario creado', $empresa_id, ['empresa_id' => $empresa_id, 'sucursal_id' => $sucursal_id, 'rol' => $rol, 'nombre' => $nombre, 'email' => $email, 'activo' => $activo]);
+            }
+        } catch (Throwable $e) {
+            json_response(['success' => false, 'message' => $e->getMessage()], 200);
+        }
+
+        json_response(['success' => true, 'id' => $id]);
+        break;
+
+    case 'delete_sa':
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') json_response(['error' => 'invalid_method'], 405);
+        $id = intval($_POST['id'] ?? 0);
+        if ($id <= 0) json_response(['success' => false, 'message' => 'ID inválido.'], 200);
+
+        $stmt = $pdo->prepare("SELECT id, rol, empresa_id FROM usuarios WHERE id=? LIMIT 1");
+        $stmt->execute([$id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row) json_response(['success' => false, 'message' => 'Usuario no existe.'], 200);
+        if (($row['rol'] ?? '') === 'superadmin') json_response(['success' => false, 'message' => 'No se puede eliminar un superadmin.'], 200);
+        
+        if ($user['rol'] !== 'superadmin') {
+            if ((int)$row['empresa_id'] !== (int)$user['empresa_id']) {
+                json_response(['success' => false, 'message' => 'No autorizado.'], 403);
+            }
+        }
+
+        try {
+            audit_event('delete', 'usuario', (int)$row['id'], 'Usuario eliminado', null, ['rol' => $row['rol']]);
+            $stmt = $pdo->prepare('DELETE FROM usuarios WHERE id=?');
+            $stmt->execute([$id]);
+        } catch (Throwable $e) {
+            json_response(['success' => false, 'message' => $e->getMessage()], 200);
+        }
+
+        json_response(['success' => true]);
+        break;
+
+    case 'list':
+        $page = max(1,intval($_GET['page']??1));
+        $per = max(1,intval($_GET['per']??10));
+        $search = $_GET['search']??'';
+
+        $where = $search ? "WHERE nombre LIKE :s OR email LIKE :s" : "";
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM usuarios $where");
+        if($search) $stmt->execute(['s'=>"%$search%"]); else $stmt->execute();
+        $total = $stmt->fetchColumn();
+        $total_pages = ceil($total/$per);
+
+        $offset = ($page-1)*$per;
+        $sql = "SELECT u.id,u.nombre,u.email,r.nombre_rol AS rol,u.activo,u.fecha_creacion
+                FROM usuarios u
+                JOIN roles r ON u.rol_id=r.id
+                $where
+                ORDER BY u.id DESC LIMIT :o,:p";
+        $stmt = $pdo->prepare($sql);
+        if($search){
+            $stmt->bindValue(':s', "%$search%", PDO::PARAM_STR);
+        }
+        $stmt->bindValue(':o', $offset, PDO::PARAM_INT);
+        $stmt->bindValue(':p', $per, PDO::PARAM_INT);
+        $stmt->execute();
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // list
+        json_response([
+            'success' => true,
+            'data' => $data,
+            'total' => $total,       // total de registros
+            'total_pages' => $total_pages
+        ]);
+
+        break;
+
+    case 'get':
+        $id = intval($_GET['id']??0);
+        $stmt = $pdo->prepare("SELECT * FROM usuarios WHERE id=?");
+        $stmt->execute([$id]);
+        $row = $stmt->fetch();
+        json_response(['success' => true,'data' => $row ?: []]);
+        break;
+
+    case 'save':
+        if(!has_permission('permiso_crear')) json_response(['error'=>'unauthorized'],403);
+        $id = intval($_POST['id']??0);
+        $nombre = $_POST['nombre']??'';
+        $email = $_POST['email']??'';
+        $rol_id = intval($_POST['rol_id']??0);
+        $activo = isset($_POST['activo']) ? 1:0;
+        $password = $_POST['password']??'';
+
+        if($id>0){
+            // actualizar
+            $params = [$nombre,$email,$rol_id,$activo,$id];
+            $sql = "UPDATE usuarios SET nombre=?,email=?,rol_id=?,activo=? WHERE id=?";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+            if($password){
+                $hash = password_hash($password,PASSWORD_DEFAULT);
+                $stmt = $pdo->prepare("UPDATE usuarios SET password_hash=? WHERE id=?");
+                $stmt->execute([$hash,$id]);
+            }
+        } else {
+            // insertar
+            if(!$password) $password='clinicaipsum';
+            $hash = password_hash($password,PASSWORD_DEFAULT);
+            $stmt = $pdo->prepare("INSERT INTO usuarios(nombre,email,password_hash,rol_id,activo) VALUES(?,?,?,?,?)");
+            $stmt->execute([$nombre,$email,$hash,$rol_id,$activo]);
+        }
+        json_response(['success'=>true]);
+        break;
+
+    case 'delete':
+        if(!has_permission('permiso_borrar')) json_response(['error'=>'unauthorized'],403);
+        $id = intval($_POST['id']??0);
+        $stmt = $pdo->prepare("DELETE FROM usuarios WHERE id=?");
+        $stmt->execute([$id]);
+        json_response(['success'=>true]);
+        break;
+
+    default:
+        json_response(['error'=>'invalid_action'],400);
+}

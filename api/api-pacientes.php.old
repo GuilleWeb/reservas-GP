@@ -1,0 +1,175 @@
+<?php
+require_once __DIR__.'/../helpers.php';
+header('Content-Type: application/json; charset=utf-8');
+
+$action = $_REQUEST['action'] ?? '';
+$csrf = $_REQUEST['csrf_token'] ?? '';
+$user = current_user();
+$method = $_SERVER['REQUEST_METHOD'];
+
+// Las acciones 'find_by_data' y 'create_or_get' son PÚBLICAS y usadas por el asistente de citas.
+$public_actions = ['find_by_data', 'create_or_get'];
+
+// Aplicar el chequeo de autorización solo a las acciones administrativas/seguras.
+if (!in_array($action, $public_actions)) {
+    //if(!check_csrf($csrf)) json_response(['error'=>'csrf_invalid'],403);
+    //if(!$user) json_response(['error'=>'unauthorized'],403);
+}
+
+switch($action){
+    // --- ACCIONES PÚBLICAS PARA EL ASISTENTE DE CITAS ---
+
+    case 'find_by_data':
+        // ACCIÓN PÚBLICA (GET): Buscar paciente por email o teléfono para pre-llenar formulario (Paciente Frecuente).
+        if ($method !== 'GET') json_response(['error' => 'Method not allowed'], 405);
+        
+        $query = trim($_GET['query'] ?? '');
+        if (empty($query)) json_response(['success' => false, 'message' => 'Query is required'], 400);
+
+        // Sanitize the input
+        $query_safe = "%".filter_var($query, FILTER_SANITIZE_EMAIL). "%"; 
+        
+        $stmt = $pdo->prepare("SELECT id, nombre, email, telefono FROM pacientes WHERE email LIKE :q OR telefono LIKE :q LIMIT 1");
+        $stmt->execute(['q' => $query_safe]);
+        $patient = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($patient) {
+            json_response(['success' => true, 'data' => $patient]);
+        } else {
+            json_response(['success' => false, 'message' => 'Paciente no encontrado']);
+        }
+        break;
+
+    case 'update_or_get':
+        // ACCIÓN PÚBLICA (POST): Crea un nuevo paciente si no existe, o devuelve el ID si ya está registrado.
+        if ($method !== 'POST') json_response(['error' => 'Method not allowed'], 405);
+
+        $id = intval($_POST['id'] ?? 0);
+        $nombre = trim($_POST['nombre'] ?? '');
+        $telefono = trim($_POST['telefono'] ?? '');
+        $email = filter_var(trim($_POST['email'] ?? ''), FILTER_SANITIZE_EMAIL);
+
+        // Validaciones básicas de datos (deberían ser más rigurosas)
+        if (empty($nombre) || empty($email) || empty($telefono)) {
+            json_response(['success' => false, 'message' => 'Nombre, email y teléfono son obligatorios'], 400);
+        }
+
+        try {
+            // 1. Si se recibió un ID, se intenta una actualización mínima (confirmando los datos)
+            if ($id > 0) {
+                 // Aquí solo actualizamos nombre, email, telefono (los únicos campos que el usuario público toca)
+                $stmt = $pdo->prepare("UPDATE pacientes SET nombre=?, telefono=?, email=? WHERE id=?");
+                $stmt->execute([$nombre, $telefono, $email, $id]);
+                json_response(['success' => true, 'paciente_id' => $id, 'message' => 'Paciente actualizado']);
+                break;
+            }
+
+            // 2. Si NO hay ID, buscar por email o teléfono para evitar duplicados
+            $stmt = $pdo->prepare("SELECT id FROM pacientes WHERE email = ? OR telefono = ? LIMIT 1");
+            $stmt->execute([$email, $telefono]);
+            $existing_id = $stmt->fetchColumn();
+
+            if ($existing_id) {
+                // Paciente ya existe, se devuelve el ID existente
+                // Opcional: Aquí podrías actualizar el nombre/telefono si fueran diferentes, pero minimizamos la lógica.
+                json_response(['success' => true, 'paciente_id' => $existing_id, 'message' => 'Paciente existente retornado']);
+            } else {
+                // Paciente nuevo, se inserta con datos mínimos
+                // Nota: Los campos dirección, fecha_nacimiento, historial_medico se dejan en NULL/Vacío
+                $stmt = $pdo->prepare("INSERT INTO pacientes(nombre, telefono, email, activo) VALUES(?, ?, ?, 1)");
+                $stmt->execute([$nombre, $telefono, $email]);
+                
+                $new_id = $pdo->lastInsertId();
+                if ($new_id) {
+                    audit_event('client_registered', 'cliente', (int)$new_id, 'Cliente registrado', null, ['nombre' => $nombre, 'email' => $email], true);
+                    json_response(['success' => true, 'paciente_id' => $new_id, 'message' => 'Nuevo paciente registrado']);
+                } else {
+                    json_response(['success' => false, 'message' => 'Fallo al registrar nuevo paciente'], 500);
+                }
+            }
+
+        } catch (PDOException $e) {
+            error_log("DB Error in create_or_get: " . $e->getMessage());
+            json_response(['success' => false, 'message' => 'Error interno del servidor'], 500);
+        }
+        break;
+
+    // --- ACCIONES ADMINISTRATIVAS (Requieren $user) ---
+    
+    case 'list':
+        $page = max(1,intval($_GET['page']??1));
+        $per = max(1,intval($_GET['per']??10));
+        $search = $_GET['search']??'';
+
+        $where = $search ? "WHERE nombre LIKE :s OR email LIKE :s OR telefono LIKE :s" : "";
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM pacientes $where");
+        if($search) $stmt->execute(['s'=>"%$search%"]); else $stmt->execute();
+        $total = $stmt->fetchColumn();
+        $total_pages = ceil($total/$per);
+
+        $offset = ($page-1)*$per;
+        $sql = "SELECT * FROM pacientes $where ORDER BY id DESC LIMIT :o,:p";
+        $stmt = $pdo->prepare($sql);
+        if($search) $stmt->bindValue(':s', "%$search%", PDO::PARAM_STR);
+        $stmt->bindValue(':o',$offset,PDO::PARAM_INT);
+        $stmt->bindValue(':p',$per,PDO::PARAM_INT);
+        $stmt->execute();
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // list
+        json_response([
+            'success' => true,
+            'data' => $data,
+            'total' => $total,        // total de registros
+            'total_pages' => $total_pages
+        ]);
+        break;
+
+    case 'get':
+        $id = intval($_GET['id']??0);
+        $stmt = $pdo->prepare("SELECT * FROM pacientes WHERE id=?");
+        $stmt->execute([$id]);
+        json_response(['success' => true,'data' => $stmt->fetch() ?: []]);
+        break;
+
+    case 'save':
+        $id = intval($_POST['id']??0);
+        $nombre = $_POST['nombre']??'';
+        $telefono = $_POST['telefono']??'';
+        $email = $_POST['email']??'';
+        $direccion = $_POST['direccion']??'';
+        $fecha_nacimiento = $_POST['fecha_nacimiento'] ?? null;
+        $fecha_nacimiento = ($fecha_nacimiento === '' ? null : $fecha_nacimiento);
+        $historial_medico = $_POST['historial_medico']??'';
+        $activo = isset($_POST['activo'])?1:0;
+
+        // Aquí la lógica asume que si hay más datos, es un registro completo (ADMIN)
+        if($id>0){
+            $stmt = $pdo->prepare("UPDATE pacientes SET nombre=?,telefono=?,email=?,direccion=?,fecha_nacimiento=?,historial_medico=?,activo=? WHERE id=?");
+            $stmt->execute([$nombre,$telefono,$email,$direccion,$fecha_nacimiento,$historial_medico,$activo,$id]);
+        } else {
+            $stmt = $pdo->prepare("INSERT INTO pacientes(nombre,telefono,email,direccion,fecha_nacimiento,historial_medico,activo) VALUES(?,?,?,?,?,?,?)");
+            $stmt->execute([$nombre,$telefono,$email,$direccion,$fecha_nacimiento,$historial_medico,$activo]);
+            $id = (int)$pdo->lastInsertId();
+            audit_event('create', 'cliente', $id, 'Cliente creado', null, ['nombre' => $nombre, 'email' => $email]);
+        }
+        json_response(['success'=>true]);
+        break;
+
+    case 'delete':
+        $id = intval($_POST['id']??0);
+
+        $stmt = $pdo->prepare("SELECT id, nombre, email FROM pacientes WHERE id=? LIMIT 1");
+        $stmt->execute([$id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row) {
+            audit_event('delete', 'cliente', (int)$row['id'], 'Cliente eliminado', null, ['nombre' => $row['nombre'], 'email' => $row['email']]);
+        }
+        $stmt = $pdo->prepare("DELETE FROM pacientes WHERE id=?");
+        $stmt->execute([$id]);
+        json_response(['success'=>true]);
+        break;
+
+    default:
+        json_response(['error'=>'invalid_action'],400);
+}

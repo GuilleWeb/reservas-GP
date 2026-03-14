@@ -1,0 +1,257 @@
+<?php
+require_once __DIR__ . '/../../includes/bootstrap.php';
+$role = $user['rol'] ?? null;
+$id_e = request_id_e();
+$module = 'equipo';
+include __DIR__ . '/../../includes/topbar.php';
+?>
+
+<div class="max-w-7xl mx-auto flex flex-col md:flex-row gap-6">
+
+  <div class="w-full md:w-1/3 bg-white shadow rounded-2xl p-6 border self-start">
+    <div class="text-xs text-gray-500 font-semibold tracking-wider uppercase mb-1">Empresa</div>
+    <div class="text-xl font-extrabold text-gray-900 mb-6">Gestionar Equipo</div>
+
+    <form id="formEquipo" class="space-y-4" enctype="multipart/form-data">
+      <input type="hidden" id="equipo_id" name="id" value="0">
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Nombre <span class="text-red-500">*</span></label>
+        <input type="text" id="nombre" name="nombre" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2"
+          required placeholder="Ej: Dr. Pérez / Carlos Barbero">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Especialidad / Título</label>
+        <input type="text" id="especialidad" name="especialidad"
+          class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2"
+          placeholder="Ej: Odontólogo General / Barber Master">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Descripción Breve</label>
+        <textarea id="descripcion" name="descripcion" rows="3"
+          class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+          placeholder="Aporta una breve descripción de la persona..."></textarea>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Foto de Perfil</label>
+        <div class="flex items-center space-x-4">
+          <div id="previewContainer"
+            class="hidden h-16 w-16 rounded-full overflow-hidden bg-gray-100 border border-gray-200">
+            <img id="imgPreview" src="" class="h-full w-full object-cover">
+          </div>
+          <input type="file" id="imagen" name="imagen" accept="image/*"
+            class="text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 cursor-pointer w-full">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Orden de Aparición</label>
+        <input type="number" id="orden" name="orden" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2"
+          placeholder="0" value="0">
+      </div>
+
+      <!-- Configuración -->
+      <div class="space-y-3 pt-2">
+        <label class="relative inline-flex items-center cursor-pointer">
+          <input type="checkbox" id="visible_en_home" name="visible_en_home" value="1" class="sr-only peer">
+          <div
+            class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 text-sm peer-checked:bg-teal-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all">
+          </div>
+          <span class="ml-3 text-sm font-medium text-gray-700">Mostrar en el inicio (Landing)</span>
+        </label>
+
+        <label class="relative inline-flex items-center cursor-pointer">
+          <input type="checkbox" id="activo" name="activo" value="1" class="sr-only peer" checked>
+          <div
+            class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 text-sm peer-checked:bg-teal-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all">
+          </div>
+          <span class="ml-3 text-sm font-medium text-gray-700">Activo</span>
+        </label>
+      </div>
+
+      <div class="pt-4 flex items-center justify-between border-t border-gray-100">
+        <button type="button" onclick="resetForm()"
+          class="text-sm text-gray-500 hover:text-gray-800 font-medium">Cancelar</button>
+        <button type="submit"
+          class="bg-gray-900 hover:bg-black text-white px-5 py-2 rounded-lg font-semibold transition"
+          id="btnSave">Guardar</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="w-full md:w-2/3 bg-white shadow rounded-2xl p-6 border flex flex-col h-[calc(100vh-140px)] min-h-[500px]">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+      <div>
+        <h2 class="text-xl font-bold text-gray-800">Directorio de Equipo</h2>
+        <p class="text-sm text-gray-500">Miembros visibles para los clientes.</p>
+      </div>
+    </div>
+
+    <!-- Contenedor Tabla -->
+    <div class="flex-1 overflow-auto bg-gray-50 rounded-lg border border-gray-100">
+      <table class="w-full text-left border-collapse min-w-max">
+        <thead class="bg-white border-b sticky top-0 z-10 shadow-sm">
+          <tr>
+            <th class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase w-16">Foto</th>
+            <th class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Miembro</th>
+            <th class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase text-center w-24">Orden</th>
+            <th class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase text-center">Visibilidad</th>
+            <th class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody" class="divide-y divide-gray-100 bg-white">
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-4 flex flex-col sm:flex-row items-center justify-between border-t pt-4">
+      <div class="text-sm text-gray-500" id="pageInfo"></div>
+      <div class="flex items-center space-x-1" id="pagination"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentPage = 1;
+
+  function renderPagination(total_pages, current) {
+    let html = '';
+    if (total_pages <= 1) { $('#pagination').empty(); return; }
+
+    html += `<button onclick="loadData(${current - 1})" class="px-3 py-1 rounded-md border text-gray-600 disabled:opacity-50 hover:bg-gray-50"><i class="fas fa-chevron-left"></i></button>`;
+    for (let i = 1; i <= total_pages; i++) {
+      let activeClass = i === current ? 'bg-teal-600 text-white font-medium shadow' : 'border bg-white text-gray-700 hover:bg-gray-50';
+      if (i === 1 || i === total_pages || (i >= current - 1 && i <= current + 1)) {
+        html += `<button onclick="loadData(${i})" class="px-3 py-1 rounded-md ${activeClass}">${i}</button>`;
+      } else if (i === current - 2 || i === current + 2) html += `<span class="px-2 text-gray-400">...</span>`;
+    }
+    html += `<button onclick="loadData(${current + 1})" class="px-3 py-1 rounded-md border text-gray-600 hover:bg-gray-50"><i class="fas fa-chevron-right"></i></button>`;
+    $('#pagination').html(html);
+  }
+
+  function loadData(page = 1) {
+    currentPage = page;
+    $.get('<?= app_url('api/admin/equipo.php') ?>', { action: 'list', page: currentPage, per: 15 }, function (res) {
+      const tbody = $('#tableBody').empty();
+      if (res.success && res.data.length > 0) {
+        res.data.forEach(item => {
+          let img = item.imagen_path ? `<img src="${item.imagen_path}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-bold">${item.nombre.charAt(0)}</div>`;
+          let visible = parseInt(item.visible_en_home) ? `<span class="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded text-xs block text-center mb-1">Home</span>` : '';
+          let status = parseInt(item.activo) === 0 ? `<span class="bg-gray-100 text-gray-800 px-2 py-0.5 rounded text-xs block text-center">Inactivo</span>` : '<span class="bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs block text-center">Activo</span>';
+
+          tbody.append(`
+          <tr class="hover:bg-teal-50/30 transition-colors group">
+            <td class="py-3 px-4">${img}</td>
+            <td class="py-3 px-4 font-semibold text-gray-800">
+                ${item.nombre} <div class="text-xs text-gray-500 font-normal">${item.especialidad || '-'}</div>
+            </td>
+            <td class="py-3 px-4 text-center font-mono text-sm">${item.orden}</td>
+            <td class="py-3 px-4">${visible}${status}</td>
+            <td class="py-3 px-4 text-right">
+                <button onclick="editItem(${item.id})" class="text-blue-500 hover:text-blue-700 bg-blue-50 px-2.5 py-1.5 rounded-lg border border-blue-200 shadow-sm transition"><i class="fas fa-edit"></i></button>
+                <button onclick="deleteItem(${item.id})" class="text-red-500 hover:text-red-700 bg-red-50 px-2.5 py-1.5 rounded-lg border border-red-200 shadow-sm transition"><i class="fas fa-trash-alt"></i></button>
+            </td>
+          </tr>
+        `);
+        });
+        $('#pageInfo').text(`Mostrando ${res.data.length} de ${res.total}`);
+      } else {
+        tbody.html('<tr><td colspan="5" class="py-10 text-center text-gray-500">No hay miembros registrados.</td></tr>');
+        $('#pageInfo').text('Mostrando 0 resultados');
+      }
+      renderPagination(res.total_pages, currentPage);
+    }, 'json');
+  }
+
+  function resetForm() {
+    $('#formEquipo')[0].reset();
+    $('#equipo_id').val(0);
+    $('#btnSave').text('Guardar');
+    $('#activo').prop('checked', true);
+    $('#visible_en_home').prop('checked', false);
+    $('#previewContainer').addClass('hidden');
+    $('#imgPreview').attr('src', '');
+  }
+
+  function editItem(id) {
+    $.get('<?= app_url('api/admin/equipo.php') ?>', { action: 'get', id: id }, function (res) {
+      if (res.success && res.data) {
+        resetForm();
+        const d = res.data;
+        $('#equipo_id').val(d.id);
+        $('#nombre').val(d.nombre);
+        $('#especialidad').val(d.especialidad);
+        $('#descripcion').val(d.descripcion);
+        $('#orden').val(d.orden);
+        $('#activo').prop('checked', parseInt(d.activo) === 1);
+        $('#visible_en_home').prop('checked', parseInt(d.visible_en_home) === 1);
+
+        if (d.imagen_path) {
+          $('#previewContainer').removeClass('hidden');
+          $('#imgPreview').attr('src', d.imagen_path);
+        }
+
+        $('#btnSave').text('Actualizar');
+      }
+    }, 'json');
+  }
+
+  function deleteItem(id) {
+    showCustomConfirm("¿Deseas eliminar definitivamente este registro?", function () {
+      $.post('<?= app_url('api/admin/equipo.php') ?>', { action: 'delete', id: id }, function (res) {
+        if (res.success) {
+          loadData(currentPage);
+          showCustomAlert('Miembro eliminado.', 5000, 'success');
+        } else {
+          showCustomAlert(res.message || 'Error al eliminar', 5000, 'error');
+        }
+      }, 'json');
+    });
+  }
+
+  $(function () {
+    // Previsualización de imagen
+    $('#imagen').on('change', function () {
+      if (this.files && this.files[0]) {
+        let reader = new FileReader();
+        reader.onload = function (e) {
+          $('#previewContainer').removeClass('hidden');
+          $('#imgPreview').attr('src', e.target.result);
+        }
+        reader.readAsDataURL(this.files[0]);
+      }
+    });
+
+    $('#formEquipo').on('submit', function (e) {
+      e.preventDefault();
+      let fd = new FormData(this);
+      fd.append('action', 'save');
+      if (!$("#activo").is(":checked")) fd.set('activo', '0');
+      if (!$("#visible_en_home").is(":checked")) fd.set('visible_en_home', '0');
+
+      $.ajax({
+        url: '<?= app_url('api/admin/equipo.php') ?>',
+        type: 'POST',
+        data: fd,
+        contentType: false,
+        processData: false,
+        success: function (res) {
+          if (res.success) {
+            resetForm();
+            loadData(currentPage);
+            showCustomAlert('Miembro guardado correctamente.', 5000, 'success');
+          } else {
+            showCustomAlert(res.message || 'Error al guardar', 5000, 'error');
+          }
+        }
+      });
+    });
+
+    loadData();
+  });
+</script>
+
+<?php include __DIR__ . '/../../includes/footer.php'; ?>

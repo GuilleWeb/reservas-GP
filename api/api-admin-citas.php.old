@@ -1,0 +1,138 @@
+<?php
+require_once __DIR__ . '/../helpers.php';
+header('Content-Type: application/json; charset=utf-8');
+
+$action = $_REQUEST['action'] ?? '';
+$user = current_user();
+$empresa_slug = request_empresa_slug();
+$is_tenant_admin = ($user && $empresa_slug && in_array($user['rol'] ?? null, ['admin', 'gerente', 'empleado']));
+
+if (!$is_tenant_admin) json_response(['error' => 'unauthorized'], 403);
+$empresa_id = intval($user['empresa_id']);
+
+switch ($action) {
+    case 'list':
+        $page = max(1, intval($_GET['page'] ?? 1));
+        $per = max(1, intval($_GET['per'] ?? 10));
+        $search = trim($_GET['search'] ?? '');
+        $estado = $_GET['estado'] ?? '';
+
+        $where = ['c.empresa_id = ?'];
+        $params = [$empresa_id];
+
+        if ($search !== '') {
+            $where[] = '(c.cliente_nombre LIKE ? OR c.cliente_email LIKE ? OR s.nombre LIKE ? OR u.nombre LIKE ?)';
+            $params[] = "%$search%";
+            $params[] = "%$search%";
+            $params[] = "%$search%";
+            $params[] = "%$search%";
+        }
+        if ($estado !== '') {
+            $where[] = 'c.estado = ?';
+            $params[] = $estado;
+        }
+
+        $whereSql = implode(' AND ', $where);
+
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*) FROM citas c 
+            LEFT JOIN sucursales s ON c.sucursal_id = s.id
+            LEFT JOIN servicios srv ON c.servicio_id = srv.id
+            LEFT JOIN usuarios u ON c.empleado_usuario_id = u.id
+            WHERE $whereSql
+        ");
+        $stmt->execute($params);
+        $total = (int)$stmt->fetchColumn();
+        $total_pages = (int)ceil($total / $per);
+
+        $offset = ($page - 1) * $per;
+        $sql = "
+            SELECT c.*, s.nombre as sucursal_nombre, srv.nombre as servicio_nombre, u.nombre as empleado_nombre 
+            FROM citas c 
+            LEFT JOIN sucursales s ON c.sucursal_id = s.id
+            LEFT JOIN servicios srv ON c.servicio_id = srv.id
+            LEFT JOIN usuarios u ON c.empleado_usuario_id = u.id
+            WHERE $whereSql 
+            ORDER BY c.inicio DESC LIMIT $per OFFSET $offset
+        ";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        json_response(['success' => true, 'data' => $data, 'total' => $total, 'total_pages' => $total_pages]);
+        break;
+
+    case 'get':
+        $id = intval($_GET['id'] ?? 0);
+        $stmt = $pdo->prepare('SELECT * FROM citas WHERE id = ? AND empresa_id = ?');
+        $stmt->execute([$id, $empresa_id]);
+        json_response(['success' => true, 'data' => $stmt->fetch(PDO::FETCH_ASSOC) ?: []]);
+        break;
+
+    case 'save':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') json_response(['error' => 'invalid_method'], 405);
+        $id = intval($_POST['id'] ?? 0);
+        $sucursal_id = intval($_POST['sucursal_id'] ?? 0);
+        $servicio_id = intval($_POST['servicio_id'] ?? 0);
+        $empleado_usuario_id = intval($_POST['empleado_usuario_id'] ?? 0);
+        $cliente_nombre = trim($_POST['cliente_nombre'] ?? '');
+        $cliente_telefono = trim($_POST['cliente_telefono'] ?? '');
+        $cliente_email = trim($_POST['cliente_email'] ?? '');
+        $inicio = trim($_POST['inicio'] ?? '');
+        $fin = trim($_POST['fin'] ?? '');
+        $estado = trim($_POST['estado'] ?? 'pendiente');
+        $notas = trim($_POST['notas'] ?? '');
+
+        if ($cliente_nombre === '' || $sucursal_id <= 0 || $servicio_id <= 0 || $empleado_usuario_id <= 0 || $inicio === '') {
+            json_response(['success' => false, 'message' => 'Faltan campos obligatorios.']);
+        }
+
+        // Auto calcular fin (duracion del servicio)
+        if ($fin === '') {
+            $stmt = $pdo->prepare("SELECT duracion_minutos FROM servicios WHERE id=?");
+            $stmt->execute([$servicio_id]);
+            $duracion = (int)$stmt->fetchColumn() ?: 30;
+            $fin = date('Y-m-d H:i:s', strtotime($inicio) + ($duracion * 60));
+        }
+
+        if ($id > 0) {
+            $stmt = $pdo->prepare("UPDATE citas SET sucursal_id=?, servicio_id=?, empleado_usuario_id=?, cliente_nombre=?, cliente_telefono=?, cliente_email=?, inicio=?, fin=?, estado=?, notas=? WHERE id=? AND empresa_id=?");
+            $stmt->execute([$sucursal_id, $servicio_id, $empleado_usuario_id, $cliente_nombre, $cliente_telefono, $cliente_email, $inicio, $fin, $estado, $notas, $id, $empresa_id]);
+        } else {
+            $creado_por = $user['id'];
+            $stmt = $pdo->prepare("INSERT INTO citas (empresa_id, sucursal_id, servicio_id, empleado_usuario_id, cliente_nombre, cliente_telefono, cliente_email, inicio, fin, estado, notas, creado_por_usuario_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$empresa_id, $sucursal_id, $servicio_id, $empleado_usuario_id, $cliente_nombre, $cliente_telefono, $cliente_email, $inicio, $fin, $estado, $notas, $creado_por]);
+        }
+        
+        json_response(['success' => true]);
+        break;
+
+    case 'delete':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') json_response(['error' => 'invalid_method'], 405);
+        $id = intval($_POST['id'] ?? 0);
+        $stmt = $pdo->prepare('DELETE FROM citas WHERE id=? AND empresa_id=?');
+        $stmt->execute([$id, $empresa_id]);
+        json_response(['success' => true]);
+        break;
+
+    case 'get_options':
+        $sucursales = $pdo->prepare("SELECT id, nombre FROM sucursales WHERE empresa_id = ? AND activo = 1")->execute([$empresa_id]) ? $pdo->prepare("SELECT id, nombre FROM sucursales WHERE empresa_id = ? AND activo = 1") : null;
+        $sucursales->execute([$empresa_id]);
+        
+        $servicios = $pdo->prepare("SELECT id, nombre FROM servicios WHERE empresa_id = ? AND activo = 1");
+        $servicios->execute([$empresa_id]);
+        
+        $empleados = $pdo->prepare("SELECT id, nombre FROM usuarios WHERE empresa_id = ? AND rol IN ('admin', 'gerente', 'empleado') AND activo = 1");
+        $empleados->execute([$empresa_id]);
+        
+        json_response([
+            'success' => true,
+            'sucursales' => $sucursales->fetchAll(PDO::FETCH_ASSOC),
+            'servicios' => $servicios->fetchAll(PDO::FETCH_ASSOC),
+            'empleados' => $empleados->fetchAll(PDO::FETCH_ASSOC)
+        ]);
+        break;
+
+    default:
+        json_response(['error' => 'invalid_action'], 400);
+}

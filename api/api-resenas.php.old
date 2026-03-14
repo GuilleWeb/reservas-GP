@@ -1,0 +1,95 @@
+<?php
+require_once __DIR__ . '/../helpers.php';
+header('Content-Type: application/json; charset=utf-8');
+
+$action = $_REQUEST['action'] ?? '';
+$user = current_user();
+$empresa_slug = request_empresa_slug();
+$is_tenant_admin = ($user && $empresa_slug && in_array($user['rol'] ?? null, ['admin', 'gerente', 'empleado']));
+
+if (!$is_tenant_admin && $action !== 'list_public') json_response(['error' => 'unauthorized'], 403);
+$empresa_id = intval($user['empresa_id'] ?? 0);
+
+switch ($action) {
+    case 'list_public':
+        if (!$empresa_slug) json_response(['error' => 'No empresa specified'], 400);
+        // Only return visible reseña for public pages (e.g., inicio/landing) limit to 3 usually
+        $stmt_emp = $pdo->prepare("SELECT id FROM empresas WHERE slug = ?");
+        $stmt_emp->execute([$empresa_slug]);
+        $emp_id = $stmt_emp->fetchColumn();
+        if (!$emp_id) json_response(['success' => false, 'data' => []]);
+
+        $limit = intval($_GET['limit'] ?? 3);
+        $stmt = $pdo->prepare("SELECT autor_nombre as autor, comentario, rating FROM resenas WHERE empresa_id = ? AND visible_en_home = 1 AND activo = 1 ORDER BY created_at DESC LIMIT ?");
+        $stmt->bindValue(1, $emp_id, PDO::PARAM_INT);
+        $stmt->bindValue(2, $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        json_response(['success' => true, 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
+        break;
+
+    case 'list':
+        $page = max(1, intval($_GET['page'] ?? 1));
+        $per = max(1, intval($_GET['per'] ?? 10));
+        
+        $whereSql = "empresa_id = ?";
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM resenas WHERE $whereSql");
+        $stmt->execute([$empresa_id]);
+        $total = (int)$stmt->fetchColumn();
+        $total_pages = (int)ceil($total / $per);
+
+        $offset = ($page - 1) * $per;
+        $sql = "SELECT * FROM resenas WHERE $whereSql ORDER BY id DESC LIMIT $per OFFSET $offset";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$empresa_id]);
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        json_response(['success' => true, 'data' => $data, 'total' => $total, 'total_pages' => $total_pages]);
+        break;
+
+    case 'get':
+        $id = intval($_GET['id'] ?? 0);
+        $stmt = $pdo->prepare('SELECT * FROM resenas WHERE id = ? AND empresa_id = ?');
+        $stmt->execute([$id, $empresa_id]);
+        json_response(['success' => true, 'data' => $stmt->fetch(PDO::FETCH_ASSOC) ?: []]);
+        break;
+
+    case 'save':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') json_response(['error' => 'invalid_method'], 405);
+        $id = intval($_POST['id'] ?? 0);
+        $autor_nombre = trim($_POST['autor_nombre'] ?? '');
+        $comentario = trim($_POST['comentario'] ?? '');
+        $rating = intval($_POST['rating'] ?? 5);
+        if($rating < 1) $rating = 1; if($rating > 5) $rating = 5;
+        
+        $visible_en_home = isset($_POST['visible_en_home']) ? intval($_POST['visible_en_home']) : 0;
+        $activo = isset($_POST['activo']) ? intval($_POST['activo']) : 1;
+
+        if ($autor_nombre === '' || $comentario === '') json_response(['success' => false, 'message' => 'Nombre y comentario requeridos.']);
+
+        // Check limit of visible home reviews, generally 3 requested by user but we let them add as many if they want, but recommend 3.
+        
+        try {
+            if ($id > 0) {
+                $stmt = $pdo->prepare("UPDATE resenas SET autor_nombre=?, comentario=?, rating=?, visible_en_home=?, activo=? WHERE id=? AND empresa_id=?");
+                $stmt->execute([$autor_nombre, $comentario, $rating, $visible_en_home, $activo, $id, $empresa_id]);
+            } else {
+                $stmt = $pdo->prepare("INSERT INTO resenas (empresa_id, autor_nombre, comentario, rating, visible_en_home, activo) VALUES (?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$empresa_id, $autor_nombre, $comentario, $rating, $visible_en_home, $activo]);
+            }
+        } catch (Throwable $e) {
+            json_response(['success' => false, 'message' => 'Error al guardar.']);
+        }
+        json_response(['success' => true]);
+        break;
+
+    case 'delete':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') json_response(['error' => 'invalid_method'], 405);
+        $id = intval($_POST['id'] ?? 0);
+        $stmt = $pdo->prepare('DELETE FROM resenas WHERE id=? AND empresa_id=?');
+        $stmt->execute([$id, $empresa_id]);
+        json_response(['success' => true]);
+        break;
+
+    default:
+        json_response(['error' => 'invalid_action'], 400);
+}

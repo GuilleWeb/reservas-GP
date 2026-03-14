@@ -1,0 +1,96 @@
+<?php
+require_once __DIR__.'/../helpers.php';
+header('Content-Type: application/json; charset=utf-8');
+
+$action = $_REQUEST['action'] ?? '';
+$csrf = $_REQUEST['csrf_token'] ?? '';
+$user = current_user();
+
+if(!$user) json_response(['error'=>'unauthorized'],403);
+
+switch($action){
+    case 'list':
+        $page = max(1,intval($_GET['page']??1));
+        $per = max(1,intval($_GET['per']??10));
+        $search = $_GET['search']??'';
+
+        $where = $search ? "WHERE nombre LIKE :s" : "";
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM roles $where");
+        if($search) $stmt->execute(['s'=>"%$search%"]); else $stmt->execute();
+        $total = $stmt->fetchColumn();
+        $total_pages = ceil($total/$per);
+
+        $offset = ($page-1)*$per;
+        $sql = "SELECT * FROM roles $where ORDER BY id DESC LIMIT :o,:p";
+        $stmt = $pdo->prepare($sql);
+        if($search) $stmt->bindValue(':s',"%$search%",PDO::PARAM_STR);
+        $stmt->bindValue(':o',$offset,PDO::PARAM_INT);
+        $stmt->bindValue(':p',$per,PDO::PARAM_INT);
+        $stmt->execute();
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // list
+        json_response([
+            'success' => true,
+            'data' => $data,
+            'total' => $total,       // total de registros
+            'total_pages' => $total_pages
+        ]);
+        break;
+
+    case 'get':
+        $id = intval($_GET['id']??0);
+        $stmt = $pdo->prepare("SELECT * FROM roles WHERE id=?");
+        $stmt->execute([$id]);
+        json_response(['success' => true,'data' => $stmt->fetch() ?: []]);
+        break;
+
+    case 'save':
+        if(!$user || !has_permission('permiso_crear')) json_response(['error'=>'unauthorized'],403);
+
+        $id = intval($_POST['id'] ?? 0);
+        if($id === 1){
+            json_response(['success'=>false,'message'=>'No se puede editar el rol principal.']);
+            exit();
+        }
+        $nombre_rol = trim($_POST['nombre_rol'] ?? '');
+        $permiso_crear = intval($_POST['permiso_crear'] ?? 0);
+        $permiso_leer = intval($_POST['permiso_leer'] ?? 0);
+        $permiso_actualizar = intval($_POST['permiso_actualizar'] ?? 0);
+        $permiso_borrar = intval($_POST['permiso_borrar'] ?? 0);
+        $estado = intval($_POST['estado'] ?? 1);
+
+        if ($nombre_rol === '') {
+            json_response(['success' => false, 'message' => 'El nombre del rol es obligatorio.']);
+        }
+
+        if ($id > 0) {
+            // Actualizar rol existente
+            $stmt = $pdo->prepare("UPDATE roles 
+                SET nombre_rol=?, permiso_crear=?, permiso_leer=?, permiso_actualizar=?, permiso_borrar=?, estado=? 
+                WHERE id=?");
+            $stmt->execute([$nombre_rol, $permiso_crear, $permiso_leer, $permiso_actualizar, $permiso_borrar, $estado, $id]);
+        } else {
+            // Crear nuevo rol
+            $stmt = $pdo->prepare("INSERT INTO roles (nombre_rol, permiso_crear, permiso_leer, permiso_actualizar, permiso_borrar, estado) 
+                VALUES (?,?,?,?,?,?)");
+            $stmt->execute([$nombre_rol, $permiso_crear, $permiso_leer, $permiso_actualizar, $permiso_borrar, $estado]);
+        }
+
+        json_response(['success' => true]);
+        break;
+
+    case 'delete':
+        $id = intval($_POST['id']??0);
+        if($id === 1){
+            json_response(['success'=>false,'message'=>'No se puede eliminar el rol principal.']);
+            exit();
+        }
+        $stmt = $pdo->prepare("DELETE FROM roles WHERE id=?");
+        $stmt->execute([$id]);
+        json_response(['success'=>true]);
+        break;
+
+    default:
+        json_response(['error'=>'invalid_action'],400);
+}

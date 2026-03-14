@@ -1,0 +1,244 @@
+<?php
+require_once __DIR__ . '/../helpers.php';
+header('Content-Type: application/json; charset=utf-8');
+
+$action = $_REQUEST['action'] ?? '';
+$user = current_user();
+if (!$user || (($user['rol'] ?? null) !== 'superadmin')) json_response(['error' => 'unauthorized'], 403);
+
+switch ($action) {
+    case 'list':
+        $page = max(1, intval($_GET['page'] ?? 1));
+        $per = max(1, intval($_GET['per'] ?? 10));
+        $search = trim($_GET['search'] ?? '');
+        $activo = $_GET['activo'] ?? '';
+        $plan_id = intval($_GET['plan_id'] ?? 0);
+        $sort = trim($_GET['sort'] ?? 'id');
+        $dir = strtolower(trim($_GET['dir'] ?? 'desc'));
+        $dir = in_array($dir, ['asc', 'desc'], true) ? $dir : 'desc';
+
+        $sortMap = [
+            'id' => 'e.id',
+            'nombre' => 'e.nombre',
+            'slug' => 'e.slug',
+            'plan' => 'p.nombre',
+            'activo' => 'e.activo',
+            'created_at' => 'e.created_at',
+        ];
+        $orderBy = $sortMap[$sort] ?? 'e.id';
+
+        $where = [];
+        $params = [];
+        if ($search !== '') {
+            $where[] = '(e.slug LIKE :s OR e.nombre LIKE :s)';
+            $params[':s'] = "%$search%";
+        }
+        if ($activo !== '' && ($activo === '0' || $activo === '1')) {
+            $where[] = 'e.activo = :a';
+            $params[':a'] = (int)$activo;
+        }
+        if ($plan_id > 0) {
+            $where[] = 'e.plan_id = :pid';
+            $params[':pid'] = $plan_id;
+        }
+        $whereSql = $where ? ('WHERE ' . implode(' AND ', $where)) : '';
+
+        $countWhere = [];
+        $countParams = [];
+        if ($search !== '') {
+            $countWhere[] = '(slug LIKE :s OR nombre LIKE :s)';
+            $countParams[':s'] = "%$search%";
+        }
+        if ($activo !== '' && ($activo === '0' || $activo === '1')) {
+            $countWhere[] = 'activo = :a';
+            $countParams[':a'] = (int)$activo;
+        }
+        if ($plan_id > 0) {
+            $countWhere[] = 'plan_id = :pid';
+            $countParams[':pid'] = $plan_id;
+        }
+        $countWhereSql = $countWhere ? ('WHERE ' . implode(' AND ', $countWhere)) : '';
+
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM empresas $countWhereSql");
+        foreach ($countParams as $k => $v) {
+            $stmt->bindValue($k, $v, is_int($v) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        $stmt->execute();
+        $total = (int)$stmt->fetchColumn();
+        $total_pages = (int)ceil($total / $per);
+
+        $offset = ($page - 1) * $per;
+        $sql = "SELECT e.id, e.plan_id, e.slug, e.nombre, e.slogan, e.activo, e.created_at,
+                       p.nombre AS plan_nombre
+                FROM empresas e
+                LEFT JOIN planes p ON p.id = e.plan_id
+                $whereSql
+                ORDER BY $orderBy $dir
+                LIMIT :o,:p";
+        $stmt = $pdo->prepare($sql);
+        foreach ($params as $k => $v) {
+            $stmt->bindValue($k, $v, is_int($v) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        $stmt->bindValue(':o', $offset, PDO::PARAM_INT);
+        $stmt->bindValue(':p', $per, PDO::PARAM_INT);
+        $stmt->execute();
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        json_response(['success' => true, 'data' => $data, 'total' => $total, 'total_pages' => $total_pages]);
+        break;
+
+    case 'get':
+        $id = intval($_GET['id'] ?? 0);
+        $stmt = $pdo->prepare('SELECT * FROM empresas WHERE id=?');
+        $stmt->execute([$id]);
+        json_response(['success' => true, 'data' => $stmt->fetch(PDO::FETCH_ASSOC) ?: []]);
+        break;
+
+    case 'save':
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') json_response(['error' => 'invalid_method'], 405);
+
+        $id = intval($_POST['id'] ?? 0);
+        $plan_id = $_POST['plan_id'] ?? null;
+        $plan_id = ($plan_id === '' || $plan_id === null) ? null : intval($plan_id);
+        $slug = trim($_POST['slug'] ?? '');
+        $nombre = trim($_POST['nombre'] ?? '');
+        $slogan = trim($_POST['slogan'] ?? '');
+        $descripcion = trim($_POST['descripcion'] ?? '');
+        $logo_path = trim($_POST['logo_path'] ?? '');
+        $portada_path = trim($_POST['portada_path'] ?? '');
+        $colores_json = trim($_POST['colores_json'] ?? '');
+        $redes_json = trim($_POST['redes_json'] ?? '');
+        $activo = isset($_POST['activo']) ? intval($_POST['activo']) : 1;
+
+        if ($slug === '' || $nombre === '') json_response(['success' => false, 'message' => 'Slug y nombre son obligatorios.'], 200);
+        if (!preg_match('/^[a-z0-9][a-z0-9\-]{1,78}[a-z0-9]$/', $slug)) {
+            json_response(['success' => false, 'message' => 'Slug inválido. Use minúsculas, números y guiones.'], 200);
+        }
+
+        $colores_json = $colores_json === '' ? null : $colores_json;
+        $redes_json = $redes_json === '' ? null : $redes_json;
+
+        try {
+            if ($id > 0) {
+                $stmt = $pdo->prepare('UPDATE empresas SET plan_id=?, slug=?, nombre=?, slogan=?, descripcion=?, logo_path=?, portada_path=?, colores_json=?, redes_json=?, activo=? WHERE id=?');
+                $stmt->execute([$plan_id, $slug, $nombre, $slogan ?: null, $descripcion ?: null, $logo_path ?: null, $portada_path ?: null, $colores_json, $redes_json, $activo ? 1 : 0, $id]);
+            } else {
+                $stmt = $pdo->prepare('INSERT INTO empresas (plan_id, slug, nombre, slogan, descripcion, logo_path, portada_path, colores_json, redes_json, activo) VALUES (?,?,?,?,?,?,?,?,?,?)');
+                $stmt->execute([$plan_id, $slug, $nombre, $slogan ?: null, $descripcion ?: null, $logo_path ?: null, $portada_path ?: null, $colores_json, $redes_json, $activo ? 1 : 0]);
+                $id = (int)$pdo->lastInsertId();
+            }
+        } catch (Throwable $e) {
+            json_response(['success' => false, 'message' => $e->getMessage()], 200);
+        }
+
+        json_response(['success' => true, 'id' => $id]);
+        break;
+
+    case 'create_empresa':
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') json_response(['error' => 'invalid_method'], 405);
+
+        $plan_id = $_POST['plan_id'] ?? null;
+        $plan_id = ($plan_id === '' || $plan_id === null) ? null : intval($plan_id);
+        $slug = trim($_POST['slug'] ?? '');
+        $nombre = trim($_POST['nombre'] ?? '');
+        $admin_nombre = trim($_POST['admin_nombre'] ?? '');
+        $admin_email = trim($_POST['admin_email'] ?? '');
+
+        if ($slug === '' || $nombre === '' || $admin_nombre === '' || $admin_email === '') {
+            json_response(['success' => false, 'message' => 'Nombre, slug y datos del admin son obligatorios.'], 200);
+        }
+        if (!preg_match('/^[a-z0-9][a-z0-9\-]{1,78}[a-z0-9]$/', $slug)) {
+            json_response(['success' => false, 'message' => 'Slug inválido. Use minúsculas, números y guiones.'], 200);
+        }
+
+        try {
+            $pdo->beginTransaction();
+
+            $stmt = $pdo->prepare('SELECT id FROM empresas WHERE slug=? LIMIT 1');
+            $stmt->execute([$slug]);
+            if ($stmt->fetchColumn()) {
+                throw new Exception('Ya existe una empresa con ese slug.');
+            }
+
+            if ($plan_id !== null) {
+                $stmt = $pdo->prepare('SELECT id FROM planes WHERE id=? LIMIT 1');
+                $stmt->execute([$plan_id]);
+                if (!$stmt->fetchColumn()) {
+                    throw new Exception('Plan inválido.');
+                }
+            }
+
+            $stmt = $pdo->prepare('INSERT INTO empresas (plan_id, slug, nombre, activo) VALUES (?,?,?,1)');
+            $stmt->execute([$plan_id, $slug, $nombre]);
+            $empresa_id = (int)$pdo->lastInsertId();
+
+            $temp_password = bin2hex(random_bytes(4));
+            $hash = password_hash($temp_password, PASSWORD_BCRYPT);
+
+            $stmt = $pdo->prepare("INSERT INTO usuarios (empresa_id, sucursal_id, rol, nombre, email, password_hash, activo) VALUES (?, NULL, 'admin', ?, ?, ?, 1)");
+            $stmt->execute([$empresa_id, $admin_nombre, $admin_email, $hash]);
+            $admin_id = (int)$pdo->lastInsertId();
+
+            audit_event('create', 'empresa', $empresa_id, 'Empresa creada', $empresa_id, ['slug' => $slug, 'nombre' => $nombre, 'plan_id' => $plan_id, 'admin_id' => $admin_id]);
+
+            $pdo->commit();
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            json_response(['success' => false, 'message' => $e->getMessage()], 200);
+        }
+
+        json_response([
+            'success' => true,
+            'empresa_id' => $empresa_id,
+            'empresa_slug' => $slug,
+            'admin_id' => $admin_id,
+            'admin_email' => $admin_email,
+            'temp_password' => $temp_password,
+        ]);
+        break;
+
+    case 'delete':
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') json_response(['error' => 'invalid_method'], 405);
+        $id = intval($_POST['id'] ?? 0);
+        if ($id <= 0) json_response(['success' => false], 200);
+
+        $stmt = $pdo->prepare('SELECT id, slug, nombre FROM empresas WHERE id=? LIMIT 1');
+        $stmt->execute([$id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row) {
+            audit_event('delete', 'empresa', (int)$row['id'], 'Empresa eliminada', (int)$row['id'], ['slug' => $row['slug'], 'nombre' => $row['nombre']]);
+        }
+        $stmt = $pdo->prepare('DELETE FROM empresas WHERE id=?');
+        $stmt->execute([$id]);
+        json_response(['success' => true]);
+        break;
+
+    case 'create_admin':
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') json_response(['error' => 'invalid_method'], 405);
+
+        $empresa_id = intval($_POST['empresa_id'] ?? 0);
+        $admin_nombre = trim($_POST['admin_nombre'] ?? '');
+        $admin_email = trim($_POST['admin_email'] ?? '');
+        $password = trim($_POST['password'] ?? '');
+        if ($empresa_id <= 0 || $admin_nombre === '' || $admin_email === '' || $password === '') {
+            json_response(['success' => false, 'message' => 'Datos incompletos.'], 200);
+        }
+
+        $stmt = $pdo->prepare('SELECT id FROM empresas WHERE id=? LIMIT 1');
+        $stmt->execute([$empresa_id]);
+        if (!$stmt->fetchColumn()) json_response(['success' => false, 'message' => 'Empresa inválida.'], 200);
+
+        $hash = password_hash($password, PASSWORD_BCRYPT);
+        try {
+            $stmt = $pdo->prepare("INSERT INTO usuarios (empresa_id, sucursal_id, rol, nombre, email, password_hash, activo) VALUES (?, NULL, 'admin', ?, ?, ?, 1)");
+            $stmt->execute([$empresa_id, $admin_nombre, $admin_email, $hash]);
+        } catch (Throwable $e) {
+            json_response(['success' => false, 'message' => $e->getMessage()], 200);
+        }
+
+        json_response(['success' => true, 'id' => (int)$pdo->lastInsertId()]);
+        break;
+
+    default:
+        json_response(['error' => 'invalid_action'], 400);
+}

@@ -1,0 +1,139 @@
+<?php
+// api/citas.php
+require_once __DIR__ . '/../helpers.php';
+header('Content-Type: application/json; charset=utf-8');
+
+$csrf = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_REQUEST['csrf_token'] ?? null;
+$action = $_REQUEST['action'] ?? 'list';
+
+if (in_array($action, ['create','update','delete'])) {
+    if (!verify_csrf($csrf)) json_response(['error'=>'invalid_csrf'],403);
+}
+
+switch($action) {
+  case 'list':
+    // list with optional filters (sede_id, paciente, estado) + pagination
+    $sede = intval($_GET['sede_id'] ?? 0);
+    $estado = trim($_GET['estado'] ?? '');
+    $page = max(1, intval($_GET['page'] ?? 1));
+    $per = max(10, min(100, intval($_GET['per'] ?? 20)));
+    $offset = ($page-1)*$per;
+
+    $where = [];
+    $params = [];
+    if ($sede) { $where[] = "c.sede_id = ?"; $params[] = $sede; }
+    if ($estado) { $where[] = "c.estado = ?"; $params[] = $estado; }
+
+    $sql = "SELECT c.*, p.nombre as paciente_nombre, s.nombre as sede_nombre
+            FROM citas c
+            JOIN pacientes p ON p.id = c.paciente_id
+            JOIN sedes s ON s.id = c.sede_id";
+    if ($where) $sql .= " WHERE " . implode(' AND ', $where);
+    $sql .= " ORDER BY fecha_hora_inicio DESC LIMIT ? OFFSET ?";
+    $params[] = $per; $params[] = $offset;
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    $data = $stmt->fetchAll();
+
+    $totalStmt = $pdo->prepare("SELECT COUNT(*) FROM citas c" . ($where ? " WHERE ".implode(' AND ',$where) : ""));
+    $totalStmt->execute(array_slice($params,0,count($params)-2));
+    $total = $totalStmt->fetchColumn();
+
+    json_response(['success'=>true,'data'=>$data,'meta'=>['page'=>$page,'per'=>$per,'total'=>intval($total)]]);
+    break;
+
+  case 'events':
+    // returns events for FullCalendar: accepts start,end (ISO strings) and optional sede_id
+    $start = $_GET['start'] ?? null;
+    $end = $_GET['end'] ?? null;
+    $sede = intval($_GET['sede_id'] ?? 0);
+    $params = [];
+    $sql = "SELECT c.id, c.fecha_hora_inicio, c.estado, p.nombre as title, c.sede_id FROM citas c JOIN pacientes p ON p.id = c.paciente_id";
+    if ($start && $end) {
+      $sql .= " WHERE c.fecha_hora_inicio BETWEEN ? AND ?";
+      $params[] = $start; $params[] = $end;
+      if ($sede) { $sql .= " AND c.sede_id = ?"; $params[] = $sede; }
+    } else {
+      if ($sede) { $sql .= " WHERE c.sede_id = ?"; $params[] = $sede; }
+    }
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    $rows = $stmt->fetchAll();
+    $events = array_map(function($r){
+      return [
+        'id' => $r['id'],
+        'title' => $r['title'] . ' · ' . $r['estado'],
+        'start' => $r['fecha_hora_inicio'],
+        'allDay' => false
+      ];
+    }, $rows);
+    json_response($events);
+    break;
+
+  case 'get':
+    $id = intval($_GET['id'] ?? 0);
+    $stmt = $pdo->prepare("SELECT c.*, p.nombre as paciente_nombre FROM citas c JOIN pacientes p ON p.id = c.paciente_id WHERE c.id = ?");
+    $stmt->execute([$id]);
+    $row = $stmt->fetch();
+    if (!$row) json_response(['error'=>'not_found'],404);
+    json_response(['success'=>true,'data'=>$row]);
+    break;
+
+  case 'create':
+    if (!has_permission('permiso_crear')) json_response(['error'=>'no_perm'],403);
+    $paciente_id = intval($_POST['paciente_id'] ?? 0);
+    $sede_id = intval($_POST['sede_id'] ?? 0);
+    $fecha_hora = $_POST['fecha_hora_inicio'] ?? null;
+    $notas = trim($_POST['notas'] ?? null);
+    if (!$paciente_id || !$sede_id || !$fecha_hora) json_response(['error'=>'missing_fields'],400);
+
+    // Simple collision check: same sede same exact datetime
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM citas WHERE sede_id = ? AND fecha_hora_inicio = ?");
+    $stmt->execute([$sede_id,$fecha_hora]);
+    if ($stmt->fetchColumn() > 0) json_response(['error'=>'slot_taken'],409);
+
+    $user = current_user();
+    $creado_por = $user['id'] ?? null;
+    $stmt = $pdo->prepare("INSERT INTO citas (paciente_id,sede_id,fecha_hora_inicio,estado,notas,creado_por_usuario_id) VALUES (?, ?, ?, 'Pendiente', ?, ?)");
+    $stmt->execute([$paciente_id,$sede_id,$fecha_hora,$notas,$creado_por]);
+    $id = $pdo->lastInsertId();
+    $stmt = $pdo->prepare("SELECT c.*, p.nombre as paciente_nombre FROM citas c JOIN pacientes p ON p.id = c.paciente_id WHERE c.id = ?");
+    $stmt->execute([$id]);
+    json_response(['success'=>true,'data'=>$stmt->fetch()],201);
+    break;
+
+  case 'update':
+    if (!has_permission('permiso_actualizar')) json_response(['error'=>'no_perm'],403);
+    $id = intval($_POST['id'] ?? 0);
+    $fecha_hora = $_POST['fecha_hora_inicio'] ?? null;
+    $estado = $_POST['estado'] ?? null;
+    $notas = trim($_POST['notas'] ?? null);
+    if (!$id) json_response(['error'=>'missing_id'],400);
+
+    // If changing time, check collision
+    if ($fecha_hora) {
+      $stmt = $pdo->prepare("SELECT COUNT(*) FROM citas WHERE fecha_hora_inicio = ? AND id != ?");
+      $stmt->execute([$fecha_hora,$id]);
+      if ($stmt->fetchColumn() > 0) json_response(['error'=>'slot_taken'],409);
+      $pdo->prepare("UPDATE citas SET fecha_hora_inicio = ? WHERE id = ?")->execute([$fecha_hora,$id]);
+    }
+    if ($estado) $pdo->prepare("UPDATE citas SET estado = ? WHERE id = ?")->execute([$estado,$id]);
+    if ($notas !== null) $pdo->prepare("UPDATE citas SET notas = ? WHERE id = ?")->execute([$notas,$id]);
+
+    $stmt = $pdo->prepare("SELECT c.*, p.nombre as paciente_nombre FROM citas c JOIN pacientes p ON p.id = c.paciente_id WHERE c.id = ?");
+    $stmt->execute([$id]);
+    json_response(['success'=>true,'data'=>$stmt->fetch()]);
+    break;
+
+  case 'delete':
+    if (!has_permission('permiso_borrar')) json_response(['error'=>'no_perm'],403);
+    $id = intval($_POST['id'] ?? 0);
+    $stmt = $pdo->prepare("DELETE FROM citas WHERE id = ?");
+    $stmt->execute([$id]);
+    json_response(['success'=>true,'deleted'=>$id]);
+    break;
+
+  default:
+    json_response(['error'=>'invalid_action'],400);
+}

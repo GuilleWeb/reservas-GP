@@ -1,0 +1,72 @@
+<?php
+// api/empleos.php
+require_once __DIR__ . '/../helpers.php';
+header('Content-Type: application/json; charset=utf-8');
+
+$csrf = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_REQUEST['csrf_token'] ?? null;
+$action = $_REQUEST['action'] ?? 'list';
+if (in_array($action,['create','update','delete'])) {
+  if (!verify_csrf($csrf)) json_response(['error'=>'invalid_csrf'],403);
+}
+
+switch($action){
+  case 'list':
+    $q = trim($_GET['q'] ?? '');
+    $page = max(1,intval($_GET['page'] ?? 1));
+    $per = max(5,min(50,intval($_GET['per'] ?? 10)));
+    $offset = ($page-1)*$per;
+    $where = " WHERE activo = 1 ";
+    $params = [];
+    if ($q !== '') { $where .= " AND (titulo LIKE ? OR descripcion LIKE ?) "; $params[] = "%$q%"; $params[] = "%$q%"; }
+
+    $stmt = $pdo->prepare("SELECT SQL_CALC_FOUND_ROWS e.*, s.nombre as sede_nombre FROM empleos e LEFT JOIN sedes s ON s.id = e.sede_id $where ORDER BY fecha_publicacion DESC LIMIT ? OFFSET ?");
+    $params[] = $per; $params[] = $offset;
+    $stmt->execute($params);
+    $data = $stmt->fetchAll();
+    $total = $pdo->query("SELECT FOUND_ROWS()")->fetchColumn();
+    json_response(['success'=>true,'data'=>$data,'meta'=>['page'=>$page,'per'=>$per,'total'=>intval($total)]]);
+    break;
+
+  case 'get':
+    $id = intval($_GET['id'] ?? 0);
+    $stmt = $pdo->prepare("SELECT e.*, s.nombre as sede_nombre FROM empleos e LEFT JOIN sedes s ON s.id = e.sede_id WHERE e.id = ? AND e.activo = 1");
+    $stmt->execute([$id]);
+    $row = $stmt->fetch();
+    if (!$row) json_response(['error'=>'not_found'],404);
+    json_response(['success'=>true,'data'=>$row]);
+    break;
+
+  case 'create':
+    if (!has_permission('permiso_crear')) json_response(['error'=>'no_perm'],403);
+    $titulo = trim($_POST['titulo'] ?? '');
+    $descripcion = trim($_POST['descripcion'] ?? '');
+    $sede = intval($_POST['sede_id'] ?? 0) ?: null;
+    if ($titulo === '' || $descripcion === '') json_response(['error'=>'missing'],400);
+    $stmt = $pdo->prepare("INSERT INTO empleos (titulo, descripcion, sede_id, fecha_publicacion, activo) VALUES (?, ?, ?, CURDATE(), 1)");
+    $stmt->execute([$titulo,$descripcion,$sede]);
+    json_response(['success'=>true,'id'=>$pdo->lastInsertId()],201);
+    break;
+
+  case 'update':
+    if (!has_permission('permiso_actualizar')) json_response(['error'=>'no_perm'],403);
+    $id = intval($_POST['id'] ?? 0);
+    $titulo = trim($_POST['titulo'] ?? '');
+    $descripcion = trim($_POST['descripcion'] ?? '');
+    $sede = intval($_POST['sede_id'] ?? 0) ?: null;
+    $activo = isset($_POST['activo']) ? (int)$_POST['activo'] : 1;
+    $stmt = $pdo->prepare("UPDATE empleos SET titulo=?, descripcion=?, sede_id=?, activo=? WHERE id = ?");
+    $stmt->execute([$titulo,$descripcion,$sede,$activo,$id]);
+    json_response(['success'=>true]);
+    break;
+
+  case 'delete':
+    if (!has_permission('permiso_borrar')) json_response(['error'=>'no_perm'],403);
+    $id = intval($_POST['id'] ?? 0);
+    $stmt = $pdo->prepare("DELETE FROM empleos WHERE id = ?");
+    $stmt->execute([$id]);
+    json_response(['success'=>true,'deleted'=>$id]);
+    break;
+
+  default:
+    json_response(['error'=>'invalid_action'],400);
+}

@@ -1,0 +1,127 @@
+<?php
+require_once __DIR__.'/../helpers.php';
+header('Content-Type: application/json; charset=utf-8');
+
+$action = $_REQUEST['action'] ?? '';
+$csrf = $_REQUEST['csrf_token'] ?? '';
+$user = current_user();
+
+/*if(!check_csrf($csrf)){
+    json_response(['error'=>'csrf_invalid'],403);
+}*/
+//if(!$user) json_response(['error'=>'unauthorized'],403);
+
+switch($action){
+    case 'list':
+        $page = max(1,intval($_GET['page']??1));
+        $per = max(1,intval($_GET['per']??10));
+        $search = $_GET['search']??'';
+        $only_active = isset($_GET['active_only']) ? "AND activo=1" : "";
+
+        $where = $search ? "WHERE titulo LIKE :s OR contenido LIKE :s $only_active" : ($only_active ? "WHERE activo=1" : "");
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM blog_posts $where");
+        if($search) $stmt->execute(['s'=>"%$search%"]); else $stmt->execute();
+        $total = $stmt->fetchColumn();
+        $total_pages = ceil($total/$per);
+
+        $offset = ($page-1)*$per;
+        $sql = "SELECT b.*, u.nombre AS autor FROM blog_posts b
+                LEFT JOIN usuarios u ON b.autor_id=u.id
+                $where ORDER BY id DESC LIMIT :o,:p";
+        $stmt = $pdo->prepare($sql);
+        if($search) $stmt->bindValue(':s', "%$search%", PDO::PARAM_STR);
+        $stmt->bindValue(':o',$offset,PDO::PARAM_INT);
+        $stmt->bindValue(':p',$per,PDO::PARAM_INT);
+        $stmt->execute();
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // list
+        json_response([
+            'success' => true,
+            'data' => $data,
+            'total' => $total,       // total de registros
+            'total_pages' => $total_pages
+        ]);
+        break;
+
+    case 'get':
+        $id = intval($_GET['id'] ?? 0);
+
+        $sql = "SELECT 
+                    b.id,
+                    b.titulo,
+                    b.contenido,
+                    b.imagen,
+                    b.fecha_publicacion,
+                    b.activo,
+                    u.nombre AS autor
+                FROM blog_posts b
+                LEFT JOIN usuarios u ON b.autor_id = u.id
+                WHERE b.id = ?";
+                
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$id]);
+        $post = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($post) {
+            json_response(['success' => true, 'data' => $post]);
+        } else {
+            json_response(['success' => false, 'message' => 'Publicación no encontrada']);
+        }
+        break;
+
+
+    case 'save':
+        if(!$user || !has_permission('permiso_crear')) 
+            json_response(['error'=>'unauthorized'],403);
+
+        $id = intval($_POST['id'] ?? 0);
+        $titulo = trim($_POST['titulo'] ?? '');
+        $contenido = trim($_POST['contenido'] ?? '');
+        $activo = isset($_POST['activo']) ? intval($_POST['activo']) : 0;
+        $fecha_actual = date('Y-m-d H:i:s');
+        $imagen_url = null;
+
+        // Procesar imagen si se envía
+        if(!empty($_FILES['imagen']['name'])){
+            $dir = __DIR__ . '/../assets/blog/';
+            if(!is_dir($dir)) mkdir($dir, 0777, true);
+            $ext = pathinfo($_FILES['imagen']['name'], PATHINFO_EXTENSION);
+            $filename = 'blog_' . time() . '.' . $ext;
+            $destino = $dir . $filename;
+
+            if(move_uploaded_file($_FILES['imagen']['tmp_name'], $destino)){
+                $imagen_url = 'assets/blog/' . $filename;
+            }
+        }
+
+        if($id > 0){
+            // Actualizar
+            if($imagen_url){
+                $stmt = $pdo->prepare("UPDATE blog_posts SET titulo=?, contenido=?, activo=?, imagen=? WHERE id=?");
+                $stmt->execute([$titulo, $contenido, $activo, $imagen_url, $id]);
+            } else {
+                $stmt = $pdo->prepare("UPDATE blog_posts SET titulo=?, contenido=?, activo=? WHERE id=?");
+                $stmt->execute([$titulo, $contenido, $activo, $id]);
+            }
+        } else {
+            // Insertar
+            $stmt = $pdo->prepare("INSERT INTO blog_posts(titulo, contenido, autor_id, activo, fecha_publicacion, imagen) VALUES(?,?,?,?,?,?)");
+            $stmt->execute([$titulo, $contenido, $user['id'], $activo, $fecha_actual, $imagen_url]);
+        }
+
+        json_response(['success'=>true]);
+        break;
+
+
+    case 'delete':
+        if(!$user || !has_permission('permiso_borrar')) json_response(['error'=>'unauthorized'],403);
+        $id = intval($_POST['id']??0);
+        $stmt = $pdo->prepare("DELETE FROM blog_posts WHERE id=?");
+        $stmt->execute([$id]);
+        json_response(['success'=>true]);
+        break;
+
+    default:
+        json_response(['error'=>'invalid_action'],400);
+}

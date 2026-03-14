@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PLC - Documentación del Planificador Calendario Core</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/monokai-sublime.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-calendar': '#10b981', // Color principal: verde/teal de la librería
+                        'primary-dark-calendar': '#0e9e73', // Variante para hover
+                        'bg-light': '#f0f2f5', // Color de fondo del body
+                        'plc-blue': '#3b82f6', // Color del demo (para modales)
+                    },
+                    keyframes: {
+                        fadeInUp: {
+                            '0%': { opacity: 0, transform: 'translateY(20px)' },
+                            '100%': { opacity: 1, transform: 'translateY(0)' },
+                        },
+                        slideInLeft: {
+                            '0%': { opacity: 0, transform: 'translateX(-50px)' },
+                            '100%': { opacity: 1, transform: 'translateX(0)' },
+                        },
+                        slideInRight: {
+                            '0%': { opacity: 0, transform: 'translateX(50px)' },
+                            '100%': { opacity: 1, transform: 'translateX(0)' },
+                        },
+                        pulseModern: {
+                            '0%, 100%': { transform: 'scale(1)', boxShadow: '0 0 #0000' },
+                            '50%': { transform: 'scale(1.02)', boxShadow: '0 8px 15px rgba(16, 185, 129, 0.4)' },
+                        },
+                    },
+                    animation: {
+                        'fade-in-up': 'fadeInUp 1s ease-out forwards',
+                        'slide-in-left': 'slideInLeft 0.8s ease-out forwards',
+                        'slide-in-right': 'slideInRight 0.8s ease-out 0.2s forwards',
+                        'pulse-modern': 'pulseModern 3s infinite ease-in-out',
+                        'modal-open': 'fadeInUp 0.3s ease-out forwards',
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Estilos base y animaciones */
+        html { scroll-behavior: smooth; }
+        .animate-delay-200 { animation-delay: 0.2s; }
+        .animate-delay-400 { animation-delay: 0.4s; }
+        .animate-delay-600 { animation-delay: 0.6s; }
+        .animate-init { opacity: 0; }
+        
+        /* Estilo para bloques de código (solo estructura, el tema de highlight.js dará el color) */
+        .code-block {
+            padding: 0; /* Highlight.js ya incluye padding, lo ajustamos para el wrapper */
+            border-radius: 0.5rem;
+            overflow: hidden; /* Asegura que el borde redondeado se aplique al contenido interno */
+        }
+        /* Estilo específico para el elemento pre de Highlight.js dentro del wrapper */
+        .code-block pre {
+            margin: 0 !important; /* Elimina márgenes por defecto */
+            padding: 1rem !important; /* Restablece el padding que queremos */
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 0.875rem;
+            overflow-x: auto;
+        }
+
+        .code-inline {
+            background-color: #e2e8f0;
+            color: #10b981;
+            padding: 0.1rem 0.3rem;
+            border-radius: 0.3rem;
+            font-weight: 600;
+        }
+        /* Estilos VANILLA JS para los modales de la DEMO */
+        .modal-vanilla {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(17, 24, 39, 0.75); /* bg-gray-900 bg-opacity-75 */
+        }
+        .modal-content-vanilla {
+            background-color: #ffffff;
+            border-radius: 8px; /* rounded-lg */
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); /* shadow-2xl */
+            width: 100%;
+            max-width: 512px; /* max-w-lg */
+            padding: 24px;
+            margin: 16px;
+            animation: fadeInUp 0.3s ease-out forwards;
+        }
+        /* Estilos adicionales para los inputs en el demo */
+        .form-input-vanilla {
+            display: block;
+            width: 100%;
+            border: 1px solid #d1d5db; /* border-gray-300 */
+            border-radius: 4px;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+            padding: 8px;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body class="bg-bg-light min-h-screen antialiased">
+
+<header class="relative overflow-hidden bg-white shadow-lg border-b border-gray-200" style="background: linear-gradient(135deg, #f0fff4 0%, #ffffff 100%);">
+    <div class="container mx-auto px-4 py-28 text-center">
+        <h1 class="text-7xl font-extrabold text-gray-900 mb-4 animate-init animate-slide-in-left">
+            <span class="text-primary-calendar">P</span>LC Core
+        </h1>
+        <p class="text-2xl text-gray-600 mb-12 animate-init animate-slide-in-right">
+            Planificador Calendario Core: Un componente de eventos responsive. <span class="text-primary-calendar">🗓️</span>
+        </p>
+
+        <div class="max-w-xl mx-auto p-6 bg-white border-4 border-primary-calendar rounded-xl shadow-2xl transition duration-500 hover:shadow-primary-calendar/50 hover:scale-[1.01] animate-init animate-fade-in-up animate-delay-400">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">Integración Rápida</h3>
+            <div class="code-block text-left mb-4">
+<pre><code class="language-javascript">// 1. Incluye el archivo calendar.js
+// 2. Inicializa en un contenedor (Ej: <div id="mi-calendario">)
+const miCalendario = inicializarPlanificador({
+    node: 'mi-calendario',
+    colorPrimario: '#3b82f6',
+    modoOscuro: false,
+    vistaInicial: 'month'
+});</code></pre>
+            </div>
+        </div>
+
+        <div class="mt-12 space-x-4">
+            <a href="#demo" class="inline-flex items-center px-8 py-3 text-lg font-semibold text-white bg-blue-500 rounded-full shadow-lg hover:bg-blue-600 transition duration-300 transform hover:translate-y-[-2px]">
+                <span class="mr-2"><i class="fas fa-calendar-alt"></i></span>
+                <span>Ver Demo</span>
+            </a>
+            <a href="#instalacion" class="inline-flex items-center px-8 py-3 text-lg font-semibold text-white bg-gray-600 rounded-full shadow-lg hover:bg-gray-700 transition duration-300 transform hover:translate-y-[-2px]">
+                <span class="mr-2"><i class="fas fa-hammer"></i></span>
+                <span>Instalación</span>
+            </a>
+            <a href="#ejemplos" class="inline-flex items-center px-8 py-3 text-lg font-semibold text-white bg-primary-calendar rounded-full shadow-lg hover:bg-primary-dark-calendar transition duration-300 transform hover:translate-y-[-2px] animate-pulse-modern">
+                <span class="mr-2"><i class="fas fa-cogs"></i></span>
+                <span>Ejemplos de Uso</span>
+            </a>
+        </div>
+    </div>
+</header>
+
+<main>
+    
+    <section class="py-16 px-4" id="demo">
+        <div class="container mx-auto max-w-6xl">
+            <div class="w-full">
+                <div class="bg-white rounded-xl shadow-xl p-8 md:p-12 animate-init animate-fade-in-up animate-delay-200">
+                    <h2 class="text-4xl font-bold text-center text-gray-800 mb-8">Demo Interactivo <span class="text-primary-calendar">✨</span></h2>
+                    <p class="text-gray-600 mb-8 leading-relaxed text-center">
+                        Prueba el Planificador Calendario Core. Los eventos de ejemplo están pre-cargados para **la fecha actual y los días siguientes**.
+                    </p>
+                    
+                    <div id="demo-calendario-contenedor" class="bg-gray-100 p-2 rounded-lg shadow-inner border border-gray-300" style="height: 550px; min-height: 400px;">
+                        <div id="demo-calendario-plc" style="width: 100%; height: 100%;">
+                            </div>
+                    </div>
+
+                    <div class="mt-6 p-4 bg-primary-calendar/10 border-l-4 border-primary-calendar rounded-lg text-gray-800">
+                        <p class="font-bold text-lg mb-1">Nota:</p>
+                        <p class="text-sm">
+                            Este demo usa la configuración por defecto: Modo Oscuro, Color Primario Azul, y vista de Mes. El **panel lateral está visible al cargar**. Haz clic en los eventos en el panel para ver sus detalles en un modal. Usa el botón "+ Nuevo" para crear un evento interactivo.
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <hr class="border-t border-gray-300 my-12 w-4/5 mx-auto">
+
+    <section class="py-16 px-4" id="instalacion">
+        <div class="container mx-auto max-w-4xl">
+            <div class="w-full">
+                <div class="bg-white rounded-xl shadow-xl p-8 md:p-12 animate-init animate-fade-in-up animate-delay-600">
+                    <h2 class="text-4xl font-bold text-center text-gray-800 mb-8">Primeros Pasos <span class="text-primary-calendar">🛠️</span></h2>
+                    <p class="text-gray-600 mb-8 leading-relaxed">
+                        **PLC Core** es una librería Vanilla JavaScript. Para comenzar, solo necesita tres pasos: incluir el archivo **`calendar.js`**, definir el contenedor HTML y llamar a la función de inicialización.
+                    </p>
+
+                    <h3 class="text-3xl font-semibold text-gray-800 mb-4 border-b pb-2">1. Incluir la Librería (calendar.js):</h3>
+                    <p class="text-gray-600 mb-4">
+                        Copie y pegue la siguiente etiqueta <code class="code-inline">&lt;script&gt;</code> justo antes de la etiqueta de cierre <code class="code-inline">&lt;/body&gt;</code>.
+                    </p>
+                    <div class="code-block mb-8">
+<pre><code class="language-html">&lt;script src="https://guillepalma.xo.je/calendar/calendar.js"&gt;&lt;/script&gt;</code></pre>
+                    </div>
+
+                    <h3 class="text-3xl font-semibold text-gray-800 mb-4 border-b pb-2">2. Estructura HTML:</h3>
+                    <p class="text-gray-600 mb-4">
+                        Defina un contenedor vacío con un <code class="code-inline">id</code>. La librería inyectará todo el markup necesario dentro de él.
+                    </p>
+                    <div class="code-block mb-8">
+<pre><code class="language-html">&lt;!-- El calendario se renderizará aquí --&gt;
+&lt;div id="mi-planificador" style="width: 100%; height: 500px;"&gt;&lt;/div&gt;
+
+&lt;!-- NOTA: La librería se adapta al tamaño de este contenedor. 
+Recomendamos darle un tamaño fijo o máximo. --&gt;</code></pre>
+                    </div>
+
+                    <h3 class="text-3xl font-semibold text-gray-800 mb-4 border-b pb-2">3. Inicialización:</h3>
+                    <p class="text-gray-600 mb-4">
+                        Finalmente, cree un bloque de script y llame a <code class="code-inline">inicializarPlanificador</code>.
+                    </p>
+                    <div class="code-block mb-8">
+<pre><code class="language-javascript">&lt;script&gt;
+    // Ejemplo de lista de eventos
+    const eventosLista = [
+        { date: '2025-10-15', time: '10:00', description: 'Reunión con Cliente', details: 'Tema A', category: 'work' },
+        { date: '2025-10-15', time: '14:30', description: 'Cita Médica', details: 'Chequeo anual', category: 'personal' },
+        // ... más eventos
+    ];
+
+    window.onload = function() {
+        inicializarPlanificador({
+            // **[OBLIGATORIO]** ID del contenedor:
+            node: 'mi-planificador', 
+            
+            // Opciones:
+            eventos: eventosLista,
+            colorPrimario: '#3b82f6', // Azul principal para resaltar
+            modoOscuro: false,
+            vistaInicial: 'month',
+            
+            // Callbacks:
+            alClicEnDia: (fecha, eventos) => console.log('Día clickeado:', fecha, eventos.length),
+        });
+    }
+&lt;/script&gt;</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <hr class="border-t border-gray-300 my-12 w-4/5 mx-auto">
+    
+    <section class="py-16 px-4" id="ejemplos">
+        <div class="container mx-auto max-w-4xl">
+            <h2 class="text-4xl font-bold text-center text-gray-800 mb-10">Ejemplos de Uso Avanzado <span class="text-primary-calendar">💡</span></h2>
+            
+            <div class="bg-white rounded-xl shadow-2xl p-8 animate-init animate-fade-in-up animate-delay-200">
+                <p class="text-gray-600 mb-8 leading-relaxed">
+                    La verdadera potencia de PLC Core reside en sus funciones de <code class="code-inline">callback</code>, que le permiten enlazar la interacción del usuario con cualquier lógica de negocio (abrir modales, enviar datos a una API, etc.).
+                </p>
+
+                <h3 class="text-3xl font-semibold text-gray-800 mb-4 border-b pb-2">1. Callback: Mostrar Detalle del Evento en un Modal (Vanilla JS)</h3>
+                <p class="text-gray-600 mb-4">
+                    Al usar <code class="code-inline">alClicEnEvento</code>, recibe el objeto evento completo y puede usarlo para poblar cualquier ventana de detalles o modal en su página.
+                </p>
+                
+                <h4 class="text-xl font-semibold text-gray-800 mb-2 mt-6">Código JavaScript (Configuración del Callback):</h4>
+                <div class="code-block mb-4">
+<pre><code class="language-javascript">inicializarPlanificador({
+    // ... otras opciones
+    alClicEnEvento: (evento) => {
+        // Lógica de Vanilla JS para poblar y abrir un modal/ventana:
+        document.getElementById('modalDetalleTitulo').textContent = evento.description;
+        document.getElementById('modalDetalleFecha').textContent = evento.date;
+        document.getElementById('modalDetalleHora').textContent = evento.time;
+        document.getElementById('modalDetalleDesc').textContent = evento.details;
+        
+        // Muestra el modal (asumiendo que tiene un ID 'miModalDetalle')
+        document.getElementById('miModalDetalle').style.display = 'block'; 
+    },
+});</code></pre>
+                </div>
+                
+                <h4 class="text-xl font-semibold text-gray-800 mb-2 mt-6">Código HTML de Referencia para el Modal:</h4>
+                <div class="code-block mb-8">
+<pre><code class="language-html">&lt;div id="miModalDetalle" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);"&gt;
+    &lt;div style="background: white; margin: 10% auto; padding: 20px; width: 80%;"&gt;
+        &lt;h3 id="modalDetalleTitulo"&gt;&lt;/h3&gt;
+        &lt;p&gt;Fecha: &lt;span id="modalDetalleFecha"&gt;&lt;/span&gt;&lt;/p&gt;
+        &lt;p&gt;Hora: &lt;span id="modalDetalleHora"&gt;&lt;/span&gt;&lt;/p&gt;
+        &lt;p&gt;Detalles: &lt;span id="modalDetalleDesc"&gt;&lt;/span&gt;&lt;/p&gt;
+        &lt;button onclick="document.getElementById('miModalDetalle').style.display='none';"&gt;Cerrar&lt;/button&gt;
+    &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+                </div>
+
+                <h3 class="text-3xl font-semibold text-gray-800 mb-4 border-b pb-2">2. Callback: Abrir Formulario y Agregar Evento Dinámicamente</h3>
+                <p class="text-gray-600 mb-4">
+                    La función <code class="code-inline">onNewEvent</code> se activa al presionar el botón **+ Nuevo**. Podemos usarla para abrir un formulario y, crucialmente, **re-renderizar** el calendario con el nuevo evento.
+                </p>
+                <div class="code-block mb-8">
+<pre><code class="language-javascript">// Asumimos que tiene un array 'eventosGlobales' fuera de la función de inicialización.
+let eventosGlobales = [...eventosIniciales]; 
+let planificadorInstancia; // Variable para almacenar la instancia del planificador
+
+// Función principal para inicializar/re-inicializar
+function cargarPlanificador() {
+    planificadorInstancia = inicializarPlanificador({
+        node: 'mi-planificador',
+        eventos: eventosGlobales, // Usamos el array global
+        
+        // Callback para el botón '+ Nuevo'
+        onNewEvent: (fechaSeleccionada) => {
+            // 1. Pre-pobla la fecha en el formulario
+            document.getElementById('formFecha').value = fechaSeleccionada;
+            
+            // 2. Muestra el modal del formulario
+            document.getElementById('miModalForm').style.display = 'block';
+        },
+        // ... otros callbacks
+    });
+}
+
+
+// ** Lógica para manejar el envío del formulario **
+document.getElementById('miFormulario').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const nuevoEvento = {
+        date: document.getElementById('formFecha').value,
+        time: document.getElementById('formHora').value,
+        description: document.getElementById('formTitulo').value,
+        details: document.getElementById('formDescripcion').value,
+        category: document.getElementById('formCategoria').value,
+    };
+
+    // 1. Agregar el nuevo evento al array global
+    eventosGlobales.push(nuevoEvento);
+
+    // 2. Cerrar el modal
+    document.getElementById('miModalForm').style.display = 'none';
+
+    // 3. ¡MÁS IMPORTANTE! Vuelve a cargar el calendario con la lista actualizada.
+    // Esto borra el viejo y dibuja el nuevo, incluyendo el evento recién creado.
+    cargarPlanificador(); 
+    
+    alert('Evento creado y calendario actualizado.');
+});
+
+
+// Llamar al inicio para cargar la instancia
+cargarPlanificador();</code></pre>
+                </div>
+                
+            </div>
+        </div>
+    </section>
+
+    <hr class="border-t border-gray-300 my-12 w-4/5 mx-auto">
+
+
+    <section class="py-16 px-4 bg-bg-light" id="opciones">
+        <div class="container mx-auto max-w-4xl">
+            <h2 class="text-4xl font-bold text-center text-gray-800 mb-10">Opciones de Configuración y Eventos <span class="text-primary-calendar">⚙️</span></h2>
+            
+            <div class="bg-white rounded-xl shadow-2xl p-8 animate-init animate-fade-in-up animate-delay-200">
+                
+                <h3 class="text-3xl font-semibold text-gray-800 mb-4 border-b pb-2">Parámetros (Opciones):</h3>
+                <p class="text-gray-600 mb-4">
+                    Se pasan como un objeto JavaScript a la función <code class="code-inline">inicializarPlanificador(config)</code>.
+                </p>
+
+                <div class="overflow-x-auto shadow-md rounded-lg mb-8">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Opción</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Default</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap"><code class="text-primary-calendar font-bold">node</code></td>
+                                <td class="px-6 py-4 whitespace-nowrap">String</td>
+                                <td class="px-6 py-4">**Obligatorio.** ID del elemento contenedor donde se renderizará el calendario.</td>
+                                <td class="px-6 py-4 whitespace-nowrap">N/A</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap"><code class="text-primary-calendar font-bold">fechaInicial</code></td>
+                                <td class="px-6 py-4 whitespace-nowrap">Date | String</td>
+                                <td class="px-6 py-4">Fecha inicial que se mostrará al cargar. Acepta objetos Date o strings válidos (ej: '2025-10-01').</td>
+                                <td class="px-6 py-4 whitespace-nowrap"><code class="text-gray-500">new Date()</code></td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap"><code class="text-primary-calendar font-bold">eventos</code></td>
+                                <td class="px-6 py-4 whitespace-nowrap">Array</td>
+                                <td class="px-6 py-4">Lista de objetos evento para mostrar en el calendario.</td>
+                                <td class="px-6 py-4 whitespace-nowrap"><code class="text-gray-500">[]</code></td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap"><code class="text-primary-calendar font-bold">colorPrimario</code></td>
+                                <td class="px-6 py-4 whitespace-nowrap">String (Hex)</td>
+                                <td class="px-6 py-4">Color principal utilizado para resaltar días, el borde del panel y botones. Debe ser un **valor hexadecimal estricto** (ej: <code class="code-inline">#10b981</code>).</td>
+                                <td class="px-6 py-4 whitespace-nowrap"><code class="text-gray-500">#10b981</code></td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap"><code class="text-primary-calendar font-bold">modoOscuro</code></td>
+                                <td class="px-6 py-4 whitespace-nowrap">Boolean</td>
+                                <td class="px-6 py-4">Si es <code class="code-inline">true</code>, activa la paleta de colores oscuros (fondos grises oscuros y texto claro).</td>
+                                <td class="px-6 py-4 whitespace-nowrap"><code class="text-gray-500">true</code></td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap"><code class="text-primary-calendar font-bold">vistaInicial</code></td>
+                                <td class="px-6 py-4 whitespace-nowrap">String</td>
+                                <td class="px-6 py-4">Vista por defecto al cargar. Valores posibles: <code class="code-inline">'month'</code> (Mes) o <code class="code-inline">'week'</code> (Semana).</td>
+                                <td class="px-6 py-4 whitespace-nowrap"><code class="text-gray-500">'month'</code></td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap"><code class="text-primary-calendar font-bold">panelOcultoInicial</code></td>
+                                <td class="px-6 py-4 whitespace-nowrap">Boolean</td>
+                                <td class="px-6 py-4">Si es <code class="code-inline">true</code>, el panel lateral de eventos se ocultará al cargar. Se mostrará al hacer clic en un día.</td>
+                                <td class="px-6 py-4 whitespace-nowrap"><code class="text-gray-500">false</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3 class="text-3xl font-semibold text-gray-800 mb-4 border-b pb-2">Estructura del Objeto Evento:</h3>
+                <p class="text-gray-600 mb-4">
+                    Cada elemento en el arreglo <code class="code-inline">eventos</code> debe seguir esta estructura:
+                </p>
+                <div class="code-block mb-8">
+<pre><code class="language-javascript">{
+    date: 'YYYY-MM-DD',      // [OBLIGATORIO] Fecha del evento (Ej: '2025-10-25')
+    time: 'HH:MM',           // Hora del evento (Ej: '14:30')
+    description: 'String',   // Título corto del evento
+    details: 'String',       // Descripción larga para el panel
+    category: 'String'       // Categoría para el punto de color (Ej: 'work', 'personal', etc.)
+}</code></pre>
+                </div>
+                
+                <h3 class="text-3xl font-semibold text-gray-800 mb-4 border-b pb-2">Funciones de Callback:</h3>
+                <p class="text-gray-600 mb-4">
+                    Callbacks que se ejecutan cuando el usuario interactúa con el calendario.
+                </p>
+                <div class="overflow-x-auto shadow-md rounded-lg">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Callback</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Parámetros</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap"><code class="text-primary-calendar font-bold">alClicEnDia</code></td>
+                                <td class="px-6 py-4 whitespace-nowrap"><code class="code-inline">fechaString, eventosDia</code></td>
+                                <td class="px-6 py-4">Se ejecuta cuando un usuario hace clic en un día. Recibe la fecha formateada ('YYYY-MM-DD') y la lista de eventos para ese día.</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap"><code class="text-primary-calendar font-bold">alClicEnEvento</code></td>
+                                <td class="px-6 py-4 whitespace-nowrap"><code class="code-inline">eventoObjeto</code></td>
+                                <td class="px-6 py-4">Se ejecuta cuando un usuario hace clic en una tarjeta de evento en el panel lateral.</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap"><code class="text-primary-calendar font-bold">onNewEvent</code></td>
+                                <td class="px-6 py-4 whitespace-nowrap"><code class="code-inline">fechaString</code></td>
+                                <td class="px-6 py-4">Se ejecuta cuando el usuario presiona el botón "+ Nuevo" en el panel lateral. Recibe la fecha seleccionada actualmente.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer class="bg-gray-800 text-white py-8 px-4">
+    <div class="container mx-auto text-center">
+        <p class="text-sm mb-2">
+            Desarrollado con <span class="text-red-500">❤️</span> como Planificador Calendario Core.
+        </p>
+        <p class="text-xs text-gray-400">
+            © 2024 <strong>PLC Core</strong>. Todos los derechos reservados.
+        </p>
+    </div>
+</footer>
+
+<script src="calendar.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+<div id="detalleModal" class="modal-vanilla" onclick="cerrarModal('detalleModal')">
+    <div class="modal-content-vanilla" onclick="event.stopPropagation()">
+        <div class="flex justify-between items-center border-b pb-3 mb-4">
+            <h3 class="text-2xl font-bold text-plc-blue" id="modalTitulo">Detalles del Evento</h3>
+            <button onclick="cerrarModal('detalleModal')" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <div class="space-y-3 text-gray-700">
+            <p><strong class="text-gray-900">Fecha:</strong> <span id="detalleFecha"></span></p>
+            <p><strong class="text-gray-900">Hora:</strong> <span id="detalleHora"></span></p>
+            <p><strong class="text-gray-900">Categoría:</strong> <span id="detalleCategoria" class="inline-block px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-200 text-gray-700"></span></p>
+            <hr>
+            <p class="text-xl font-semibold text-gray-800" id="detalleDescripcion"></p>
+            <p class="text-gray-600" id="detalleDetails"></p>
+        </div>
+        <div class="mt-6 text-right">
+            <button onclick="cerrarModal('detalleModal')" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<div id="nuevoEventoModal" class="modal-vanilla" onclick="cerrarModal('nuevoEventoModal')">
+    <div class="modal-content-vanilla" onclick="event.stopPropagation()">
+        <div class="flex justify-between items-center border-b pb-3 mb-4">
+            <h3 class="text-2xl font-bold text-primary-calendar">Crear Nuevo Evento</h3>
+            <button onclick="cerrarModal('nuevoEventoModal')" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <form id="formNuevoEvento">
+            <div class="space-y-4">
+                
+                <div>
+                    <label for="eventoTitulo" class="block text-sm font-medium text-gray-700">Título</label>
+                    <input type="text" id="eventoTitulo" required class="form-input-vanilla">
+                </div>
+                
+                <div>
+                    <label for="eventoDescripcion" class="block text-sm font-medium text-gray-700">Descripción / Detalles</label>
+                    <textarea id="eventoDescripcion" required rows="2" class="form-input-vanilla"></textarea>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="eventoFecha" class="block text-sm font-medium text-gray-700">Fecha</label>
+                        <input type="date" id="eventoFecha" required class="form-input-vanilla">
+                    </div>
+                    <div>
+                        <label for="eventoHora" class="block text-sm font-medium text-gray-700">Hora</label>
+                        <input type="time" id="eventoHora" required class="form-input-vanilla">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="eventoCategoria" class="block text-sm font-medium text-gray-700">Categoría</label>
+                    <select id="eventoCategoria" required class="form-input-vanilla">
+                        <option value="work">Trabajo (work)</option>
+                        <option value="personal">Personal (personal)</option>
+                        <option value="learning">Aprendizaje (learning)</option>
+                        <option value="other">Otro (other)</option>
+                    </select>
+                </div>
+
+            </div>
+            <div class="mt-6 p-4 bg-primary-calendar/10 border-l-4 border-primary-calendar rounded-lg text-gray-800">
+                <p class="font-bold text-lg mb-1">Nota:</p>
+                <p class="text-sm">
+                Este evento se perdera al actualizar la pagina
+                </p>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button type="button" onclick="cerrarModal('nuevoEventoModal')" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">Cancelar</button>
+                <button type="submit" class="px-4 py-2 bg-primary-calendar text-white rounded-lg hover:bg-primary-dark-calendar transition font-semibold">Guardar Evento</button>
+            </div>
+
+        </form>
+
+    </div>
+</div>
+
+<script>
+    // Variables globales para el demo
+    const demoNodeId = 'demo-calendario-plc';
+    let miCalendario = null;
+    let demoEventos = [];
+    
+    // Función de ayuda para formatear fecha a YYYY-MM-DD
+    const formatDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
+    // --- LÓGICA DE MODALES (VANILLA JS) ---
+    
+    function abrirModal(id) {
+        document.getElementById(id).style.display = 'flex';
+    }
+
+    function cerrarModal(id) {
+        document.getElementById(id).style.display = 'none';
+    }
+
+    function mostrarDetalleEvento(evento) {
+        const modal = document.getElementById('detalleModal');
+        
+        // Asignar los datos del evento a los elementos del modal
+        document.getElementById('detalleDescripcion').textContent = evento.description;
+        document.getElementById('detalleDetails').textContent = evento.details;
+        document.getElementById('detalleFecha').textContent = evento.date;
+        document.getElementById('detalleHora').textContent = evento.time;
+        
+        const catElement = document.getElementById('detalleCategoria');
+        catElement.textContent = evento.category;
+        
+        // Lógica simple para color de categoría
+        const colorMap = {
+            'work': 'bg-yellow-100 text-yellow-800',
+            'personal': 'bg-plc-blue/20 text-plc-blue',
+            'learning': 'bg-green-100 text-green-800',
+            'other': 'bg-red-100 text-red-800',
+        };
+        catElement.className = `inline-block px-2 py-0.5 text-xs font-semibold rounded-full ${colorMap[evento.category] || 'bg-gray-200 text-gray-700'}`;
+
+        abrirModal('detalleModal');
+    }
+
+    function mostrarFormularioNuevoEvento(fecha) {
+        // Pre-poblar la fecha en el formulario
+        document.getElementById('eventoFecha').value = fecha;
+        // Limpiar otros campos
+        document.getElementById('eventoTitulo').value = '';
+        document.getElementById('eventoDescripcion').value = '';
+        document.getElementById('eventoHora').value = '09:00';
+        document.getElementById('eventoCategoria').value = 'work';
+        
+        abrirModal('nuevoEventoModal');
+    }
+
+    // Función principal para inicializar y re-inicializar el calendario
+    function inicializarDemo() {
+        // Obtener la fecha de hoy
+        const hoy = new Date();
+
+        // 1. Crear Eventos Dinámicos si es la primera vez
+        if (demoEventos.length === 0) {
+            const fechaHoy = formatDate(hoy);
+            
+            const manana = new Date(hoy);
+            manana.setDate(hoy.getDate() + 1);
+            const fechaManana = formatDate(manana);
+
+            const dosDias = new Date(hoy);
+            dosDias.setDate(hoy.getDate() + 2);
+            const fechaDosDias = formatDate(dosDias);
+            
+            // Eventos de ejemplo para el demo (fijados en fechas relativas)
+            demoEventos = [
+                { date: fechaHoy, time: '09:00', description: 'Reunión de Hoy (Alfa)', details: 'Revisión final de código.', category: 'work' },
+                { date: fechaHoy, time: '14:30', description: 'Cita Médica (Hoy)', details: 'Chequeo anual.', category: 'personal' },
+                { date: fechaManana, time: '11:00', description: 'Webinar de Tecnología', details: 'Nuevas tendencias de JS.', category: 'learning' },
+                { date: fechaDosDias, time: '16:00', description: 'Llamada con Proveedor', details: 'Ajuste de contrato.', category: 'work' },
+            ];
+        }
+
+        // Limpiar el contenedor antes de re-inicializar para evitar duplicados/errores
+        document.getElementById(demoNodeId).innerHTML = '';
+
+        // 2. Inicialización del DEMO
+        if (typeof inicializarPlanificador === 'function') {
+            miCalendario = inicializarPlanificador({
+                node: demoNodeId, 
+                fechaInicial: hoy,
+                eventos: demoEventos, // Pasa el array actualizable
+                colorPrimario: '#3b82f6', // Un azul para diferenciar del teal del sitio
+                modoOscuro: true, 
+                vistaInicial: 'month',
+                panelOcultoInicial: false, // Ahora visible por defecto
+                
+                // Callbacks ACTUALIZADOS
+                alClicEnDia: (fecha, eventos) => {
+                    console.log(`Día ${fecha} clickeado. Eventos: ${eventos.length}`);
+                },
+                alClicEnEvento: (evento) => {
+                    mostrarDetalleEvento(evento); // Muestra el modal de detalles
+                },
+                onNewEvent: (fecha) => {
+                    mostrarFormularioNuevoEvento(fecha); // Muestra el modal del formulario
+                }
+            });
+        } else {
+             document.getElementById(demoNodeId).innerHTML = `
+                <div style="height: 100%; display: flex; align-items: center; justify-content: center; text-align: center; color: #ef4444; font-weight: bold;">
+                    ERROR: La librería 'calendar.js' no fue cargada. Asegúrate de incluirla en tu HTML.
+                </div>
+            `;
+        }
+    }
+    
+    // --- Lógica de Formulario de Nuevo Evento ---
+    document.getElementById('formNuevoEvento').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const nuevoEvento = {
+            date: document.getElementById('eventoFecha').value,
+            time: document.getElementById('eventoHora').value,
+            description: document.getElementById('eventoTitulo').value,
+            details: document.getElementById('eventoDescripcion').value,
+            category: document.getElementById('eventoCategoria').value,
+        };
+
+        // 1. Agregar al array de eventos
+        demoEventos.push(nuevoEvento);
+
+        // 2. Ocultar el modal
+        cerrarModal('nuevoEventoModal');
+        
+        // 3. Re-inicializar el calendario para reflejar el cambio
+        inicializarDemo();
+        
+        console.log("Nuevo evento agregado:", nuevoEvento);
+        alert(`¡Evento "${nuevoEvento.description}" agregado exitosamente! (Se perderá al recargar la página)`);
+    });
+
+
+    // Ejecución inicial
+    document.addEventListener('DOMContentLoaded', () => {
+        // Inicialización de la Animación
+        const elementsToAnimate = document.querySelectorAll('.animate-init');
+        elementsToAnimate.forEach(el => {
+            el.style.opacity = '1';
+        });
+
+        // Retraso para que Tailwind cargue y evitar parpadeos y para que el calendario cargue primero
+        setTimeout(() => {
+            inicializarDemo();
+            // Inicializar Highlight.js
+            if (typeof hljs !== 'undefined') {
+                hljs.highlightAll();
+            }
+        }, 100); 
+    });
+</script>
+
+</body>
+</html>

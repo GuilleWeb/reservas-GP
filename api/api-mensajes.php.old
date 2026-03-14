@@ -1,0 +1,58 @@
+<?php
+require_once __DIR__.'/../helpers.php';
+header('Content-Type: application/json; charset=utf-8');
+
+$action = $_REQUEST['action'] ?? '';
+$ctx = tenant_context();
+$empresa_slug = $ctx['empresa_slug'];
+
+switch ($action) {
+    case 'contacto':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            json_response(['success' => false, 'error' => 'method_not_allowed'], 405);
+        }
+
+        if (!$empresa_slug) {
+            json_response(['success' => false, 'error' => 'missing_empresa'], 400);
+        }
+
+        $nombre = trim($_POST['nombre'] ?? '');
+        $email = trim($_POST['email'] ?? '');
+        $telefono = trim($_POST['telefono'] ?? '');
+        $asunto = trim($_POST['asunto'] ?? '');
+        $mensaje = trim($_POST['mensaje'] ?? '');
+
+        $sucursal_id = request_sucursal_id();
+        if ($sucursal_id !== null && $sucursal_id <= 0) $sucursal_id = null;
+
+        if ($mensaje === '') {
+            json_response(['success' => false, 'error' => 'missing_message'], 400);
+        }
+
+        $stmt = $pdo->prepare('SELECT id, activo FROM empresas WHERE slug = ? LIMIT 1');
+        $stmt->execute([$empresa_slug]);
+        $empresa = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$empresa) json_response(['success' => false, 'error' => 'empresa_not_found'], 404);
+        if (empty($empresa['activo'])) json_response(['success' => false, 'error' => 'empresa_inactiva'], 403);
+
+        if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            json_response(['success' => false, 'error' => 'invalid_email'], 400);
+        }
+
+        $stmt = $pdo->prepare('INSERT INTO mensajes_contacto (empresa_id, sucursal_id, nombre, email, telefono, asunto, mensaje) VALUES (?, ?, ?, ?, ?, ?, ?)');
+        $stmt->execute([
+            $empresa['id'],
+            $sucursal_id,
+            $nombre !== '' ? $nombre : null,
+            $email !== '' ? $email : null,
+            $telefono !== '' ? $telefono : null,
+            $asunto !== '' ? $asunto : null,
+            $mensaje,
+        ]);
+
+        json_response(['success' => true]);
+        break;
+
+    default:
+        json_response(['error' => 'invalid_action'], 400);
+}

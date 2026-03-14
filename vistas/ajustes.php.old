@@ -1,0 +1,264 @@
+<?php
+// vistas/ajustes.php
+$user = current_user();
+$role = $user['rol'] ?? null;
+$empresa_slug = request_empresa_slug();
+$is_superadmin = ($role === 'superadmin' && !$empresa_slug);
+$is_tenant_admin = ($empresa_slug && in_array($role, ['admin', 'gerente']));
+
+if (!$is_superadmin && !$is_tenant_admin) {
+  echo '<div class="max-w-3xl mx-auto bg-white p-6 rounded-xl shadow">No autorizado.</div>';
+  return;
+}
+?>
+
+<div class="max-w-7xl mx-auto">
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+    <?php if($is_superadmin): ?>
+    <div class="lg:col-span-12 mb-4">
+      <div class="bg-white rounded-2xl shadow p-6 border">
+        <div class="text-sm text-gray-500">SuperAdmin</div>
+        <div class="mt-1 text-2xl font-extrabold text-gray-900">Ajustes Globales del Sistema</div>
+
+        <form id="panelForm" class="mt-5 space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Nombre del sistema</label>
+            <input id="system_name" name="system_name" class="border rounded-lg p-2 w-full" placeholder="Sistema">
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Modo mantenimiento</label>
+              <select id="maintenance_mode" name="maintenance_mode" class="border rounded-lg p-2 w-full">
+                <option value="0">No</option>
+                <option value="1">Sí</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Permitir login</label>
+              <select id="allow_login" name="allow_login" class="border rounded-lg p-2 w-full">
+                <option value="1">Sí</option>
+                <option value="0">No</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Permitir registros</label>
+              <select id="allow_register" name="allow_register" class="border rounded-lg p-2 w-full">
+                <option value="1">Sí</option>
+                <option value="0">No</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="pt-2 border-t"></div>
+          <div class="font-semibold text-gray-900">SMTP</div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Host</label>
+              <input id="smtp_host" name="smtp_host" class="border rounded-lg p-2 w-full" placeholder="smtp.tudominio.com">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Puerto</label>
+              <input id="smtp_port" name="smtp_port" type="number" class="border rounded-lg p-2 w-full" placeholder="587">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Usuario</label>
+              <input id="smtp_user" name="smtp_user" class="border rounded-lg p-2 w-full" placeholder="usuario@dominio.com">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Password</label>
+              <input id="smtp_pass" name="smtp_pass" type="password" class="border rounded-lg p-2 w-full" placeholder="********">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">From email</label>
+              <input id="smtp_from_email" name="smtp_from_email" class="border rounded-lg p-2 w-full" placeholder="no-reply@dominio.com">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">From nombre</label>
+              <input id="smtp_from_name" name="smtp_from_name" class="border rounded-lg p-2 w-full" placeholder="Sistema">
+            </div>
+          </div>
+
+          <div class="pt-2 flex items-center justify-between gap-2">
+            <button type="button" id="btnReloadGlobal" class="px-4 py-2 border rounded-lg">Recargar</button>
+            <button type="submit" class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-black">Guardar Ajustes</button>
+          </div>
+          <div id="saveInfoGlobal" class="hidden text-sm text-teal-700"></div>
+        </form>
+      </div>
+    </div>
+    <?php endif; ?>
+
+    <div class="lg:col-span-12">
+      <div class="bg-white rounded-2xl shadow p-6 border">
+        <div class="font-semibold text-gray-900"><?= $is_superadmin ? 'Personalización y Soporte del Superadmin' : 'Configuración de Mi Empresa' ?></div>
+        <div class="mt-2 text-sm text-gray-600"><?= $is_superadmin ? 'Branding para la plataforma principal (landing).' : 'Personaliza los colores, logo y tu landing page (inicio).' ?></div>
+
+        <form id="tenantForm" class="mt-4 space-y-4">
+
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Logo (URL o ruta local)</label>
+            <input id="system_logo_path" name="system_logo_path" class="border rounded-lg p-2 w-full" placeholder="assets/logo.avif">
+            <p class="text-xs text-gray-500 mt-1">Ej: https://midominio.com/logo.png</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Color Primario (Hexadecimal)</label>
+            <input id="ui_primary_color" name="ui_primary_color" class="border rounded-lg p-2 w-full" placeholder="#0d9488">
+            <p class="text-xs text-gray-500 mt-1">Color principal de tu marca.</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Email de Soporte/Contacto</label>
+            <input id="support_email" name="support_email" class="border rounded-lg p-2 w-full" placeholder="soporte@dominio.com">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Teléfono de Soporte/Contacto</label>
+            <input id="support_phone" name="support_phone" class="border rounded-lg p-2 w-full" placeholder="+52 ...">
+          </div>
+        </div>
+
+        </div>
+
+        <div class="mt-4 pt-4 border-t border-gray-100">
+          <h3 class="text-sm font-bold text-gray-900 mb-3">Configuración de Landing Page (Inicio)</h3>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Título del Hero Banner</label>
+              <input id="hero_titulo" name="hero_titulo" class="border border-gray-300 focus:ring-2 focus:ring-teal-500 rounded-lg p-2 w-full mt-1" placeholder="Ej: Transformando tu Sonrisa">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Subtítulo del Hero Banner</label>
+              <input id="hero_subtitulo" name="hero_subtitulo" class="border border-gray-300 focus:ring-2 focus:ring-teal-500 rounded-lg p-2 w-full mt-1" placeholder="Ej: Expertos en salud y estética dental...">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Texto del Botón Principal</label>
+              <input id="hero_btn_texto" name="hero_btn_texto" class="border border-gray-300 focus:ring-2 focus:ring-teal-500 rounded-lg p-2 w-full mt-1" placeholder="Ej: Agendar Cita">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Enlace del Botón Principal</label>
+              <input id="hero_btn_link" name="hero_btn_link" class="border border-gray-300 focus:ring-2 focus:ring-teal-500 rounded-lg p-2 w-full mt-1" placeholder="Ej: /citas">
+            </div>
+
+            <div class="md:col-span-2">
+              <label class="block text-sm font-medium text-gray-700">Título Sección Acerca de Nosotros</label>
+              <input id="about_titulo" name="about_titulo" class="border border-gray-300 focus:ring-2 focus:ring-teal-500 rounded-lg p-2 w-full mt-1" placeholder="Ej: ¿Quiénes Somos?">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Nuestra Misión</label>
+              <textarea id="mision" name="mision" class="border border-gray-300 focus:ring-2 focus:ring-teal-500 rounded-lg p-2 w-full mt-1" rows="3" placeholder="Ej: Brindar el mejor..."></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Nuestra Visión</label>
+              <textarea id="vision" name="vision" class="border border-gray-300 focus:ring-2 focus:ring-teal-500 rounded-lg p-2 w-full mt-1" rows="3" placeholder="Ej: Ser líderes en..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 pt-4 border-t border-gray-100">
+          <label class="block text-sm font-medium text-gray-700">Texto libre o información de pago (opcional para el footer)</label>
+          <textarea id="public_footer_text" name="public_footer_text" class="border border-gray-300 focus:ring-2 focus:ring-teal-500 rounded-lg p-2 w-full mt-1" rows="3" placeholder="Ej: Aceptamos tarjetas..."></textarea>
+        </div>
+
+        <div class="mt-4 flex items-center justify-end gap-2 border-t pt-4">
+            <button type="button" id="btnReloadTenant" class="px-4 py-2 border rounded-lg">Recargar Datos</button>
+            <button type="submit" class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg">Guardar Apariencia</button>
+        </div>
+        <div id="saveInfoTenant" class="hidden text-sm text-teal-700 text-right mt-2"></div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+$(function(){
+  const isSuperadmin = <?= $is_superadmin ? 'true' : 'false' ?>;
+  const isTenantAdmin = <?= $is_tenant_admin ? 'true' : 'false' ?>;
+
+  function showInfo(msg, ok, target = 'Global'){
+    const el = $('#saveInfo' + target);
+    el.removeClass('hidden');
+    el.toggleClass('text-teal-700', !!ok);
+    el.toggleClass('text-red-600', !ok);
+    el.text(msg);
+    setTimeout(()=>el.addClass('hidden'), 2500);
+  }
+
+  function setVal(id, v, fallback=''){
+    if(v===undefined || v===null || v==='') $('#'+id).val(fallback);
+    else $('#'+id).val(String(v));
+  }
+
+  function loadPanelGlobal(){
+    if (!isSuperadmin) return;
+    $.get('api/superadmin/ajustes.php',{action:'get_panel'},function(res){
+      if(!res.success) return;
+      const d = res.data || {};
+      setVal('system_name', d.system_name, 'Sistema');
+      setVal('maintenance_mode', d.maintenance_mode, '0');
+      setVal('allow_login', d.allow_login, '1');
+      setVal('allow_register', d.allow_register, '1');
+
+      setVal('smtp_host', d.smtp_host, '');
+      setVal('smtp_port', d.smtp_port, '587');
+      setVal('smtp_user', d.smtp_user, '');
+      setVal('smtp_pass', d.smtp_pass, '');
+      setVal('smtp_from_email', d.smtp_from_email, '');
+      setVal('smtp_from_name', d.smtp_from_name, '');
+    },'json');
+  }
+
+  function loadPanelTenant(){
+    $.get('api/superadmin/ajustes.php',{action:'get_tenant'},function(res){
+      if(!res.success) return;
+      const d = res.data || {};
+      setVal('system_logo_path', d.logo_path, '');
+      setVal('ui_primary_color', d.color_principal, '');
+      setVal('support_email', d.email_contacto, '');
+      setVal('support_phone', d.telefono_contacto, '');
+      setVal('public_footer_text', d.texto_footer, '');
+      setVal('hero_titulo', d.hero_titulo, '');
+      setVal('hero_subtitulo', d.hero_subtitulo, '');
+      setVal('hero_btn_texto', d.hero_btn_texto, '');
+      setVal('hero_btn_link', d.hero_btn_link, '');
+      setVal('mision', d.mision, '');
+      setVal('vision', d.vision, '');
+      setVal('about_titulo', d.about_titulo, '');
+    },'json');
+  }
+
+  $('#btnReloadGlobal').click(loadPanelGlobal);
+  $('#btnReloadTenant').click(loadPanelTenant);
+
+  $('#panelForm').on('submit', function(ev){
+    ev.preventDefault();
+    $.post('api/superadmin/ajustes.php', $(this).serialize()+'&action=save_panel', function(res){
+      if(res.success){
+        showInfo('Guardado con éxito. Refresca para ver cambios.', true, 'Global');
+        loadPanelGlobal();
+      } else {
+        showInfo(res.message||'Error al guardar', false, 'Global');
+      }
+    },'json');
+  });
+
+  $('#tenantForm').on('submit', function(ev){
+    ev.preventDefault();
+    $.post('api/superadmin/ajustes.php', $(this).serialize()+'&action=save_tenant', function(res){
+      if(res.success){
+        showInfo('Apariencia guardada. Refresca para ver cambios.', true, 'Tenant');
+        loadPanelTenant();
+      } else {
+        showInfo(res.message||'Error al guardar', false, 'Tenant');
+      }
+    },'json');
+  });
+
+  if (isSuperadmin) loadPanelGlobal();
+  loadPanelTenant();
+});
+</script>

@@ -1,0 +1,244 @@
+<?php
+require_once __DIR__.'/../helpers.php';
+header('Content-Type: application/json; charset=utf-8');
+
+$action = $_REQUEST['action'] ?? '';
+$csrf = $_REQUEST['csrf_token'] ?? '';
+$user = current_user();
+
+/*if(!check_csrf($csrf)){
+    json_response(['error'=>'csrf_invalid'],403);
+}*/
+// Solo las acciones de administración requieren un usuario logueado
+$admin_actions = ['list', 'get', 'save', 'delete'];
+
+if (in_array($action, $admin_actions) && !$user) {
+    json_response(['error'=>'unauthorized'],403);
+}
+
+// Nota: Para la acción 'agendar' o 'save' pública (si existiera), la validación de $user se podría omitir o reescribir.
+// En este caso, asumimos que 'save' se usará para AGENDAR y que no requiere $user si viene con un paciente_id válido,
+// o si la acción 'save' solo es para el administrador. Mantendré la validación de $user para 'save' por ahora.
+
+switch($action){
+    case 'list':
+        $page = max(1,intval($_GET['page']??1));
+        $per = max(1,intval($_GET['per']??10));
+        $search = $_GET['search']??'';
+
+        $where = $search ? "WHERE c.estado LIKE :s OR p.nombre LIKE :s OR s.nombre LIKE :s" : "";
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM citas c
+                               JOIN pacientes p ON c.paciente_id=p.id
+                               JOIN sedes s ON c.sede_id=s.id
+                               $where");
+        if($search) $stmt->execute(['s'=>"%$search%"]); else $stmt->execute();
+        $total = $stmt->fetchColumn();
+        $total_pages = ceil($total/$per);
+
+        $offset = ($page-1)*$per;
+        $sql = "SELECT c.id, p.nombre AS paciente, s.nombre AS sede, c.fecha_hora_inicio, c.estado, c.notas
+                FROM citas c
+                JOIN pacientes p ON c.paciente_id=p.id
+                JOIN sedes s ON c.sede_id=s.id
+                $where
+                ORDER BY id DESC LIMIT :o,:p";
+        $stmt = $pdo->prepare($sql);
+        if($search) $stmt->bindValue(':s', "%$search%", PDO::PARAM_STR);
+        $stmt->bindValue(':o',$offset,PDO::PARAM_INT);
+        $stmt->bindValue(':p',$per,PDO::PARAM_INT);
+        $stmt->execute();
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // list
+        json_response([
+            'success' => true,
+            'data' => $data,
+            'total' => $total,        // total de registros
+            'total_pages' => $total_pages
+        ]);
+        break;
+
+    case 'get':
+        $id = intval($_GET['id']??0);
+        $stmt = $pdo->prepare("SELECT * FROM citas WHERE id=?");
+        $stmt->execute([$id]);
+        json_response(['success' => true,'data' => $stmt->fetch() ?: []]);
+        break;
+
+    case 'save':
+        // 1. Obtención y saneamiento de datos
+        $id = intval($_POST['id'] ?? 0);
+        
+        // *** SOLO NECESITAMOS EL ID DEL PACIENTE (YA CREADO/OBTENIDO POR api-pacientes.php) ***
+        $paciente_id = intval($_POST['paciente_id'] ?? 0);
+        // *** NOTA: Se eliminan $nombre, $email, $telefono de aquí. ***
+
+        $sede_id = intval($_POST['sede_id'] ?? 0);
+        // La fecha viene como YYYY-MM-DDTHH:MM. La transformamos a YYYY-MM-DD HH:MM:SS
+        $fecha_hora_inicio = trim($_POST['fecha'] ?? '');
+        $estado = trim($_POST['estado'] ?? 'pendiente'); // Usamos 'pendiente' como default si no viene
+        $notas = trim($_POST['notas'] ?? ($_POST['nota'] ?? ''));
+        
+        // Si estamos creando una cita (id = 0), el estado por defecto es 'pendiente'.
+        // Si estamos editando (id > 0), asumimos que el estado viene del formulario del admin.
+        if ($id == 0) {
+            $estado = 'pendiente'; 
+        }
+
+        // 2. VALIDACIÓN DE REQUERIMIENTOS BÁSICOS
+        if ($paciente_id <= 0) {
+            // Este error indica que el frontend no logró crear o recuperar el ID del paciente.
+            json_response(['success' => false, 'message' => 'El Paciente es requerido. No se pudo obtener el ID de registro.'], 400);
+            break;
+        }
+        if ($sede_id <= 0) {
+            json_response(['success' => false, 'message' => 'La Sede es requerida.'], 400);
+            break;
+        }
+        if (empty($fecha_hora_inicio)) {
+            json_response(['success' => false, 'message' => 'La Fecha y Hora de la cita son requeridas.'], 400);
+            break;
+        }
+
+        // 3. VALIDACIÓN DE FECHA Y FORMATO
+        // Convertir el formato del frontend (YYYY-MM-DDTHH:MM) a SQL (YYYY-MM-DD HH:MM:SS)
+        $fecha_hora_sql = str_replace('T', ' ', $fecha_hora_inicio) . ':00';
+        
+        // Verificar que la fecha no sea pasada (doble chequeo)
+        $now = date('Y-m-d H:i:00');
+        if ($fecha_hora_sql < $now && $id == 0) {
+              json_response(['success' => false, 'message' => 'No puedes programar una cita en el pasado.']);
+              break;
+        }
+        
+        // 4. VALIDACIÓN DE EXISTENCIA (PACIENTE Y SEDE)
+        // Verificar Paciente (aunque api-pacientes lo garantiza, es buena práctica)
+        $stmt = $pdo->prepare("SELECT id FROM pacientes WHERE id = ?");
+        $stmt->execute([$paciente_id]);
+        if (!$stmt->fetch()) {
+              json_response(['success' => false, 'message' => 'El Paciente seleccionado no existe en la base de datos.'], 404);
+              break;
+        }
+
+        // Verificar Sede y obtener Horario
+        $stmt = $pdo->prepare("SELECT id, horario FROM sedes WHERE id = ?");
+        $stmt->execute([$sede_id]);
+        $sede = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$sede) {
+              json_response(['success' => false, 'message' => 'La Sede seleccionada no existe.'], 404);
+              break;
+        }
+        
+        // 5. VALIDACIÓN DE HORARIO DE LA SEDE (LÓGICA CRÍTICA)
+        if (!empty($sede['horario'])) {
+            $horario = json_decode($sede['horario'], true);
+            
+            // Obtener el día de la semana (1=Lunes, 7=Domingo) y hora (HH:MM)
+            $timestamp = strtotime($fecha_hora_inicio);
+            $day_of_week_num = date('N', $timestamp); // 1 (Mon) to 7 (Sun)
+            $time_selected = date('H:i', $timestamp);
+            
+            $key = '';
+            if ($day_of_week_num >= 1 && $day_of_week_num <= 5) {
+                $key = 'lun-vie';
+            } elseif ($day_of_week_num == 6) {
+                $key = 'sab';
+            } elseif ($day_of_week_num == 7) {
+                $key = 'dom';
+            }
+
+            if (isset($horario[$key])) {
+                $horario_dia = $horario[$key];
+
+                // a) DÍA NO LABORABLE
+                if ($horario_dia === false) {
+                    json_response(['success' => false, 'message' => 'Día no laborable para esta sede.'], 400);
+                    break;
+                }
+
+                // b) HORA FUERA DE RANGO
+                if (is_array($horario_dia) && isset($horario_dia['inicio']) && isset($horario_dia['fin'])) {
+                    $start = $horario_dia['inicio']; // ej: "08:00"
+                    $end = $horario_dia['fin'];      // ej: "17:00"
+
+                    if ($time_selected < $start || $time_selected >= $end) {
+                        json_response(['success' => false, 'message' => "Horario fuera de rango. La atención es de {$start} a {$end}."], 400);
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // 6. VALIDACIÓN DE DISPONIBILIDAD (OPCIONAL, PERO RECOMENDADA)
+        // Lógica para verificar si ya hay otra cita a esa hora y sede,
+        // excluyendo la cita actual si estamos editando.
+        $sql_disponibilidad = "SELECT COUNT(*) FROM citas WHERE sede_id = ? AND fecha_hora_inicio = ?";
+        $params_disponibilidad = [$sede_id, $fecha_hora_sql];
+        if ($id > 0) {
+            $sql_disponibilidad .= " AND id != ?";
+            $params_disponibilidad[] = $id;
+        }
+        $stmt = $pdo->prepare($sql_disponibilidad);
+        $stmt->execute($params_disponibilidad);
+        if ($stmt->fetchColumn() > 0) {
+            json_response(['success' => false, 'message' => 'Ya existe una cita programada para esa Sede y hora.'], 409); // 409 Conflict
+            break;
+        }
+        
+
+        // 7. EJECUCIÓN DEL GUARDADO
+        if ($id > 0) {
+            // Actualización (asumimos que la hace un admin, por eso requiere $user)
+            $stmt = $pdo->prepare("UPDATE citas SET paciente_id=?,sede_id=?,fecha_hora_inicio=?,estado=?,notas=? WHERE id=?");
+            $stmt->execute([$paciente_id, $sede_id, $fecha_hora_sql, $estado, $notas, $id]);
+        } else {
+            // Inserción / Agendamiento
+            // Usamos un ID de usuario por defecto si no hay admin logueado (ej: 0 o NULL) para distinguir citas agendadas por el público.
+            $creado_por_usuario_id = $user['id'] ?? null; 
+            
+            $stmt = $pdo->prepare("INSERT INTO citas(paciente_id,sede_id,fecha_hora_inicio,estado,notas,creado_por_usuario_id) VALUES(?,?,?,?,?,?)");
+            $stmt->execute([$paciente_id, $sede_id, $fecha_hora_sql, $estado, $notas, $creado_por_usuario_id]);
+        }
+        
+        json_response(['success' => true, 'message' => 'Cita agendada correctamente. Nos pondremos en contacto para confirmación de datos.']);
+        break;
+
+    case 'delete':
+        $id = intval($_POST['id']??0);
+        $stmt = $pdo->prepare("DELETE FROM citas WHERE id=?");
+        $stmt->execute([$id]);
+        json_response(['success'=>true]);
+        break;
+    case 'get_booked_slots':
+        // Esta acción es de lectura y puede ser pública para mostrar disponibilidad.
+        $sede_id = intval($_GET['sede_id'] ?? 0);
+        $fecha = trim($_GET['fecha'] ?? ''); // YYYY-MM-DD
+
+        if ($sede_id <= 0 || empty($fecha)) {
+            json_response(['success' => false, 'message' => 'Sede y fecha son requeridas.'], 400);
+            break;
+        }
+
+        // Buscar todas las citas activas (no canceladas) para esa sede y fecha
+        $sql = "SELECT TIME_FORMAT(fecha_hora_inicio, '%H:%i') as hora
+                FROM citas 
+                WHERE sede_id = :sede_id 
+                AND DATE(fecha_hora_inicio) = :fecha
+                AND estado IN ('pendiente', 'confirmada', 'en curso')"; // Puedes ajustar los estados
+                
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute(['sede_id' => $sede_id, 'fecha' => $fecha]);
+        
+        // Devolver un array simple de horas reservadas (ej: ["10:00", "11:00"])
+        $booked_slots = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+        json_response([
+            'success' => true,
+            'data' => $booked_slots // array de strings HH:MM
+        ]);
+        break;
+
+    default:
+        json_response(['error'=>'invalid_action'],400);
+}

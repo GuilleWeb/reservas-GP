@@ -1,0 +1,73 @@
+<?php
+require_once __DIR__ . '/../../helpers.php';
+header('Content-Type: application/json; charset=utf-8');
+
+$action = $_REQUEST['action'] ?? '';
+$user = current_user();
+$empresa_slug = request_empresa_slug();
+
+$roles_permitidos = ['superadmin', 'admin', 'gerente'];
+if (!$user || !$empresa_slug || !in_array($user['rol'] ?? null, $roles_permitidos)) {
+    json_response(['error' => 'unauthorized'], 403);
+}
+
+$empresa_id = (int) ($user['empresa_id'] ?? 0);
+$sucursal_id_filtro = (int) ($user['sucursal_id'] ?? 0);
+
+switch ($action) {
+    case 'list':
+        $where = ['empresa_id = ?'];
+        $params = [$empresa_id];
+        if ($sucursal_id_filtro > 0) {
+            $where[] = 'id = ?';
+            $params[] = $sucursal_id_filtro;
+        }
+        $whereSql = implode(' AND ', $where);
+        $stmt = $pdo->prepare("SELECT id, nombre, direccion, telefono, horarios_json, activo FROM sucursales WHERE $whereSql ORDER BY nombre ASC");
+        $stmt->execute($params);
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        json_response(['success' => true, 'data' => $data, 'total' => count($data)]);
+        break;
+
+    case 'get':
+        $id = (int) ($_GET['id'] ?? 0);
+        $stmt = $pdo->prepare('SELECT * FROM sucursales WHERE id = ? AND empresa_id = ?');
+        $stmt->execute([$id, $empresa_id]);
+        json_response(['success' => true, 'data' => $stmt->fetch(PDO::FETCH_ASSOC) ?: []]);
+        break;
+
+    case 'save':
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST')
+            json_response(['error' => 'invalid_method'], 405);
+
+        $id = (int) ($_POST['id'] ?? 0);
+        $nombre = trim($_POST['nombre'] ?? '');
+        $dir = trim($_POST['direccion'] ?? '');
+        $tel = trim($_POST['telefono'] ?? '');
+        $horario = trim($_POST['horario'] ?? '');
+
+        // Validar que si tiene filtro solo edite el suyo
+        if ($sucursal_id_filtro > 0 && $id > 0 && $id !== $sucursal_id_filtro) {
+            json_response(['success' => false, 'message' => 'No autorizado para editar esta sucursal.']);
+        }
+
+        if (!$nombre)
+            json_response(['success' => false, 'message' => 'Nombre obligatorio.']);
+
+        $horario_json = json_encode(['texto' => $horario]);
+
+        if ($id > 0) {
+            $stmt = $pdo->prepare('UPDATE sucursales SET nombre=?, direccion=?, telefono=?, horarios_json=? WHERE id=? AND empresa_id=?');
+            $stmt->execute([$nombre, $dir, $tel, $horario_json, $id, $empresa_id]);
+        } else {
+            // Gerentes usualmente no crean sucursales en este flujo, pero permitimos si no hay restricción
+            $stmt = $pdo->prepare('INSERT INTO sucursales (empresa_id, nombre, direccion, telefono, horarios_json, activo) VALUES (?,?,?,?,?,1)');
+            $stmt->execute([$empresa_id, $nombre, $dir, $tel, $horario_json]);
+            $id = (int) $pdo->lastInsertId();
+        }
+        json_response(['success' => true, 'id' => $id]);
+        break;
+
+    default:
+        json_response(['error' => 'invalid_action'], 400);
+}

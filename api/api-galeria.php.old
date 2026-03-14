@@ -1,0 +1,101 @@
+<?php
+require_once __DIR__.'/../helpers.php';
+header('Content-Type: application/json; charset=utf-8');
+
+$action = $_REQUEST['action'] ?? '';
+$csrf = $_REQUEST['csrf_token'] ?? '';
+$user = current_user();
+
+//if(!$user) json_response(['error'=>'unauthorized'],403);
+
+$upload_dir = __DIR__.'/../uploads/';
+
+switch($action){
+    case 'list':
+        $page = max(1,intval($_GET['page']??1));
+        $per = max(1,intval($_GET['per']??10));
+        $stmt = $pdo->query("SELECT COUNT(*) FROM galeria");
+        $total = $stmt->fetchColumn();
+        $total_pages = ceil($total/$per);
+        $offset = ($page-1)*$per;
+
+        $stmt = $pdo->prepare("SELECT * FROM galeria ORDER BY orden DESC LIMIT :o,:p");
+        $stmt->bindValue(':o',$offset,PDO::PARAM_INT);
+        $stmt->bindValue(':p',$per,PDO::PARAM_INT);
+        $stmt->execute();
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // crear thumbnail virtual para demo
+        $data = array_map(function($i){
+            $i['thumb'] = "/uploads/".basename($i['url_imagen']);
+            return $i;
+        }, $data);
+
+        // list
+        json_response([
+            'success' => true,
+            'data' => $data,
+            'total' => $total,       // total de registros
+            'total_pages' => $total_pages
+        ]);
+        break;
+
+    case 'get':
+        $id = intval($_GET['id']??0);
+        $stmt = $pdo->prepare("SELECT * FROM galeria WHERE id=?");
+        $stmt->execute([$id]);
+        json_response(['success' => true,'data' => $stmt->fetch() ?: []]);
+        break;
+
+    case 'save':
+        if(!$user || !has_permission('permiso_crear')) json_response(['error'=>'unauthorized'],403);
+
+        $id = intval($_POST['id'] ?? 0);
+        $titulo = trim($_POST['titulo'] ?? '');
+        $descripcion = trim($_POST['descripcion'] ?? '');
+        $activo = intval($_POST['activo'] ?? 0);
+
+        // Subida de imagen
+        $url_imagen = $_POST['url_imagen'] ?? '';
+        if(isset($_FILES['imagen']) && $_FILES['imagen']['error'] === UPLOAD_ERR_OK){
+            $dir = __DIR__ . '/../assets/galeria/';
+            if(!is_dir($dir)) mkdir($dir, 0777, true);
+
+            $ext = pathinfo($_FILES['imagen']['name'], PATHINFO_EXTENSION);
+            $filename = uniqid('img_').'.'.$ext;
+            $path = $dir.$filename;
+
+            if(move_uploaded_file($_FILES['imagen']['tmp_name'], $path)){
+                $url_imagen = 'assets/galeria/'.$filename;
+            }
+        }
+
+        if($id > 0){
+            // Si no se subió nueva imagen, mantener la existente
+            if(!$url_imagen){
+                $stmt = $pdo->prepare("SELECT url_imagen FROM galeria WHERE id=?");
+                $stmt->execute([$id]);
+                $url_imagen = $stmt->fetchColumn();
+            }
+            $stmt = $pdo->prepare("UPDATE galeria SET titulo=?, descripcion=?, url_imagen=?, activo=? WHERE id=?");
+            $stmt->execute([$titulo, $descripcion, $url_imagen, $activo, $id]);
+        } else {
+            $stmt = $pdo->prepare("INSERT INTO galeria (titulo, descripcion, url_imagen, activo) VALUES (?,?,?)");
+            $stmt->execute([$titulo, $descripcion, $url_imagen, $activo]);
+        }
+
+        json_response(['success'=>true]);
+        break;
+
+
+    case 'delete':
+        if(!$user || !has_permission('permiso_borrar')) json_response(['error'=>'unauthorized'],403);
+        $id = intval($_POST['id']??0);
+        $stmt = $pdo->prepare("DELETE FROM galeria WHERE id=?");
+        $stmt->execute([$id]);
+        json_response(['success'=>true]);
+        break;
+
+    default:
+        json_response(['error'=>'invalid_action'],400);
+}

@@ -1,0 +1,319 @@
+<?php
+// vistas/usuarios.php
+$user = current_user();
+$role = $user['rol'] ?? null;
+$es_super = ($role === 'superadmin');
+$empresa_id_user = $user['empresa_id'] ?? null;
+
+if (!$user || (!$es_super && !in_array($role, ['admin','gerente','empleado']))) {
+  echo '<div class="max-w-3xl mx-auto bg-white p-6 rounded-xl shadow">No autorizado.</div>';
+  return;
+}
+
+if ($es_super) {
+    $empresas = $pdo->query("SELECT id, nombre, slug FROM empresas ORDER BY nombre ASC")->fetchAll(PDO::FETCH_ASSOC);
+    $sucursales = $pdo->query("SELECT id, empresa_id, nombre FROM sucursales ORDER BY nombre ASC")->fetchAll(PDO::FETCH_ASSOC);
+} else {
+    $empresas = [];
+    $stmt = $pdo->prepare("SELECT id, empresa_id, nombre FROM sucursales WHERE empresa_id = ? ORDER BY nombre ASC");
+    $stmt->execute([$empresa_id_user]);
+    $sucursales = $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+?>
+
+<div class="max-w-7xl mx-auto">
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+    <div class="lg:col-span-4">
+      <div class="bg-white rounded-2xl shadow p-5 border">
+        <div class="text-sm text-gray-500">SuperAdmin</div>
+        <div class="mt-1 text-2xl font-extrabold text-gray-900">Usuarios</div>
+
+        <form id="userForm" class="mt-4 space-y-3">
+          <input type="hidden" id="userId" name="id">
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Nombre</label>
+            <input class="border rounded-lg p-2 w-full" id="nombre" name="nombre" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Email</label>
+            <input type="email" class="border rounded-lg p-2 w-full" id="email" name="email" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Teléfono</label>
+            <input class="border rounded-lg p-2 w-full" id="telefono" name="telefono">
+          </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Rol</label>
+                <select class="border rounded-lg p-2 w-full" id="rol" name="rol" required>
+                  <option value="admin">Admin</option>
+                  <option value="gerente">Gerente</option>
+                  <option value="empleado">Empleado</option>
+                  <option value="cliente">Cliente</option>
+                </select>
+              </div>
+              <?php if ($es_super): ?>
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Empresa</label>
+                <select class="border rounded-lg p-2 w-full" id="empresa_id" name="empresa_id">
+                  <option value="">Sin empresa</option>
+                  <?php foreach($empresas as $e): ?>
+                    <option value="<?= (int)$e['id'] ?>"><?= htmlspecialchars($e['nombre']) ?> (<?= htmlspecialchars($e['slug']) ?>)</option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+              <?php else: ?>
+                  <input type="hidden" id="empresa_id" name="empresa_id" value="<?= $empresa_id_user ?>">
+              <?php endif; ?>
+            </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Sucursal</label>
+              <select class="border rounded-lg p-2 w-full" id="sucursal_id" name="sucursal_id">
+                <option value="">Sin sucursal</option>
+                <?php foreach($sucursales as $s): ?>
+                  <option value="<?= (int)$s['id'] ?>" data-empresa="<?= (int)$s['empresa_id'] ?>"><?= htmlspecialchars($s['nombre']) ?></option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Estado</label>
+              <select class="border rounded-lg p-2 w-full" id="activo" name="activo">
+                <option value="1" selected>Activo</option>
+                <option value="0">Inactivo</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Password (opcional)</label>
+            <input type="text" class="border rounded-lg p-2 w-full font-mono" id="password" name="password" placeholder="Dejar vacío para no cambiar">
+          </div>
+
+          <div class="pt-2 flex items-center justify-between gap-2">
+            <button type="button" id="btnReset" class="px-4 py-2 border rounded-lg">Nuevo</button>
+            <button type="submit" id="btnSubmit" class="px-4 py-2 bg-gray-900 text-white rounded-lg">Crear</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="lg:col-span-8">
+      <div class="bg-white rounded-2xl shadow border">
+        <div class="p-5 border-b">
+          <div class="font-semibold text-gray-900">Listado</div>
+
+          <div class="mt-4 grid grid-cols-1 md:grid-cols-6 gap-3">
+            <input id="searchUser" type="text" placeholder="Buscar por nombre o email..." class="border rounded-lg p-2 md:col-span-2">
+            <?php if ($es_super): ?>
+            <select id="fEmpresa" class="border rounded-lg p-2">
+              <option value="0">Empresa: todas</option>
+              <?php foreach($empresas as $e): ?>
+                <option value="<?= (int)$e['id'] ?>"><?= htmlspecialchars($e['nombre']) ?> (<?= htmlspecialchars($e['slug']) ?>)</option>
+              <?php endforeach; ?>
+            </select>
+            <?php else: ?>
+            <input type="hidden" id="fEmpresa" value="<?= $empresa_id_user ?>">
+            <?php endif; ?>
+            <select id="fRol" class="border rounded-lg p-2">
+              <option value="">Rol: todos</option>
+              <option value="admin">Admin</option>
+              <option value="gerente">Gerente</option>
+              <option value="empleado">Empleado</option>
+              <option value="cliente">Cliente</option>
+            </select>
+            <select id="fActivo" class="border rounded-lg p-2">
+              <option value="">Estado: todos</option>
+              <option value="1">Activos</option>
+              <option value="0">Inactivos</option>
+            </select>
+            <select id="perPage" class="border rounded-lg p-2">
+              <option value="5">5</option>
+              <option value="10" selected>10</option>
+              <option value="20">20</option>
+            </select>
+          </div>
+          <div class="mt-3 text-sm text-gray-600" id="totalReg"></div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-sm">
+            <thead class="bg-gray-50 text-gray-700">
+              <tr>
+                <th class="text-left px-4 py-3 cursor-pointer select-none" data-sort="nombre">Usuario <span class="sort-ind" data-for="nombre"></span></th>
+                <th class="text-left px-4 py-3 cursor-pointer select-none" data-sort="rol">Rol <span class="sort-ind" data-for="rol"></span></th>
+                <th class="text-left px-4 py-3 cursor-pointer select-none" data-sort="empresa">Empresa/Sucursal <span class="sort-ind" data-for="empresa"></span></th>
+                <th class="text-left px-4 py-3 cursor-pointer select-none" data-sort="activo">Estado <span class="sort-ind" data-for="activo"></span></th>
+                <th class="text-right px-4 py-3">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="usersTable" class="divide-y"></tbody>
+          </table>
+        </div>
+
+        <div class="p-4 border-t">
+          <div id="pagination" class="flex flex-wrap gap-2 justify-end"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+$(function(){
+  let page=1, per=10, search='', empresa_id=0, rol='', activo='';
+  let sort='id', dir='desc';
+  let t=null;
+
+  function resetForm(){
+    $('#userForm')[0].reset();
+    $('#userId').val('');
+    $('#btnSubmit').text('Crear');
+    $('#activo').val('1');
+    $('#rol').val('admin');
+    if ($('#empresa_id').is('select')) {
+        $('#empresa_id').val('');
+    }
+    $('#sucursal_id').val('');
+    filterSucursales();
+  }
+
+  function filterSucursales(){
+    const eid = parseInt($('#empresa_id').val()||'0');
+    $('#sucursal_id option').each(function(){
+      const opt=$(this);
+      const oe=parseInt(opt.data('empresa')||'0');
+      if(!opt.attr('data-empresa')) return; // first option
+      if(!eid || oe===eid) opt.show(); else opt.hide();
+    });
+    const cur = parseInt($('#sucursal_id').val()||'0');
+    if(cur){
+      const curOpt = $('#sucursal_id option[value="'+cur+'"]');
+      if(curOpt.length && curOpt.is(':hidden')) $('#sucursal_id').val('');
+    }
+  }
+
+  function debounceLoad(){ if(t) clearTimeout(t); t=setTimeout(loadUsers,1000); }
+
+  function badgeActive(a){
+    return a==1
+      ? '<span class="inline-flex px-2 py-1 rounded-full text-xs bg-teal-50 text-teal-800 border border-teal-100">Activo</span>'
+      : '<span class="inline-flex px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-700 border">Inactivo</span>';
+  }
+
+  function loadUsers(){
+    $.get('api/superadmin/usuarios.php',{action:'list_sa', page:page, per:per, search:search, empresa_id:empresa_id, rol:rol, activo:activo, sort:sort, dir:dir},function(res){
+      if(!res.success) return;
+      const tbody=$('#usersTable').empty();
+      res.data.forEach(u=>{
+        tbody.append(`<tr class="hover:bg-gray-50">
+          <td class="px-4 py-3">
+            <div class="font-medium text-gray-900">${u.nombre||''}</div>
+            <div class="text-xs text-gray-500">${u.email||''}</div>
+          </td>
+          <td class="px-4 py-3">${u.rol||''}</td>
+          <td class="px-4 py-3">
+            <div class="text-sm text-gray-900">${u.empresa_nombre||''}</div>
+            <div class="text-xs text-gray-500">${u.sucursal_nombre||''}</div>
+          </td>
+          <td class="px-4 py-3">${badgeActive(u.activo)}</td>
+          <td class="px-4 py-3">
+            <div class="flex items-center justify-end gap-2">
+              <button class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-white editBtn" title="Editar" data-id="${u.id}"><i class="fas fa-pen"></i></button>
+              <button class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-white text-red-600 deleteBtn" title="Eliminar" data-id="${u.id}"><i class="fas fa-trash"></i></button>
+            </div>
+          </td>
+        </tr>`);
+      });
+      $('#totalReg').text(`Total: ${res.total}`);
+      renderPagination(res.total);
+      updateSortIndicators();
+    },'json');
+  }
+
+  function updateSortIndicators(){
+    $('.sort-ind').text('');
+    const el = $(`.sort-ind[data-for="${sort}"]`);
+    if(!el.length) return;
+    el.text(dir==='asc' ? '▲' : '▼');
+  }
+
+  function renderPagination(total){
+    const totalPages=Math.ceil(total/per)||1;
+    const pag=$('#pagination').empty();
+    for(let i=1;i<=totalPages;i++){
+      pag.append(`<button class="px-3 py-1 rounded ${i===page?'bg-gray-900 text-white':'border'}" data-page="${i}">${i}</button>`);
+    }
+  }
+
+  $('#empresa_id').on('change', filterSucursales);
+
+  $('#pagination').on('click','button',function(){ page=parseInt($(this).data('page')); loadUsers(); });
+  $('#perPage').on('change',function(){ per=parseInt($(this).val()); page=1; loadUsers(); });
+  $('#searchUser').on('keyup',function(){ search=$(this).val(); page=1; debounceLoad(); });
+  $('#fEmpresa').on('change',function(){ empresa_id=parseInt($(this).val()); page=1; loadUsers(); });
+  $('#fRol').on('change',function(){ rol=$(this).val(); page=1; loadUsers(); });
+  $('#fActivo').on('change',function(){ activo=$(this).val(); page=1; loadUsers(); });
+  $('#btnReset').click(resetForm);
+
+  $('table thead').on('click','th[data-sort]', function(){
+    const nextSort = $(this).data('sort');
+    if(sort === nextSort){
+      dir = (dir === 'asc') ? 'desc' : 'asc';
+    } else {
+      sort = nextSort;
+      dir = 'asc';
+    }
+    page = 1;
+    loadUsers();
+  });
+
+  $('#userForm').on('submit', function(ev){
+    ev.preventDefault();
+    const payload = $(this).serialize() + '&action=save_sa';
+    $.post('api/superadmin/usuarios.php', payload, function(res){
+      if(res.success){
+        resetForm();
+        loadUsers();
+      } else {
+        alert(res.message||'Error');
+      }
+    },'json');
+  });
+
+  $('#usersTable').on('click','.editBtn',function(){
+    const id=$(this).data('id');
+    $.get('api/superadmin/usuarios.php',{action:'get_sa', id:id},function(res){
+      if(!res.success) return;
+      const u=res.data;
+      $('#userId').val(u.id);
+      $('#nombre').val(u.nombre||'');
+      $('#email').val(u.email||'');
+      $('#telefono').val(u.telefono||'');
+      $('#rol').val(u.rol||'admin');
+      $('#empresa_id').val(u.empresa_id||'');
+      filterSucursales();
+      $('#sucursal_id').val(u.sucursal_id||'');
+      $('#activo').val(parseInt(u.activo||0)===1 ? '1' : '0');
+      $('#password').val('');
+      $('#btnSubmit').text('Guardar');
+      window.scrollTo({top:0, behavior:'smooth'});
+    },'json');
+  });
+
+  $('#usersTable').on('click','.deleteBtn',function(){
+    const id=$(this).data('id');
+    if(!window.confirm('¿Eliminar este usuario?')) return;
+    $.post('api/superadmin/usuarios.php',{action:'delete_sa', id:id},function(res){
+      if(res.success) loadUsers();
+      else alert(res.message||'No se pudo eliminar');
+    },'json');
+  });
+
+  resetForm();
+  loadUsers();
+});
+</script>

@@ -1,0 +1,346 @@
+<?php
+// vistas/blog.php - Módulo Público para visualizar artículos del blog (Índice o Detalle)
+// Este archivo requiere la librería jQuery y Font Awesome
+?>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+    /* Usando una fuente moderna y colores que armonicen con el teal */
+    body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f0f4f8; /* Fondo más suave */
+    }
+    .blog-card {
+        transition: transform 0.3s, box-shadow 0.3s;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid #e2e8f0; /* Borde sutil */
+    }
+    .blog-card:hover {
+        transform: translateY(-8px); /* Elevación más notable */
+        box-shadow: 0 15px 25px -5px rgba(6, 78, 59, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Sombra más pronunciada y verde */
+    }
+    .card-content {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    /* Estilos específicos para la vista de artículo completo (prose styling) */
+    #article-content {
+        font-size: 1.1rem; /* Texto ligeramente más grande para lectura */
+    }
+    #article-content img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 1rem; /* Esquinas más redondeadas */
+        margin: 2rem 0;
+        box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.15);
+    }
+    #article-content p {
+        margin-bottom: 1.5rem;
+        line-height: 1.8;
+        color: #374151; /* gray-700 */
+    }
+    #article-content h3 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #0d9488; /* teal-600 */
+        margin-top: 2.5rem;
+        margin-bottom: 1rem;
+        border-bottom: 2px solid #a7f3d0; /* Borde inferior sutil */
+        padding-bottom: 0.5rem;
+    }
+</style>
+
+<div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+    
+    <!-- Contenedor Principal que se llenará con la Vista de Índice o Detalle -->
+    <div id="mainContainer">
+        <div class="text-center mb-16" id="indexHeader">
+            <h1 class="text-5xl font-extrabold text-gray-900 tracking-tight sm:text-6xl pb-2">
+                <span class="bg-clip-text text-transparent bg-gradient-to-r from-teal-600 to-teal-800">
+                    Blog de Salud
+                </span>
+            </h1>
+            <p class="mt-4 text-xl text-gray-500 max-w-2xl mx-auto">
+                Accede a información detallada, sugerencias y últimas investigaciones.
+            </p>
+        </div>
+
+        <!-- Vista de Índice (Grid de Resúmenes) -->
+        <div id="blogIndex">
+            <div id="blogGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                <!-- Los artículos del blog se inyectarán aquí -->
+            </div>
+            
+            <div class="mt-16 text-center">
+                <button id="loadMore" class="px-10 py-4 bg-teal-600 text-white font-bold text-lg rounded-full shadow-lg hover:bg-teal-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105">
+                    Cargar más artículos
+                </button>
+                <p id="noMore" class="text-gray-500 mt-6 hidden">No hay más artículos para mostrar.</p>
+            </div>
+        </div>
+
+        <!-- Vista de Artículo Individual (Detalle) -->
+        <div id="articleDetail" class="hidden">
+            <!-- El contenido detallado del artículo se inyectará aquí -->
+        </div>
+
+    </div>
+</div>
+
+<script>
+let page = 1;
+const PER_PAGE = 6;
+const ARTICLE_ID = new URLSearchParams(window.location.search).get('id');
+// Placeholder URL actualizada
+const PLACEHOLDER_IMG_URL = "https://guillepalma.xo.je/placeholder/api.php?text=Articulo+Generico";
+
+// Función auxiliar para obtener un extracto seguro y limitado
+function getExcerpt(content, limit = 150) {
+    if (!content) return '';
+    let text = content.replace(/<[^>]*>?/gm, ''); // Elimina etiquetas HTML
+    if (text.length > limit) {
+        text = text.substring(0, limit) + '...';
+    }
+    return text;
+}
+
+// Función auxiliar para formatear la fecha
+function getFormattedDate(dateStr) {
+    if (!dateStr) return 'Fecha Desconocida';
+    const date = new Date(dateStr); 
+    return date.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+// Función auxiliar para extraer imagen del contenido
+function extractImageFromContent(content) {
+    if (!content) return null;
+    const match = content.match(/<img[^>]+src="([^"]+)"/i);
+    return match ? match[1] : null;
+}
+
+// --- VISTA DE ÍNDICE: FUNCIÓN DE CARGA DE POSTS (Ahora global) ---
+function loadPosts(resetGrid = false){
+    $("#loadMore").prop('disabled', true).html('<i class="fas fa-sync-alt fa-spin mr-2"></i> Cargando...');
+    $("#noMore").addClass('hidden');
+    
+    $.get('api/api-blog.php', {action:'list', per: PER_PAGE, page: page}, function(res){
+        const grid = $('#blogGrid');
+
+        if (resetGrid) {
+             grid.empty();
+        }
+        
+        if(res.success && res.data && res.data.length > 0){
+            res.data.forEach(p => {
+                // Lógica de imagen: Prioriza p.imagen, luego extrae de p.contenido, y finalmente usa placeholder
+                const imageInContent = extractImageFromContent(p.contenido);
+                const postImageUrl = p.imagen || imageInContent || PLACEHOLDER_IMG_URL;
+                
+                const excerpt = getExcerpt(p.contenido, 150);
+                const publishedDate = getFormattedDate(p.fecha_publicacion);
+                const authorName = p.autor || 'Anónimo';
+
+                grid.append(`
+                    <article class="bg-white rounded-xl shadow-xl blog-card overflow-hidden">
+                        <div class="h-56 bg-gray-100 overflow-hidden">
+                            <img src="${postImageUrl}" 
+                                 alt="Imagen para ${p.titulo}" 
+                                 class="w-full h-full object-cover">
+                        </div>
+                        <div class="p-6 card-content">
+                            <div>
+                                <div class="text-xs text-gray-400 mb-2 flex items-center space-x-3">
+                                    <span class="flex items-center">
+                                        <i class="fas fa-calendar-alt mr-1"></i> ${publishedDate}
+                                    </span>
+                                    <span class="flex items-center">
+                                        <i class="fas fa-user-edit mr-1"></i> ${authorName}
+                                    </span>
+                                </div>
+                                <h2 class="text-2xl font-bold text-gray-800 hover:text-teal-600 transition duration-150">${p.titulo}</h2>
+                                <p class="text-base text-gray-600 mt-3">${excerpt}</p>
+                            </div>
+                            
+                            <!-- RUTA CORREGIDA: sin /vistas/blog.php -->
+                            <a href="blog?id=${p.id}" class="inline-flex items-center text-teal-600 font-semibold hover:text-teal-800 transition duration-150 mt-4">
+                                Leer artículo completo
+                                <i class="fas fa-chevron-right ml-2 text-sm"></i>
+                            </a>
+                        </div>
+                    </article>
+                `);
+            });
+            
+            if (res.data.length < PER_PAGE) {
+                $("#loadMore").hide();
+                $("#noMore").removeClass('hidden');
+            } else {
+                $("#loadMore").prop('disabled', false).html('Cargar más artículos');
+            }
+        } else {
+            $("#loadMore").hide();
+            if (page === 1) {
+                grid.append('<div class="md:col-span-2 lg:col-span-3 text-center text-gray-500 text-lg py-10">Actualmente no hay artículos publicados. Vuelve pronto.</div>');
+            } else {
+                $("#noMore").removeClass('hidden');
+            }
+        }
+    }).fail(xhr => {
+        console.error("Error al cargar posts:", xhr.responseText);
+        $("#loadMore").prop('disabled', false).html('Error al cargar (Reintentar)');
+    });
+}
+
+// --- VISTA DE ÍNDICE (SETUP) ---
+function loadIndexView(){
+    $("#articleDetail").addClass('hidden');
+    $("#blogIndex").removeClass('hidden');
+
+    // Inicializar listeners del índice
+    if ($("#loadMore").data('listener') !== 'active') {
+        $("#loadMore").on("click",()=>{
+            page++;
+            loadPosts();
+        }).data('listener', 'active');
+    }
+    
+    // FIX: La carga inicial debe ocurrir aquí
+    if (page === 1) {
+        loadPosts(true);
+    }
+}
+
+// --- VISTA DE DETALLE (ARTÍCULO COMPLETO) ---
+function loadDetailView(id){
+    $("#indexHeader").addClass('hidden');
+    $("#blogIndex").addClass('hidden');
+    $("#articleDetail").removeClass('hidden').html(`
+        <div class="flex justify-center my-10">
+            <i class="fas fa-sync-alt fa-spin text-4xl text-teal-600"></i>
+        </div>
+    `);
+
+    $.get('api/api-blog.php', {action:'get', id: id}, function(res){
+        const detailContainer = $('#articleDetail').empty();
+
+        if(res.success && res.data){
+            const p = res.data;
+            // Lógica de imagen: Prioriza p.imagen, luego extrae de p.contenido, y finalmente usa placeholder
+            const imageInContent = extractImageFromContent(p.contenido);
+            const postImageUrl = p.imagen || imageInContent || PLACEHOLDER_IMG_URL;
+            
+            const publishedDate = getFormattedDate(p.fecha_publicacion);
+            const authorName = p.autor || 'Anónimo';
+
+            const articleHtml = `
+                <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl p-6 md:p-10 lg:p-12 border-t-8 border-teal-600">
+                    
+                    <!-- Breadcrumb (Volver al índice) - RUTA CORREGIDA -->
+                    <a href="blog" class="text-teal-600 hover:text-teal-800 transition duration-150 mb-8 inline-flex items-center text-lg font-medium">
+                        <i class="fas fa-arrow-left mr-3"></i> Volver al listado de artículos
+                    </a>
+
+                    <!-- Imagen Destacada -->
+                    <div class="h-96 w-full bg-gray-100 rounded-2xl overflow-hidden mb-10">
+                        <img src="${postImageUrl}" 
+                             alt="${p.titulo}" 
+                             class="w-full h-full object-cover">
+                    </div>
+
+                    <!-- Título y Metadatos -->
+                    <h1 class="text-5xl font-extrabold text-gray-900 mb-4">${p.titulo}</h1>
+                    <div class="text-base text-gray-500 mb-10 flex items-center space-x-6 border-b pb-4">
+                        <span class="flex items-center text-teal-700 font-semibold">
+                            <i class="fas fa-calendar-alt mr-2"></i> ${publishedDate}
+                        </span>
+                        <span class="flex items-center">
+                            <i class="fas fa-user-edit mr-2"></i> Por: ${authorName}
+                        </span>
+                    </div>
+
+                    <!-- Contenido Completo del Artículo -->
+                    <div id="article-content" class="prose max-w-none text-gray-700">
+                        ${p.contenido}
+                    </div>
+
+                    
+                </div>
+
+                <!-- Sección de Sugerencias (Artículos Relacionados) -->
+                <div class="max-w-7xl mx-auto mt-20">
+                    <h2 class="text-4xl font-extrabold text-teal-800 mb-10 text-center border-b pb-3">Artículos Relacionados</h2>
+                    <div id="relatedPostsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <!-- Aquí se cargarán artículos aleatorios/relacionados -->
+                    </div>
+                </div>
+            `;
+            detailContainer.append(articleHtml);
+            
+            // Cargar artículos relacionados (reusando la lógica de listado)
+            loadRelatedPosts(id);
+
+        } else {
+             detailContainer.html('<div class="max-w-4xl mx-auto text-center text-red-500 text-lg py-20 bg-white rounded-xl shadow-md">Artículo no encontrado o no disponible.</div>');
+        }
+    }).fail(xhr => {
+        console.error("Error al cargar detalle del post:", xhr.responseText);
+        $('#articleDetail').html('<div class="max-w-4xl mx-auto text-center text-red-500 text-lg py-20 bg-white rounded-xl shadow-md">Error de conexión al cargar el artículo.</div>');
+    });
+}
+
+// Función para cargar artículos relacionados (excluyendo el actual)
+function loadRelatedPosts(currentId) {
+    // Usamos la API de lista, pero solo pedimos 3 artículos. 
+    $.get('api/api-blog.php', {action:'list', per: 3, page: 1}, function(res){
+        const relatedGrid = $('#relatedPostsGrid').empty();
+        
+        if(res.success && res.data){
+            // Filtramos el artículo actual si viene en la lista
+            const related = res.data.filter(p => p.id != currentId).slice(0, 3);
+
+            related.forEach(p => {
+                // Lógica de imagen: Prioriza p.imagen, luego extrae de p.contenido, y finalmente usa placeholder
+                const imageInContent = extractImageFromContent(p.contenido);
+                const postImageUrl = p.imagen || imageInContent || PLACEHOLDER_IMG_URL;
+
+                const publishedDate = getFormattedDate(p.fecha_publicacion);
+
+                relatedGrid.append(`
+                    <article class="bg-white rounded-xl shadow-lg blog-card overflow-hidden border border-gray-200">
+                        <div class="h-40 bg-gray-100 overflow-hidden">
+                            <img src="${postImageUrl}" 
+                                 alt="${p.titulo}" 
+                                 class="w-full h-full object-cover">
+                        </div>
+                        <div class="p-4 card-content">
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1 font-medium">${publishedDate}</p>
+                                <h3 class="text-lg font-bold text-gray-800 hover:text-teal-600 transition duration-150">${p.titulo}</h3>
+                            </div>
+                            <!-- RUTA CORREGIDA: sin /vistas/blog.php -->
+                            <a href="blog?id=${p.id}" class="text-teal-600 font-semibold text-sm mt-3 inline-block hover:text-teal-800">
+                                Leer más <i class="fas fa-chevron-right ml-1 text-sm"></i>
+                            </a>
+                        </div>
+                    </article>
+                `);
+            });
+        }
+    });
+}
+
+
+// --- LÓGICA DE INICIO ---
+$(function(){
+    if (ARTICLE_ID) {
+        // Modo detalle: cargar un solo artículo
+        loadDetailView(ARTICLE_ID);
+    } else {
+        // Modo índice: cargar lista de resúmenes (incluye la carga automática)
+        loadIndexView();
+    }
+});
+</script>

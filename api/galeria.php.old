@@ -1,0 +1,125 @@
+<?php
+// api/galeria.php
+require_once __DIR__ . '/../helpers.php';
+header('Content-Type: application/json; charset=utf-8');
+
+$csrf = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_REQUEST['csrf_token'] ?? null;
+$action = $_REQUEST['action'] ?? 'list';
+$uploads_dir = __DIR__ . '/../uploads';
+$thumbs_dir = $uploads_dir . '/thumbs';
+if (!is_dir($uploads_dir)) mkdir($uploads_dir,0755,true);
+if (!is_dir($thumbs_dir)) mkdir($thumbs_dir,0755,true);
+
+function make_thumbnail($srcPath, $destPath, $maxW=400, $maxH=300) {
+    list($w,$h,$type) = @getimagesize($srcPath);
+    if (!$w) return false;
+    $ratio = $w/$h;
+    if ($w > $maxW) { $w = $maxW; $h = intval($w/$ratio); }
+    if ($h > $maxH) { $h = $maxH; $w = intval($h*$ratio); }
+    $thumb = imagecreatetruecolor($w,$h);
+    switch ($type) {
+      case IMAGETYPE_JPEG: $img = imagecreatefromjpeg($srcPath); break;
+      case IMAGETYPE_PNG:  $img = imagecreatefrompng($srcPath); break;
+      case IMAGETYPE_GIF:  $img = imagecreatefromgif($srcPath); break;
+      default: return false;
+    }
+    imagecopyresampled($thumb, $img, 0,0,0,0, $w, $h, imagesx($img), imagesy($img));
+    imagejpeg($thumb, $destPath, 85);
+    imagedestroy($thumb);
+    imagedestroy($img);
+    return true;
+}
+
+if (in_array($action,['upload','delete','reorder','update']) ) {
+  if (!verify_csrf($csrf)) json_response(['error'=>'invalid_csrf'],403);
+}
+
+switch($action){
+  case 'list':
+    // optional active, paginate
+    $page = max(1,intval($_GET['page'] ?? 1));
+    $per = max(6,min(48,intval($_GET['per'] ?? 12)));
+    $offset = ($page-1)*$per;
+    $stmt = $pdo->prepare("SELECT SQL_CALC_FOUND_ROWS * FROM galeria WHERE activo=1 ORDER BY orden ASC LIMIT ? OFFSET ?");
+    $stmt->execute([$per,$offset]);
+    $data = $stmt->fetchAll();
+    $total = $pdo->query("SELECT FOUND_ROWS()")->fetchColumn();
+    // add thumbnail/url paths for frontend
+    $base = '/uploads';
+    foreach($data as &$r){
+      $r['url'] = $base . '/' . $r['url_imagen'];
+      $r['thumb'] = $base . '/thumbs/' . $r['url_imagen'];
+    }
+    json_response(['success'=>true,'data'=>$data,'meta'=>['page'=>$page,'per'=>$per,'total'=>intval($total)]]);
+    break;
+
+  case 'upload':
+    if (!has_permission('permiso_crear')) json_response(['error'=>'no_perm'],403);
+    if (!isset($_FILES['file'])) json_response(['error'=>'no_file'],400);
+    $f = $_FILES['file'];
+    if ($f['error']) json_response(['error'=>'upload_error','code'=>$f['error']],400);
+    // validate size (max 6MB)
+    if ($f['size'] > 6*1024*1024) json_response(['error'=>'file_too_large'],400);
+    // validate mime & extension
+    $allowed = ['image/jpeg','image/png','image/gif'];
+    if (!in_array(mime_content_type($f['tmp_name']), $allowed)) json_response(['error'=>'bad_type'],400);
+
+    $ext = pathinfo($f['name'], PATHINFO_EXTENSION);
+    $safeName = bin2hex(random_bytes(10)) . '.' . $ext;
+    $dest = $uploads_dir . '/' . $safeName;
+    if (!move_uploaded_file($f['tmp_name'], $dest)) json_response(['error'=>'move_failed'],500);
+
+    // create thumbnail
+    $thumbPath = $thumbs_dir . '/' . $safeName;
+    make_thumbnail($dest, $thumbPath, 600, 400);
+
+    // insert db
+    $titulo = trim($_POST['titulo'] ?? null);
+    $descripcion = trim($_POST['descripcion'] ?? null);
+    $orden = intval($_POST['orden'] ?? 0);
+    $stmt = $pdo->prepare("INSERT INTO galeria (titulo, descripcion, url_imagen, orden, activo) VALUES (?, ?, ?, ?, 1)");
+    $stmt->execute([$titulo,$descripcion,$safeName,$orden]);
+    $id = $pdo->lastInsertId();
+    json_response(['success'=>true,'id'=>$id,'url'=>'/uploads/'.$safeName,'thumb'=>'/uploads/thumbs/'.$safeName],201);
+    break;
+
+  case 'delete':
+    if (!has_permission('permiso_borrar')) json_response(['error'=>'no_perm'],403);
+    $id = intval($_POST['id'] ?? 0);
+    $stmt = $pdo->prepare("SELECT url_imagen FROM galeria WHERE id = ?");
+    $stmt->execute([$id]);
+    $r = $stmt->fetch();
+    if ($r) {
+      @unlink($uploads_dir . '/' . $r['url_imagen']);
+      @unlink($thumbs_dir . '/' . $r['url_imagen']);
+    }
+    $pdo->prepare("DELETE FROM galeria WHERE id = ?")->execute([$id]);
+    json_response(['success'=>true,'deleted'=>$id]);
+    break;
+
+  case 'reorder':
+    if (!has_permission('permiso_actualizar')) json_response(['error'=>'no_perm'],403);
+    // expects json array: [{id:1,orden:0},...]
+    $payload = json_decode(file_get_contents('php://input'), true);
+    if (!is_array($payload)) json_response(['error'=>'invalid_payload'],400);
+    $stmt = $pdo->prepare("UPDATE galeria SET orden = ? WHERE id = ?");
+    foreach($payload as $item){
+      $stmt->execute([intval($item['orden']), intval($item['id'])]);
+    }
+    json_response(['success'=>true]);
+    break;
+
+  case 'update':
+    if (!has_permission('permiso_actualizar')) json_response(['error'=>'no_perm'],403);
+    $id = intval($_POST['id'] ?? 0);
+    $titulo = trim($_POST['titulo'] ?? null);
+    $descripcion = trim($_POST['descripcion'] ?? null);
+    $activo = isset($_POST['activo']) ? (int)$_POST['activo'] : 1;
+    $stmt = $pdo->prepare("UPDATE galeria SET titulo=?, descripcion=?, activo=? WHERE id = ?");
+    $stmt->execute([$titulo,$descripcion,$activo,$id]);
+    json_response(['success'=>true]);
+    break;
+
+  default:
+    json_response(['error'=>'invalid_action'],400);
+}

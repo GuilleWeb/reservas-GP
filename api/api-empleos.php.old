@@ -1,0 +1,80 @@
+<?php
+require_once __DIR__.'/../helpers.php';
+header('Content-Type: application/json; charset=utf-8');
+
+$action = $_REQUEST['action'] ?? '';
+$csrf = $_REQUEST['csrf_token'] ?? '';
+$user = current_user();
+
+//if(!$user) json_response(['error'=>'unauthorized'],403);
+
+switch($action){
+    case 'list':
+        $page = max(1,intval($_GET['page']??1));
+        $per = max(1,intval($_GET['per']??10));
+        $search = $_GET['search']??'';
+        $only_active = isset($_GET['active_only']) ? "AND activo=1" : "";
+
+        $where = $search ? "WHERE titulo LIKE :s OR descripcion LIKE :s $only_active" : ($only_active ? "WHERE activo=1" : "");
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM empleos $where");
+        if($search) $stmt->execute(['s'=>"%$search%"]); else $stmt->execute();
+        $total = $stmt->fetchColumn();
+        $total_pages = ceil($total/$per);
+
+        $offset = ($page-1)*$per;
+        $sql = "SELECT e.*, s.nombre AS sede FROM empleos e
+                LEFT JOIN sedes s ON e.sede_id=s.id
+                $where ORDER BY fecha_publicacion DESC LIMIT :o,:p";
+        $stmt = $pdo->prepare($sql);
+        if($search) $stmt->bindValue(':s', "%$search%", PDO::PARAM_STR);
+        $stmt->bindValue(':o',$offset,PDO::PARAM_INT);
+        $stmt->bindValue(':p',$per,PDO::PARAM_INT);
+        $stmt->execute();
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // list
+        json_response([
+            'success' => true,
+            'data' => $data,
+            'total' => $total,       // total de registros
+            'total_pages' => $total_pages
+        ]);
+        break;
+
+    case 'get':
+        $id = intval($_GET['id']??0);
+        $stmt = $pdo->prepare("SELECT * FROM empleos WHERE id=?");
+        $stmt->execute([$id]);
+        json_response(['success' => true,'data' => $stmt->fetch() ?: []]);
+        break;
+
+    case 'save':
+        if(!$user || !has_permission('permiso_crear')) json_response(['error'=>'unauthorized'],403);
+        $id = intval($_POST['id']??0);
+        $titulo = $_POST['titulo']??'';
+        $descripcion = $_POST['descripcion']??'';
+        $sede_id = intval($_POST['sede']??0);
+        $activo = isset($_POST['activo'])?1:0;
+
+        if($id>0){
+            $stmt = $pdo->prepare("UPDATE empleos SET titulo=?,descripcion=?,sede_id=?,activo=? WHERE id=?");
+            $stmt->execute([$titulo,$descripcion,$sede_id,$activo,$id]);
+        } else {
+            $fecha_publicacion = date('Y-m-d');
+            $stmt = $pdo->prepare("INSERT INTO empleos (titulo, descripcion, sede_id, fecha_publicacion, activo) VALUES (?, ?, ?, ?, ?)");
+            $stmt->execute([$titulo, $descripcion, $sede_id, $fecha_publicacion, $activo]);
+        }
+        json_response(['success'=>true]);
+        break;
+
+    case 'delete':
+        if(!$user || !has_permission('permiso_borrar')) json_response(['error'=>'unauthorized'],403);
+        $id = intval($_POST['id']??0);
+        $stmt = $pdo->prepare("DELETE FROM empleos WHERE id=?");
+        $stmt->execute([$id]);
+        json_response(['success'=>true]);
+        break;
+
+    default:
+        json_response(['error'=>'invalid_action'],400);
+}

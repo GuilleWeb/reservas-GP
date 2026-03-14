@@ -1,0 +1,78 @@
+<div class="p-6">
+  <h1 class="text-2xl font-bold mb-4 flex items-center">
+    <i class="fa fa-users mr-2"></i> Gestión de Clientes
+  </h1>
+
+  <!-- Barra de búsqueda -->
+  <div class="flex mb-4">
+    <input id="searchPaciente" type="text" placeholder="Buscar cliente..."
+           class="border rounded-l px-4 py-2 w-full">
+    <button id="btnBuscarPaciente" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-r">
+      <i class="fa fa-search"></i>
+    </button>
+  </div>
+
+  <!-- Tabla pacientes -->
+  <div class="overflow-x-auto">
+    <table class="min-w-full border">
+      <thead class="bg-gray-100">
+        <tr>
+          <th class="px-4 py-2 border">ID</th>
+          <th class="px-4 py-2 border">Nombre</th>
+          <th class="px-4 py-2 border">Teléfono</th>
+          <th class="px-4 py-2 border">Email</th>
+          <th class="px-4 py-2 border">Activo</th>
+        </tr>
+      </thead>
+      <tbody id="pacientesTable"></tbody>
+    </table>
+  </div>
+
+  <!-- Paginación -->
+  <div class="flex justify-center mt-6 space-x-2" id="paginationPacientes"></div>
+</div>
+
+<script>
+$(function(){
+  let page = 1;
+  let search = "";
+
+  function loadPacientes() {
+    $.getJSON("api/pacientes.php", {accion:"listar", page:page, search:search}, function(res){
+      let html="";
+      res.data.forEach(p=>{
+        html+=`
+          <tr class="hover:bg-gray-50">
+            <td class="px-4 py-2 border">${p.id}</td>
+            <td class="px-4 py-2 border">${p.nombre}</td>
+            <td class="px-4 py-2 border">${p.telefono||''}</td>
+            <td class="px-4 py-2 border">${p.email||''}</td>
+            <td class="px-4 py-2 border">${p.activo==1?'Sí':'No'}</td>
+          </tr>
+        `;
+      });
+      $("#pacientesTable").html(html);
+
+      // paginación
+      let pagHTML="";
+      for(let i=1;i<=res.total_pages;i++){
+        pagHTML+=`<button data-p="${i}" class="px-3 py-1 rounded ${i==page?'bg-purple-600 text-white':'bg-gray-200'}">${i}</button>`;
+      }
+      $("#paginationPacientes").html(pagHTML);
+    });
+  }
+
+  $("#btnBuscarPaciente").click(function(){
+    search=$("#searchPaciente").val();
+    page=1;
+    loadPacientes();
+  });
+
+  $("#paginationPacientes").on("click","button",function(){
+    page=$(this).data("p");
+    loadPacientes();
+  });
+
+  loadPacientes();
+});
+</script>

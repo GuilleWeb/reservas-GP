@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo Planificador (Vista Completa Estable)</title>
+    <script src="calendar.js"></script>
+    <style>
+        /* Estilo para el contenedor del demo */
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            background-color: #f0f4f8; /* Fondo claro para el demo */
+        }
+        /* Definición de ancho y alto fijos para probar la estabilidad del componente */
+        #mi_planificador_full {
+            width: 800px;
+            height: 480px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+            margin: 20px auto; /* Centrar el contenedor */
+            overflow: hidden;
+        }
+        h1 {
+            text-align: center;
+            color: #1f2937;
+        }
+    </style>
+</head>
+
+
+
+<body>
+    <h1>Planificador de Eventos (Producción Ready)</h1>
+    
+    <div id="mi_planificador_full"></div>
+    
+    <script>
+        // Lista de eventos de ejemplo
+        const misEventos = [
+            { 
+                // Evento de Hoy
+                date: new Date().toISOString().substring(0, 10), 
+                time: '10:00', 
+                description: 'Reunión de Standup (HOY)', 
+                category: 'work', 
+                details: 'Revisar pendientes. Verificar que el fondo opaco funciona con el color de respaldo.' 
+            },
+            // Eventos para el 20 de Octubre (múltiples para probar el scroll del panel y el fondo opaco del día)
+            { date: '2025-10-20', time: '09:00', description: 'Presentación de Proyecto', category: 'work', details: 'Sala de juntas A.' },
+            { date: '2025-10-20', time: '14:30', description: 'Almuerzo con equipo', category: 'personal' },
+            { date: '2025-10-20', description: 'Cierre de mes', category: 'work' },
+            { date: '2025-10-20', description: 'Día libre', category: 'personal' },
+            { date: '2025-10-20', description: 'Día libre - Parte 2', category: 'personal' },
+            { date: '2025-10-20', description: 'Día libre - Parte 3', category: 'personal' },
+            { date: '2025-10-20', description: 'Día libre - Parte 4', category: 'personal' }
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // Inicialización Completa con todos los parámetros finales
+            const planificadorFull = inicializarPlanificador({
+                node: 'mi_planificador_full',
+                // Usamos un color RGB no HEX para probar la lógica de respaldo de opacidad.
+                // Si la opacidad funciona, el fondo del día con eventos será gris por defecto.
+                // Si la opacidad falla, simplemente no tendrá fondo.
+                //colorPrimario: '#ff0', 
+                modoOscuro: false,
+                vistaInicial: 'month', // Inicia en vista semanal (horizontal)
+                eventosLista: misEventos,
+                panelOcultoInicial: true, // Inicia con el panel lateral oculto
+
+                // Al hacer clic en un evento en el panel lateral
+                alClicEnEvento: function(evento) {
+                    console.log('Evento Clickeado:', evento);
+                    alert(`Evento: ${evento.description} a las ${evento.time}.`);
+                },
+                // Al hacer clic en el botón "+ Nuevo" en el panel lateral
+                onNewEvent: function(fecha) {
+                    console.log('Nuevo Evento para:', fecha);
+                    alert(`Se creará un nuevo evento para la fecha: ${fecha}`);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

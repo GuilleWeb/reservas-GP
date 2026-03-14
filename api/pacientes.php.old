@@ -1,0 +1,89 @@
+<?php
+// api/pacientes.php
+require_once __DIR__ . '/../helpers.php';
+header('Content-Type: application/json; charset=utf-8');
+
+$csrf = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_REQUEST['csrf_token'] ?? null;
+$action = $_REQUEST['action'] ?? 'list';
+
+if (in_array($action, ['create','update','delete'])) {
+    if (!verify_csrf($csrf)) json_response(['error'=>'invalid_csrf'],403);
+}
+
+switch($action) {
+  case 'list':
+    // pagination & search
+    $q = trim($_GET['q'] ?? '');
+    $page = max(1, intval($_GET['page'] ?? 1));
+    $per = max(10, min(100, intval($_GET['per'] ?? 10)));
+    $offset = ($page-1)*$per;
+
+    if ($q !== '') {
+      $like = "%$q%";
+      $stmt = $pdo->prepare("SELECT SQL_CALC_FOUND_ROWS * FROM pacientes WHERE nombre LIKE ? OR email LIKE ? ORDER BY id DESC LIMIT ? OFFSET ?");
+      $stmt->execute([$like,$like,$per,$offset]);
+    } else {
+      $stmt = $pdo->prepare("SELECT SQL_CALC_FOUND_ROWS * FROM pacientes ORDER BY id DESC LIMIT ? OFFSET ?");
+      $stmt->execute([$per,$offset]);
+    }
+    $data = $stmt->fetchAll();
+    $total = $pdo->query("SELECT FOUND_ROWS()")->fetchColumn();
+    json_response(['success'=>true,'data'=>$data,'meta'=>['page'=>$page,'per'=>$per,'total'=>intval($total)]]);
+    break;
+
+  case 'get':
+    $id = intval($_GET['id'] ?? 0);
+    $stmt = $pdo->prepare("SELECT * FROM pacientes WHERE id = ?");
+    $stmt->execute([$id]);
+    $row = $stmt->fetch();
+    if (!$row) json_response(['error'=>'not_found'],404);
+    json_response(['success'=>true,'data'=>$row]);
+    break;
+
+  case 'create':
+    if (!has_permission('permiso_crear')) json_response(['error'=>'no_perm'],403);
+    $nombre = trim($_POST['nombre'] ?? '');
+    if ($nombre === '') json_response(['error'=>'nombre_required'],400);
+    $telefono = trim($_POST['telefono'] ?? null);
+    $email = trim($_POST['email'] ?? null);
+    $direccion = trim($_POST['direccion'] ?? null);
+    $fn = $_POST['fecha_nacimiento'] ?: null;
+    $historial = trim($_POST['historial_medico'] ?? null);
+
+    $stmt = $pdo->prepare("INSERT INTO pacientes (nombre, telefono, email, direccion, fecha_nacimiento, historial_medico, activo) VALUES (?, ?, ?, ?, ?, ?, 1)");
+    $stmt->execute([$nombre,$telefono,$email,$direccion,$fn,$historial]);
+    $id = $pdo->lastInsertId();
+    $stmt = $pdo->prepare("SELECT * FROM pacientes WHERE id = ?");
+    $stmt->execute([$id]);
+    json_response(['success'=>true,'data'=>$stmt->fetch()],201);
+    break;
+
+  case 'update':
+    if (!has_permission('permiso_actualizar')) json_response(['error'=>'no_perm'],403);
+    $id = intval($_POST['id'] ?? 0);
+    $nombre = trim($_POST['nombre'] ?? '');
+    if ($nombre === '') json_response(['error'=>'nombre_required'],400);
+    $telefono = trim($_POST['telefono'] ?? null);
+    $email = trim($_POST['email'] ?? null);
+    $direccion = trim($_POST['direccion'] ?? null);
+    $fn = $_POST['fecha_nacimiento'] ?: null;
+    $historial = trim($_POST['historial_medico'] ?? null);
+
+    $stmt = $pdo->prepare("UPDATE pacientes SET nombre=?, telefono=?, email=?, direccion=?, fecha_nacimiento=?, historial_medico=? WHERE id = ?");
+    $stmt->execute([$nombre,$telefono,$email,$direccion,$fn,$historial,$id]);
+    $stmt = $pdo->prepare("SELECT * FROM pacientes WHERE id = ?");
+    $stmt->execute([$id]);
+    json_response(['success'=>true,'data'=>$stmt->fetch()]);
+    break;
+
+  case 'delete':
+    if (!has_permission('permiso_borrar')) json_response(['error'=>'no_perm'],403);
+    $id = intval($_POST['id'] ?? 0);
+    $stmt = $pdo->prepare("DELETE FROM pacientes WHERE id = ?");
+    $stmt->execute([$id]);
+    json_response(['success'=>true,'deleted'=>$id]);
+    break;
+
+  default:
+    json_response(['error'=>'invalid_action'],400);
+}
