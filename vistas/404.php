@@ -13,7 +13,7 @@
         <div class="absolute inset-0 flex items-center justify-center">
           <div
             class="w-24 h-24 rounded-3xl bg-teal-50 border border-teal-100 shadow-sm grid place-items-center animate-[float_3s_ease-in-out_infinite]">
-            <i class="fas fa-compass text-teal-700 text-4xl"></i>
+            <i data-lucide="compass" class="text-teal-700 text-4xl"></i>
           </div>
         </div>
         <div

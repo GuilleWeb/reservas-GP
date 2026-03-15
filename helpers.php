@@ -12,7 +12,6 @@ function json_response($data, $code = 200)
     exit;
 }
 
-// Login / auth helpers
 function login_user_by_id($user_id)
 {
     global $pdo;
@@ -40,18 +39,15 @@ function current_user()
         return null;
     }
 
-    // Check single session
     global $pdo;
     $stmt = $pdo->prepare("SELECT session_token FROM usuarios WHERE id = ? LIMIT 1");
     $stmt->execute([$_SESSION['user']['id']]);
     $db_token = $stmt->fetchColumn();
 
     if (!empty($db_token) && $db_token !== session_id()) {
-        // La sesión ha sido tomada por otro dispositivo
         session_unset();
         session_destroy();
         $base = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
-        // si es en api, subimos un nivel
         if (strpos($base, '/api') !== false) {
             $base = dirname($base);
         }
@@ -62,40 +58,42 @@ function current_user()
     return $_SESSION['user'];
 }
 
-// permission check
-function has_permission($perm_name)
+function has_permission($perm_name, $effective_role = null)
 {
-    // perm_name: 'permiso_crear', 'permiso_leer', 'permiso_actualizar', 'permiso_borrar'
     $user = current_user();
-    if (!$user)
-        return false;
-    if (!empty($user['rol']) && $user['rol'] === 'superadmin')
-        return true;
-
-    // Nuevo esquema: roles por ENUM en usuarios
-    if (!empty($user['rol'])) {
-        if ($user['rol'] === 'superadmin')
-            return true;
-        if ($user['rol'] === 'admin')
-            return true;
-        if ($user['rol'] === 'gerente')
-            return true;
+    if (!$user) {
         return false;
     }
-    global $pdo;
-    $stmt = $pdo->prepare("SELECT $perm_name FROM roles WHERE id = ? LIMIT 1");
-    $stmt->execute([$user['rol_id']]);
-    $r = $stmt->fetch();
-    return !empty($r[$perm_name]);
-}
 
-// simple CSRF token - for AJAX include header X-CSRF-Token
-// helpers.php
+    $role = $effective_role ?? ($user['rol'] ?? null);
+
+    if ($role === 'superadmin') {
+        return true;
+    }
+    if ($role === 'admin') {
+        return true;
+    }
+    if ($role === 'gerente') {
+        return true;
+    }
+
+    // Fallback a tabla de roles si tiene rol_id y no tiene rol ENUM
+    if (!empty($user['rol_id'])) {
+        global $pdo;
+        $stmt = $pdo->prepare("SELECT $perm_name FROM roles WHERE id = ? LIMIT 1");
+        $stmt->execute([$user['rol_id']]);
+        $r = $stmt->fetch();
+        return !empty($r[$perm_name]);
+    }
+
+    return false;
+}
 
 function generate_csrf()
 {
-    if (session_status() !== PHP_SESSION_ACTIVE)
+    if (session_status() !== PHP_SESSION_ACTIVE) {
         session_start();
+    }
     if (empty($_SESSION['csrf_token'])) {
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
     }
@@ -104,20 +102,29 @@ function generate_csrf()
 
 function check_csrf($token)
 {
-    if (session_status() !== PHP_SESSION_ACTIVE)
+    if (session_status() !== PHP_SESSION_ACTIVE) {
         session_start();
+    }
     return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
 }
 
+function verify_csrf($token)
+{
+    return check_csrf((string) ($token ?? ''));
+}
+
+// Contexto de empresa determinado exclusivamente por la URL.
+// Para vistas públicas: ?id_e=slug o ?empresa=slug
+// Para vistas privadas: ?id_e=123 (numérico)
+// Nunca lee $_SESSION para determinar empresa de contexto.
 function request_id_e()
 {
-    // Si no viene en request pero hay sesión con empresa_id, usarlo
-    if (isset($_SESSION['user']['empresa_id'])) {
-        $id = $_SESSION['user']['empresa_id'];
-    } else {
-        $id = $_GET['id_e'] ?? $_POST['id_e'] ?? null;
+    $id = $_GET['id_e'] ?? $_POST['id_e'] ?? null;
+    if ($id === null || $id === '') {
+        return null;
     }
-    return $id ? (int) $id : null;
+    // Solo retorna entero si es numérico; vistas privadas siempre pasan ID numérico
+    return is_numeric($id) ? (int) $id : null;
 }
 
 function app_root_path()
@@ -125,8 +132,9 @@ function app_root_path()
     $sn = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
     $sn = '/' . ltrim($sn, '/');
     $parts = array_values(array_filter(explode('/', $sn), fn($p) => $p !== ''));
-    if (empty($parts))
+    if (empty($parts)) {
         return '';
+    }
     return '/' . $parts[0];
 }
 
@@ -138,8 +146,9 @@ function app_url($path)
 
 function app_link_with_slug($path, $id_e)
 {
-    if (!$path)
+    if (!$path) {
         return '#';
+    }
     $url = app_url($path);
     if ($id_e) {
         $url .= (strpos($url, '?') === false ? '?' : '&') . 'id_e=' . rawurlencode((string) $id_e);
@@ -162,8 +171,9 @@ function request_sucursal_slug()
 function request_sucursal_id()
 {
     $id = $_GET['sucursal_id'] ?? ($_POST['sucursal_id'] ?? null);
-    if ($id === null || $id === '')
+    if ($id === null || $id === '') {
         return null;
+    }
     return intval($id);
 }
 
@@ -200,10 +210,7 @@ function audit_event($tipo, $entidad, $entidad_id = null, $descripcion = null, $
             }
         }
 
-        $metadata_json = null;
-        if ($metadata !== null) {
-            $metadata_json = json_encode($metadata, JSON_UNESCAPED_UNICODE);
-        }
+        $metadata_json = $metadata !== null ? json_encode($metadata, JSON_UNESCAPED_UNICODE) : null;
 
         $stmt = $pdo->prepare('INSERT INTO auditoria_eventos (empresa_id, actor_usuario_id, actor_rol, tipo, entidad, entidad_id, descripcion, metadata_json, ip) VALUES (?,?,?,?,?,?,?,?,?)');
         $stmt->execute([

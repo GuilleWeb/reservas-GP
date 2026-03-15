@@ -23,13 +23,24 @@ include __DIR__ . '/../../includes/topbar.php';
       </div>
       <div class="bg-gray-50 border border-gray-100 rounded-2xl p-5 shadow-sm transition hover:shadow-md">
         <div class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-2">Pendientes próximas</div>
-        <div class="text-3xl font-black text-indigo-600" id="stat-pendientes">--</div>
+        <div class="text-3xl font-black text-teal-600" id="stat-pendientes">--</div>
       </div>
+    </div>
+
+    <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <a href="<?= view_url('vistas/empleado/citas.php', $id_e) ?>" class="block rounded-xl border p-4 hover:bg-teal-100 bg-teal-50 border-teal-100 transition">
+        <div class="font-semibold text-teal-900">Agenda Completa</div>
+        <div class="text-sm text-teal-700">Explorar calendario y disponibilidad.</div>
+      </a>
+      <a href="<?= view_url('vistas/empleado/ajustes.php', $id_e) ?>" class="block rounded-xl border p-4 hover:bg-teal-100 bg-teal-50 border-teal-100 transition">
+        <div class="font-semibold text-teal-900">Configuración</div>
+        <div class="text-sm text-teal-700">Actualizar perfil y horario.</div>
+      </a>
     </div>
 
     <div class="mt-10">
       <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
-        <i class="far fa-calendar-check mr-2 text-teal-600"></i> Próximas Citas
+        <i data-lucide="calendar-check" class="mr-2 text-teal-600"></i> Próximas Citas
       </h3>
       <div class="overflow-hidden bg-white rounded-2xl border">
         <table class="w-full text-left">
@@ -70,7 +81,7 @@ include __DIR__ . '/../../includes/topbar.php';
                 <div class="font-bold text-gray-800">${c.cliente_nombre}</div>
                 <div class="text-xs text-gray-500">${c.cliente_telefono || ''}</div>
               </td>
-              <td class="px-6 py-4 font-medium text-indigo-600">${c.servicio_nombre}</td>
+              <td class="px-6 py-4 font-medium text-teal-600">${c.servicio_nombre}</td>
               <td class="px-6 py-4">
                 <div class="font-semibold text-gray-700">${d.toLocaleDateString()}</div>
                 <div class="text-xs text-gray-400">${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>

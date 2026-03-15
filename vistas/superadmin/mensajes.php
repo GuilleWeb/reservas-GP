@@ -53,7 +53,7 @@ $empresas = $pdo->query('SELECT id, nombre, slug FROM empresas ORDER BY nombre A
             <label class="block text-sm font-medium text-gray-700">Mensaje</label>
             <textarea id="cuerpo" name="cuerpo" class="border rounded-lg p-2 w-full" rows="6" required></textarea>
           </div>
-          <button type="submit" class="w-full px-4 py-2 bg-gray-900 text-white rounded-lg">Enviar</button>
+          <button type="submit" class="w-full px-2 py-2 bg-teal-600 text-white rounded-lg">Enviar</button>
           <div id="sentInfo" class="hidden text-sm text-teal-700"></div>
         </form>
       </div>
@@ -191,7 +191,7 @@ $empresas = $pdo->query('SELECT id, nombre, slug FROM empresas ORDER BY nombre A
           <td class="px-4 py-3">${m.created_at || ''}</td>
           <td class="px-4 py-3">
             <div class="flex items-center justify-end gap-2">
-              <button class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-white viewBtn" title="Ver" data-id="${m.id}"><i class="fas fa-eye"></i></button>
+              <button class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-white viewBtn" title="Ver" data-id="${m.id}"><i data-lucide="eye"></i></button>
             </div>
           </td>
         </tr>`);
@@ -213,7 +213,7 @@ $empresas = $pdo->query('SELECT id, nombre, slug FROM empresas ORDER BY nombre A
       const totalPages = Math.ceil(total / per) || 1;
       const pag = $("#pagination").empty();
       for (let i = 1; i <= totalPages; i++) {
-        pag.append(`<button class="px-3 py-1 rounded ${i === page ? 'bg-gray-900 text-white' : 'border'}" data-page="${i}">${i}</button>`);
+        pag.append(`<button class="px-3 py-1 rounded ${i === page ? 'bg-teal-600 text-white' : 'border'}" data-page="${i}">${i}</button>`);
       }
     }
 

@@ -70,11 +70,11 @@ include __DIR__ . '/../../includes/topbar.php';
                                 
                                 <div class="space-y-2 text-sm text-gray-600">
                                     <div class="flex items-start gap-3">
-                                        <i class="fas fa-map-marker-alt text-teal-500 mt-1"></i>
+                                        <i data-lucide="map-pin" class="text-teal-500 mt-1"></i>
                                         <span>${s.direccion || 'Dirección no disponible'}</span>
                                     </div>
                                     <div class="flex items-center gap-3">
-                                        <i class="fas fa-phone text-teal-500"></i>
+                                        <i data-lucide="phone" class="text-teal-500"></i>
                                         <span>${s.telefono || 'Sin teléfono'}</span>
                                     </div>
                                 </div>
@@ -87,7 +87,7 @@ include __DIR__ . '/../../includes/topbar.php';
                                 </a>
                                 <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.direccion + ' ' + s.nombre)}" target="_blank"
                                    class="px-4 bg-white text-gray-700 border border-gray-200 font-bold py-3 rounded-xl text-center text-sm hover:bg-gray-100 transition">
-                                    <i class="fas fa-map"></i>
+                                    <i data-lucide="map"></i>
                                 </a>
                             </div>
                         </div>

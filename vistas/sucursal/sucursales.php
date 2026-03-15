@@ -6,9 +6,11 @@ $module = 'sucursales';
 include __DIR__ . '/../../includes/topbar.php';
 ?>
 
-<div class="max-w-7xl mx-auto flex flex-col md:flex-row gap-6">
+<div class="max-w-7xl mx-auto">
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
 
-  <div class="w-full md:w-1/3 bg-white shadow rounded-2xl p-6 border self-start">
+  <div class="lg:col-span-4">
+      <div class="bg-white rounded-2xl shadow p-5 border">
     <div class="text-xl font-extrabold text-gray-900 mb-6">Gestionar Sucursal</div>
 
     <form id="formSucursal" class="space-y-4">
@@ -51,13 +53,15 @@ include __DIR__ . '/../../includes/topbar.php';
 
       <div class="pt-4 flex items-center justify-between border-t border-gray-100">
         <button type="submit"
-          class="bg-gray-900 hover:bg-black text-white px-5 py-2 rounded-lg font-semibold transition"
+          class="bg-teal-600 hover:bg-teal-700 text-white px-2 py-2 rounded-lg font-semibold transition"
           id="btnSave">Guardar Cambios</button>
       </div>
     </form>
   </div>
+  </div>
 
-  <div class="w-full md:w-2/3 bg-white shadow rounded-2xl p-6 border flex flex-col h-[calc(100vh-140px)] min-h-[500px]">
+  <div class="lg:col-span-8">
+      <div class="bg-white rounded-2xl shadow border p-5">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
       <h2 class="text-xl font-bold text-gray-800">Ubicaciones clínicas</h2>
     </div>
@@ -76,6 +80,9 @@ include __DIR__ . '/../../includes/topbar.php';
     </div>
   </div>
 </div>
+</div>
+
+</div>
 
 <script>
   const API_URL = '<?= app_url('api/sucursal/sucursales.php') ?>';
@@ -92,7 +99,7 @@ include __DIR__ . '/../../includes/topbar.php';
                 <div class="mt-1">${item.telefono || '-'}</div>
             </td>
             <td class="py-3 px-4 text-right">
-                <button onclick="editItem(${item.id})" class="text-blue-500 hover:text-blue-700 bg-blue-50 px-2.5 py-1.5 rounded-lg border border-blue-200"><i class="fas fa-edit"></i></button>
+                <button onclick="editItem(${item.id})" class="text-blue-500 hover:text-blue-700 bg-blue-50 px-2.5 py-1.5 rounded-lg border border-blue-200"><i data-lucide="pen"></i></button>
             </td>
           </tr>
         `);

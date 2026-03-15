@@ -29,10 +29,10 @@
     <div>
       <h4 class="font-semibold text-lg mb-3 border-b border-teal-500 pb-1">Contacto</h4>
       <ul class="text-sm space-y-2">
-        <li><i class="fas fa-map-marker-alt w-5"></i> Dirección: <?= htmlspecialchars($direccion) ?></li>
-        <li><i class="fas fa-phone w-5"></i> Teléfono: <?= htmlspecialchars($telefono_contacto) ?></li>
-        <li><i class="fas fa-envelope w-5"></i> Email: <?= htmlspecialchars($email_contacto) ?></li>
-        <li><i class="fas fa-clock w-5"></i> Horario: <?= htmlspecialchars($horaios) ?></li>
+        <li><i data-lucide="map-pin" class="w-5"></i> Dirección: <?= htmlspecialchars($direccion) ?></li>
+        <li><i data-lucide="phone" class="w-5"></i> Teléfono: <?= htmlspecialchars($telefono_contacto) ?></li>
+        <li><i data-lucide="mail" class="w-5"></i> Email: <?= htmlspecialchars($email_contacto) ?></li>
+        <li><i data-lucide="clock" class="w-5"></i> Horario: <?= htmlspecialchars($horaios) ?></li>
       </ul>
     </div>
 
@@ -42,22 +42,22 @@
       <h4 class="font-semibold text-lg mb-3 border-b border-teal-500 pb-1">Síguenos</h4>
       <div class="flex space-x-4 text-2xl items-center text-center">
         <?php if (!empty($redes['facebook'])): ?>
-          <a href="<?= htmlspecialchars($redes['facebook']) ?>" target="_blank" class="hover:text-gray-300"><i class="fab fa-facebook"></i></a>
+          <a href="<?= htmlspecialchars($redes['facebook']) ?>" target="_blank" class="hover:text-gray-300"><i data-lucide="facebook"></i></a>
         <?php endif; ?>
         <?php if (!empty($redes['instagram'])): ?>
-          <a href="<?= htmlspecialchars($redes['instagram']) ?>" target="_blank" class="hover:text-gray-300"><i class="fab fa-instagram"></i></a>
+          <a href="<?= htmlspecialchars($redes['instagram']) ?>" target="_blank" class="hover:text-gray-300"><i data-lucide="instagram"></i></a>
         <?php endif; ?>
         <?php if (!empty($redes['whatsapp'])): ?>
-          <a href="<?= htmlspecialchars($redes['whatsapp']) ?>" target="_blank" class="hover:text-gray-300"><i class="fab fa-whatsapp"></i></a>
+          <a href="<?= htmlspecialchars($redes['whatsapp']) ?>" target="_blank" class="hover:text-gray-300"><i data-lucide="message-circle"></i></a>
         <?php endif; ?>
         <?php if (!empty($redes['tiktok'])): ?>
-          <a href="<?= htmlspecialchars($redes['tiktok']) ?>" target="_blank" class="hover:text-gray-300"><i class="fab fa-tiktok"></i></a>
+          <a href="<?= htmlspecialchars($redes['tiktok']) ?>" target="_blank" class="hover:text-gray-300"><i data-lucide="music"></i></a>
         <?php endif; ?>
         <?php if (!empty($redes['x'])): ?>
-          <a href="<?= htmlspecialchars($redes['x']) ?>" target="_blank" class="hover:text-gray-300"><i class="fab fa-x-twitter"></i></a>
+          <a href="<?= htmlspecialchars($redes['x']) ?>" target="_blank" class="hover:text-gray-300"><i data-lucide="twitter"></i></a>
         <?php endif; ?>
         <?php if (!empty($redes['otro'])): ?>
-          <a href="<?= htmlspecialchars($redes['otro']) ?>" target="_blank" class="hover:text-gray-300"><i class="fa fa-globe"></i></a>
+          <a href="<?= htmlspecialchars($redes['otro']) ?>" target="_blank" class="hover:text-gray-300"><i data-lucide="globe"></i></a>
         <?php endif; ?>
       </div>
       <?php endif; ?>
@@ -157,25 +157,25 @@
       title: 'Éxito',
       bg: 'bg-green-600',
       color: 'text-white',
-      icon: '<i class="fas fa-check-circle text-xl"></i>'
+      icon: '<i data-lucide="check-circle-2" class="text-xl"></i>'
     },
     error: {
       title: 'Error',
       bg: 'bg-red-600',
       color: 'text-white',
-      icon: '<i class="fas fa-exclamation-triangle text-xl"></i>'
+      icon: '<i data-lucide="alert-triangle" class="text-xl"></i>'
     },
     warning: {
       title: 'Aviso',
       bg: 'bg-amber-500',
       color: 'text-white',
-      icon: '<i class="fas fa-exclamation-circle text-xl"></i>'
+      icon: '<i data-lucide="alert-circle" class="text-xl"></i>'
     },
     info: {
       title: 'Info',
       bg: 'bg-teal-600',
       color: 'text-white',
-      icon: '<i class="fas fa-info-circle text-xl"></i>'
+      icon: '<i data-lucide="info" class="text-xl"></i>'
     }
   };
 
@@ -196,7 +196,7 @@
         <p class="text-sm font-bold mt-0.5 leading-tight">${message.replace(/\n/g, '<br>')}</p>
       </div>
       <button class="flex-shrink-0 hover:scale-110 transition-transform focus:outline-none" aria-label="Cerrar">
-        <i class="fas fa-times"></i>
+        <i data-lucide="x"></i>
       </button>
     </div>
   `;
@@ -271,7 +271,27 @@
   // Al iniciar, asegurarse de que el toast esté oculto
   $(document).ready(function () {
     $("#customAlertToast").addClass('translate-x-full opacity-0');
+    if (window.lucide) { lucide.createIcons(); }
   });
+
+  // Re-renderizar iconos al añadir nuevo contenido dinámico (AJAX/Modales)
+  let lucideIsRendering = false;
+  const lucideObserver = new MutationObserver(function(mutations) {
+    if (lucideIsRendering || !window.lucide) return;
+    
+    const hasNewIcons = Array.from(mutations).some(mutation => 
+      Array.from(mutation.addedNodes).some(node => 
+        node.nodeType === 1 && (node.hasAttribute('data-lucide') || node.querySelector('[data-lucide]'))
+      )
+    );
+    
+    if (hasNewIcons) {
+      lucideIsRendering = true;
+      lucide.createIcons();
+      setTimeout(() => { lucideIsRendering = false; }, 10);
+    }
+  });
+  lucideObserver.observe(document.body, { childList: true, subtree: true });
 </script>
 
 </body>

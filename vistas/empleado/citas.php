@@ -74,7 +74,7 @@ include __DIR__ . '/../../includes/topbar.php';
             </td>
             <td class="py-3 px-4">${badge}</td>
             <td class="py-3 px-4 text-right">
-                <button onclick="viewDetails(${item.id})" class="text-teal-600 hover:text-teal-800 bg-teal-50 px-2.5 py-1.5 rounded-lg border border-teal-200"><i class="fas fa-eye"></i></button>
+                <button onclick="viewDetails(${item.id})" class="text-teal-600 hover:text-teal-800 bg-teal-50 px-2.5 py-1.5 rounded-lg border border-teal-200"><i data-lucide="eye"></i></button>
             </td>
           </tr>
         `);

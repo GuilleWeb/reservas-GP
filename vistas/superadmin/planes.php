@@ -18,7 +18,7 @@ if (!$user || $role !== 'superadmin') {
     <div class="lg:col-span-4">
       <div class="bg-white rounded-2xl shadow p-5 border">
         <div class="text-sm text-gray-500">SuperAdmin</div>
-        <div class="mt-1 text-2xl font-extrabold text-gray-900">Planes</div>
+        <div class="mt-1 text-2xl font-extrabold text-gray-900">Gestionar Planes</div>
 
         <form id="planForm" class="mt-4 space-y-3">
           <input type="hidden" id="planId" name="id">
@@ -34,19 +34,23 @@ if (!$user || $role !== 'superadmin') {
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-sm font-medium text-gray-700">Max sucursales</label>
-              <input type="number" min="1" class="border rounded-lg p-2 w-full" id="max_sucursales" name="max_sucursales" value="1" required>
+              <input type="number" min="1" class="border rounded-lg p-2 w-full" id="max_sucursales"
+                name="max_sucursales" value="1" required>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700">Max empleados</label>
-              <input type="number" min="1" class="border rounded-lg p-2 w-full" id="max_empleados" name="max_empleados" value="1" required>
+              <input type="number" min="1" class="border rounded-lg p-2 w-full" id="max_empleados" name="max_empleados"
+                value="1" required>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700">Max servicios</label>
-              <input type="number" min="1" class="border rounded-lg p-2 w-full" id="max_servicios" name="max_servicios" value="50" required>
+              <input type="number" min="1" class="border rounded-lg p-2 w-full" id="max_servicios" name="max_servicios"
+                value="50" required>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700">Max clientes</label>
-              <input type="number" min="1" class="border rounded-lg p-2 w-full" id="max_clientes" name="max_clientes" value="10000" required>
+              <input type="number" min="1" class="border rounded-lg p-2 w-full" id="max_clientes" name="max_clientes"
+                value="10000" required>
             </div>
           </div>
           <div>
@@ -58,8 +62,8 @@ if (!$user || $role !== 'superadmin') {
           </div>
 
           <div class="pt-2 flex items-center justify-between gap-2">
-            <button type="button" id="btnReset" class="px-4 py-2 border rounded-lg">Nuevo</button>
-            <button type="submit" id="btnSubmit" class="px-4 py-2 bg-gray-900 text-white rounded-lg">Crear</button>
+            <button type="button" id="btnReset" class="px-2 py-2 border rounded-lg">Nuevo</button>
+            <button type="submit" id="btnSubmit" class="px-2 py-2 bg-teal-600 text-white rounded-lg">Crear</button>
           </div>
         </form>
       </div>
@@ -69,6 +73,7 @@ if (!$user || $role !== 'superadmin') {
       <div class="bg-white rounded-2xl shadow border">
         <div class="p-5 border-b">
           <div class="font-semibold text-gray-900">Listado</div>
+          <div class="text-sm text-gray-500">Acciones: editar y eliminar.</div>
 
           <div class="mt-4 grid grid-cols-1 md:grid-cols-5 gap-3">
             <input id="searchPlan" type="text" placeholder="Buscar..." class="border rounded-lg p-2 md:col-span-2">
@@ -90,9 +95,12 @@ if (!$user || $role !== 'superadmin') {
           <table class="min-w-full text-sm">
             <thead class="bg-gray-50 text-gray-700">
               <tr>
-                <th class="text-left px-4 py-3 cursor-pointer select-none" data-sort="nombre">Nombre <span class="sort-ind" data-for="nombre"></span></th>
-                <th class="text-left px-4 py-3 cursor-pointer select-none" data-sort="max_clientes">Límites <span class="sort-ind" data-for="max_clientes"></span></th>
-                <th class="text-left px-4 py-3 cursor-pointer select-none" data-sort="activo">Estado <span class="sort-ind" data-for="activo"></span></th>
+                <th class="text-left px-4 py-3 cursor-pointer select-none" data-sort="nombre">Nombre <span
+                    class="sort-ind" data-for="nombre"></span></th>
+                <th class="text-left px-4 py-3 cursor-pointer select-none" data-sort="max_clientes">Límites <span
+                    class="sort-ind" data-for="max_clientes"></span></th>
+                <th class="text-left px-4 py-3 cursor-pointer select-none" data-sort="activo">Estado <span
+                    class="sort-ind" data-for="activo"></span></th>
                 <th class="text-right px-4 py-3">Acciones</th>
               </tr>
             </thead>
@@ -109,134 +117,149 @@ if (!$user || $role !== 'superadmin') {
 </div>
 
 <script>
-$(function(){
-  const API_PLANES = <?= json_encode(app_url('api/superadmin/planes.php')) ?>;
-  let page=1, per=10, search='', activo='';
-  let sort='id', dir='desc';
-  let t=null;
+  $(function () {
+    const API_PLANES = <?= json_encode(app_url('api/superadmin/planes.php')) ?>;
+    let page = 1, per = 10, search = '', activo = '';
+    let sort = 'id', dir = 'desc';
+    let t = null;
 
-  function resetForm(){
-    $('#planForm')[0].reset();
-    $('#planId').val('');
-    $('#btnSubmit').text('Crear');
-    $('#max_sucursales').val(1);
-    $('#max_empleados').val(1);
-    $('#max_servicios').val(50);
-    $('#max_clientes').val(10000);
-    $('#activo').val('1');
-  }
+    function resetForm() {
+      $('#planForm')[0].reset();
+      $('#planId').val('');
+      $('#btnSubmit').text('Crear');
+      $('#max_sucursales').val(1);
+      $('#max_empleados').val(1);
+      $('#max_servicios').val(50);
+      $('#max_clientes').val(10000);
+      $('#activo').val('1');
+    }
 
-  function debounceLoad(){ if(t) clearTimeout(t); t=setTimeout(loadPlanes,1000); }
+    function debounceLoad() { if (t) clearTimeout(t); t = setTimeout(loadPlanes, 1000); }
 
-  function loadPlanes(){
-    $.get(API_PLANES,{action:'list', page:page, per:per, search:search, activo:activo, sort:sort, dir:dir},function(res){
-      if(!res.success) return;
-      const tbody=$("#planesTable").empty();
-      res.data.forEach(p=>{
-        const estado = p.activo==1
-          ? '<span class="inline-flex px-2 py-1 rounded-full text-xs bg-teal-50 text-teal-800 border border-teal-100">Activo</span>'
-          : '<span class="inline-flex px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-700 border">Inactivo</span>';
-        const limites = `Suc: ${p.max_sucursales} | Emp: ${p.max_empleados} | Serv: ${p.max_servicios} | Cli: ${p.max_clientes}`;
-        tbody.append(`<tr class="hover:bg-gray-50">
+    function loadPlanes() {
+      $.get(API_PLANES, { action: 'list', page: page, per: per, search: search, activo: activo, sort: sort, dir: dir }, function (res) {
+        if (!res.success) return;
+        const tbody = $("#planesTable").empty();
+        res.data.forEach(p => {
+          const estado = p.activo == 1
+            ? '<span class="inline-flex px-2 py-1 rounded-full text-xs bg-teal-50 text-teal-800 border border-teal-100">Activo</span>'
+            : '<span class="inline-flex px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-700 border">Inactivo</span>';
+          const limites = `
+            <div class="flex flex-wrap gap-1.5 min-w-[200px]">
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700 border" title="Sucursales">
+                <i data-lucide="store" class="text-gray-400"></i> ${p.max_sucursales}
+              </span>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700 border" title="Empleados">
+                <i data-lucide="users" class="text-gray-400"></i> ${p.max_empleados}
+              </span>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700 border" title="Servicios">
+                <i data-lucide="bell-ring" class="text-gray-400"></i> ${p.max_servicios}
+              </span>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700 border" title="Clientes">
+                <i data-lucide="user-friends" class="text-gray-400"></i> ${p.max_clientes}
+              </span>
+            </div>
+          `;
+          tbody.append(`<tr class="hover:bg-gray-50 border-b last:border-0 border-gray-100">
           <td class="px-4 py-3">
-            <div class="font-medium text-gray-900">${p.nombre||''}</div>
-            <div class="text-xs text-gray-500 line-clamp-1">${p.descripcion||''}</div>
+            <div class="font-medium text-gray-900">${p.nombre || ''}</div>
+            <div class="text-xs text-gray-500 line-clamp-1">${p.descripcion || ''}</div>
           </td>
           <td class="px-4 py-3 text-gray-700">${limites}</td>
           <td class="px-4 py-3">${estado}</td>
           <td class="px-4 py-3">
             <div class="flex items-center justify-end gap-2">
-              <button class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-white editBtn" title="Editar" data-id="${p.id}"><i class="fas fa-pen"></i></button>
-              <button class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-white text-red-600 deleteBtn" title="Eliminar" data-id="${p.id}"><i class="fas fa-trash"></i></button>
+              <button class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-white editBtn" title="Editar" data-id="${p.id}"><i data-lucide="pen"></i></button>
+              <button class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-white text-red-600 deleteBtn" title="Eliminar" data-id="${p.id}"><i data-lucide="trash-2"></i></button>
             </div>
           </td>
         </tr>`);
-      });
-      $("#totalReg").text(`Total: ${res.total}`);
-      renderPagination(res.total);
-      updateSortIndicators();
-    },'json');
-  }
-
-  function updateSortIndicators(){
-    $('.sort-ind').text('');
-    const el = $(`.sort-ind[data-for="${sort}"]`);
-    if(!el.length) return;
-    el.text(dir==='asc' ? '▲' : '▼');
-  }
-
-  function renderPagination(total){
-    const totalPages=Math.ceil(total/per)||1;
-    const pag=$("#pagination").empty();
-    for(let i=1;i<=totalPages;i++){
-      pag.append(`<button class="px-3 py-1 rounded ${i===page?'bg-gray-900 text-white':'border'}" data-page="${i}">${i}</button>`);
+        });
+        $("#totalReg").text(`Total: ${res.total}`);
+        renderPagination(res.total);
+        updateSortIndicators();
+      }, 'json');
     }
-  }
 
-  $("#pagination").on('click','button',function(){ page=parseInt($(this).data('page')); loadPlanes(); });
-  $("#perPage").on('change',function(){ per=parseInt($(this).val()); page=1; loadPlanes(); });
-  $("#fActivo").on('change',function(){ activo=$(this).val(); page=1; loadPlanes(); });
-  $("#searchPlan").on('keyup',function(){ search=$(this).val(); page=1; debounceLoad(); });
-
-  $('table thead').on('click','th[data-sort]', function(){
-    const nextSort = $(this).data('sort');
-    if(sort === nextSort){
-      dir = (dir === 'asc') ? 'desc' : 'asc';
-    } else {
-      sort = nextSort;
-      dir = 'asc';
+    function updateSortIndicators() {
+      $('.sort-ind').text('');
+      const el = $(`.sort-ind[data-for="${sort}"]`);
+      if (!el.length) return;
+      el.text(dir === 'asc' ? '▲' : '▼');
     }
-    page = 1;
+
+    function renderPagination(total) {
+      const totalPages = Math.ceil(total / per) || 1;
+      const pag = $("#pagination").empty();
+      for (let i = 1; i <= totalPages; i++) {
+        pag.append(`<button class="px-3 py-1 rounded ${i === page ? 'bg-teal-600 text-white' : 'border'}" data-page="${i}">${i}</button>`);
+      }
+    }
+
+    $("#pagination").on('click', 'button', function () { page = parseInt($(this).data('page')); loadPlanes(); });
+    $("#perPage").on('change', function () { per = parseInt($(this).val()); page = 1; loadPlanes(); });
+    $("#fActivo").on('change', function () { activo = $(this).val(); page = 1; loadPlanes(); });
+    $("#searchPlan").on('keyup', function () { search = $(this).val(); page = 1; debounceLoad(); });
+
+    $('table thead').on('click', 'th[data-sort]', function () {
+      const nextSort = $(this).data('sort');
+      if (sort === nextSort) {
+        dir = (dir === 'asc') ? 'desc' : 'asc';
+      } else {
+        sort = nextSort;
+        dir = 'asc';
+      }
+      page = 1;
+      loadPlanes();
+    });
+    $("#btnReset").click(resetForm);
+
+    $("#planForm").submit(function (e) {
+      e.preventDefault();
+      $.post(API_PLANES, $(this).serialize() + '&action=save', function (res) {
+        if (res.success) {
+          resetForm();
+          loadPlanes();
+          showCustomAlert('Plan guardado con éxito', 5000, 'success');
+        } else {
+          showCustomAlert(res.message || 'Error al guardar', 5000, 'error');
+        }
+      }, 'json');
+    });
+
+    $("#planesTable").on('click', '.editBtn', function () {
+      const id = $(this).data('id');
+      $.get(API_PLANES, { action: 'get', id: id }, function (res) {
+        if (!res.success) return;
+        const p = res.data;
+        $("#planId").val(p.id);
+        $("#nombre").val(p.nombre);
+        $("#descripcion").val(p.descripcion || '');
+        $("#max_sucursales").val(p.max_sucursales);
+        $("#max_empleados").val(p.max_empleados);
+        $("#max_servicios").val(p.max_servicios);
+        $("#max_clientes").val(p.max_clientes);
+        $("#activo").val(p.activo);
+        $('#btnSubmit').text('Guardar');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 'json');
+    });
+
+    $("#planesTable").on('click', '.deleteBtn', function () {
+      const id = $(this).data('id');
+      if (!window.confirm('¿Eliminar este plan?')) return;
+      $.post(API_PLANES, { action: 'delete', id: id }, function (res) {
+        if (res.success) {
+          loadPlanes();
+          showCustomAlert('Plan eliminado', 3000, 'info');
+        }
+        else showCustomAlert('No se pudo eliminar.', 5000, 'error');
+      }, 'json');
+    });
+
+    resetForm();
     loadPlanes();
   });
-  $("#btnReset").click(resetForm);
-
-  $("#planForm").submit(function(e){
-    e.preventDefault();
-    $.post(API_PLANES, $(this).serialize()+'&action=save', function(res){
-      if(res.success){
-        resetForm();
-        loadPlanes();
-        showCustomAlert('Plan guardado con éxito', 5000, 'success');
-      } else {
-        showCustomAlert(res.message||'Error al guardar', 5000, 'error');
-      }
-    },'json');
-  });
-
-  $("#planesTable").on('click','.editBtn',function(){
-    const id=$(this).data('id');
-    $.get(API_PLANES,{action:'get',id:id},function(res){
-      if(!res.success) return;
-      const p=res.data;
-      $("#planId").val(p.id);
-      $("#nombre").val(p.nombre);
-      $("#descripcion").val(p.descripcion||'');
-      $("#max_sucursales").val(p.max_sucursales);
-      $("#max_empleados").val(p.max_empleados);
-      $("#max_servicios").val(p.max_servicios);
-      $("#max_clientes").val(p.max_clientes);
-      $("#activo").val(p.activo);
-      $('#btnSubmit').text('Guardar');
-      window.scrollTo({top:0, behavior:'smooth'});
-    },'json');
-  });
-
-  $("#planesTable").on('click','.deleteBtn',function(){
-    const id=$(this).data('id');
-    if(!window.confirm('¿Eliminar este plan?')) return;
-    $.post(API_PLANES,{action:'delete',id:id},function(res){
-      if(res.success) {
-        loadPlanes();
-        showCustomAlert('Plan eliminado', 3000, 'info');
-      }
-      else showCustomAlert('No se pudo eliminar.', 5000, 'error');
-    },'json');
-  });
-
-  resetForm();
-  loadPlanes();
-});
 </script>
 
 <?php

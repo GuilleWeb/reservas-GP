@@ -251,12 +251,12 @@ if ($empresa_info && $empresa_id) {
                 <div class="mt-8 space-y-4 sm:space-y-0 sm:space-x-4">
                   <a href="<?= htmlspecialchars($btn1_url) ?>"
                     class="inline-flex items-center justify-center px-8 py-3 border border-transparent text-base font-bold rounded-full shadow-md text-white bg-teal-600 hover:bg-teal-700 transition">
-                    <i class="fas fa-calendar-check mr-2"></i>
+                    <i data-lucide="calendar-check" class="mr-2"></i>
                     <?= htmlspecialchars((string) ($btn1['text'] ?? 'Agendar Cita')) ?>
                   </a>
                   <a href="<?= htmlspecialchars($btn2_url) ?>"
                     class="inline-flex items-center justify-center px-8 py-3 border border-teal-600 text-base font-bold rounded-full text-teal-700 bg-white hover:bg-teal-50 transition">
-                    <i class="fas fa-store mr-2"></i> <?= htmlspecialchars((string) ($btn2['text'] ?? 'Ver Sedes')) ?>
+                    <i data-lucide="store" class="mr-2"></i> <?= htmlspecialchars((string) ($btn2['text'] ?? 'Ver Sedes')) ?>
                   </a>
                 </div>
               </div>
@@ -283,14 +283,14 @@ if ($empresa_info && $empresa_id) {
             <div class="grid md:grid-cols-2 gap-8">
               <?php if ($mission): ?>
                   <div class="bg-white rounded-2xl shadow-xl p-8 border-t-4 border-teal-600">
-                    <i class="fas fa-bullseye text-teal-600 text-4xl mb-4"></i>
+                    <i data-lucide="bullseye" class="text-teal-600 text-4xl mb-4"></i>
                     <h3 class="text-2xl font-bold text-gray-800 mb-3">Nuestra Misión</h3>
                     <p class="text-gray-600 leading-relaxed"><?= nl2br(htmlspecialchars($mission)) ?></p>
                   </div>
               <?php endif; ?>
               <?php if ($vision): ?>
                   <div class="bg-white rounded-2xl shadow-xl p-8 border-t-4 border-teal-600">
-                    <i class="fas fa-eye text-teal-600 text-4xl mb-4"></i>
+                    <i data-lucide="eye" class="text-teal-600 text-4xl mb-4"></i>
                     <h3 class="text-2xl font-bold text-gray-800 mb-3">Nuestra Visión</h3>
                     <p class="text-gray-600 leading-relaxed"><?= nl2br(htmlspecialchars($vision)) ?></p>
                   </div>
@@ -301,7 +301,7 @@ if ($empresa_info && $empresa_id) {
 
       <?php if (!empty($cfg['team']['enabled']) && !empty($team)): ?>
           <section class="my-16">
-            <h2 class="text-3xl font-bold text-teal-700 mb-8 text-center sm:text-left"><i class="fas fa-users mr-2"></i> Nuestro
+            <h2 class="text-3xl font-bold text-teal-700 mb-8 text-center sm:text-left"><i data-lucide="users" class="mr-2"></i> Nuestro
               Equipo</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
               <?php foreach ($team as $m): ?>
@@ -320,8 +320,7 @@ if ($empresa_info && $empresa_id) {
 
       <?php if (!empty($cfg['services']['enabled']) && !empty($services)): ?>
           <section class="my-16">
-            <h2 class="text-3xl font-bold text-teal-700 mb-8 text-center sm:text-left"><i
-                class="fas fa-concierge-bell mr-2"></i> Nuestros Servicios</h2>
+            <h2 class="text-3xl font-bold text-teal-700 mb-8 text-center sm:text-left"><i data-lucide="bell-ring" class="mr-2"></i> Nuestros Servicios</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
               <?php foreach ($services as $s): ?>
                   <div class="bg-white rounded-2xl shadow-xl p-6 border-t-4 border-teal-600">
@@ -343,7 +342,7 @@ if ($empresa_info && $empresa_id) {
 
       <?php if (!empty($cfg['reviews']['enabled']) && !empty($reviews)): ?>
           <section class="my-20">
-            <h2 class="text-3xl font-bold text-teal-700 mb-10"><i class="fas fa-comments mr-2"></i> Lo que dicen nuestros
+            <h2 class="text-3xl font-bold text-teal-700 mb-10"><i data-lucide="comments" class="mr-2"></i> Lo que dicen nuestros
               clientes</h2>
             <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
               <?php foreach ($reviews as $r): ?>
@@ -366,9 +365,9 @@ if ($empresa_info && $empresa_id) {
                     <div class="mt-4 flex text-sm">
                       <?php for ($i = 1; $i <= 5; $i++): ?>
                           <?php if ($i <= $rating): ?>
-                              <i class="fas fa-star text-yellow-500 mr-1"></i>
+                              <i data-lucide="star" class="text-yellow-500 mr-1"></i>
                           <?php else: ?>
-                              <i class="far fa-star text-yellow-300 mr-1"></i>
+                              <i data-lucide="star" class="text-yellow-300 mr-1"></i>
                           <?php endif; ?>
                       <?php endfor; ?>
                     </div>
@@ -380,7 +379,7 @@ if ($empresa_info && $empresa_id) {
 
       <?php if (!empty($cfg['blog']['enabled'])): ?>
           <section class="my-16">
-            <h2 class="text-3xl font-bold text-teal-700 mb-8 text-center sm:text-left"><i class="fas fa-newspaper mr-2"></i>
+            <h2 class="text-3xl font-bold text-teal-700 mb-8 text-center sm:text-left"><i data-lucide="newspaper" class="mr-2"></i>
               Nuestro Blog</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
               <?php if (!empty($posts)): ?>
@@ -400,8 +399,7 @@ if ($empresa_info && $empresa_id) {
                           <p class="text-sm text-gray-600 mt-2 flex-1"><?= htmlspecialchars($excerpt) ?></p>
                           <div class="mt-4">
                             <a href="<?= htmlspecialchars(v2_public_url('public/blog.php', $id_e)) ?>"
-                              class="inline-flex items-center text-teal-600 font-semibold text-sm hover:text-teal-800">Ver blog <i
-                                class="fas fa-chevron-right ml-1 text-xs"></i></a>
+                              class="inline-flex items-center text-teal-600 font-semibold text-sm hover:text-teal-800">Ver blog <i data-lucide="chevron-right" class="ml-1 text-xs"></i></a>
                           </div>
                         </div>
                       </article>
@@ -413,14 +411,14 @@ if ($empresa_info && $empresa_id) {
             <div class="mt-10 text-center">
               <a href="<?= htmlspecialchars(v2_public_url('public/blog.php', $id_e)) ?>"
                 class="inline-flex items-center text-xl font-semibold text-teal-600 hover:text-teal-800 transition">Ver todas
-                las publicaciones <i class="fas fa-arrow-right ml-2"></i></a>
+                las publicaciones <i data-lucide="arrow-right" class="ml-2"></i></a>
             </div>
           </section>
       <?php endif; ?>
 
       <?php if (!empty($contact['enabled'])): ?>
           <section class="my-16">
-            <h2 class="text-3xl font-bold text-teal-700 mb-8 text-center sm:text-left"><i class="fas fa-envelope mr-2"></i>
+            <h2 class="text-3xl font-bold text-teal-700 mb-8 text-center sm:text-left"><i data-lucide="mail" class="mr-2"></i>
               Contáctanos</h2>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <div class="bg-white rounded-2xl shadow-xl p-8 border-t-4 border-teal-600">
@@ -428,13 +426,13 @@ if ($empresa_info && $empresa_id) {
                 <p class="text-gray-600 mb-4">Estos datos se configuran por empresa.</p>
 
                 <?php if ($c_phone): ?>
-                    <p class="mb-2"><i class="fas fa-phone text-teal-600 w-6"></i> <?= htmlspecialchars((string) $c_phone) ?></p>
+                    <p class="mb-2"><i data-lucide="phone" class="text-teal-600 w-6"></i> <?= htmlspecialchars((string) $c_phone) ?></p>
                 <?php endif; ?>
                 <?php if ($c_email): ?>
-                    <p class="mb-2"><i class="fas fa-envelope text-teal-600 w-6"></i> <?= htmlspecialchars((string) $c_email) ?></p>
+                    <p class="mb-2"><i data-lucide="mail" class="text-teal-600 w-6"></i> <?= htmlspecialchars((string) $c_email) ?></p>
                 <?php endif; ?>
                 <?php if ($c_address): ?>
-                    <p class="mb-2"><i class="fas fa-map-marker-alt text-teal-600 w-6"></i>
+                    <p class="mb-2"><i data-lucide="map-pin" class="text-teal-600 w-6"></i>
                       <?= htmlspecialchars((string) $c_address) ?></p>
                 <?php endif; ?>
 

@@ -47,7 +47,7 @@ include __DIR__ . '/../../includes/topbar.php';
         <div id="postsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             <!-- Cargado por JS -->
             <div class="col-span-full text-center py-20 text-gray-400">
-                <i class="fas fa-sync fa-spin text-4xl mb-4 text-teal-200"></i>
+                <i data-lucide="sync" class="text-4xl mb-4 text-teal-200 animate-spin"></i>
                 <p>Cargando publicaciones...</p>
             </div>
         </div>
@@ -82,7 +82,7 @@ include __DIR__ . '/../../includes/topbar.php';
 
         function loadList(page = 1) {
             currentPage = page;
-            $('#postsGrid').html('<div class="col-span-full text-center py-20"><i class="fas fa-sync fa-spin text-4xl text-teal-400"></i></div>');
+            $('#postsGrid').html('<div class="col-span-full text-center py-20"><i data-lucide="sync" class="text-4xl text-teal-400 animate-spin"></i></div>');
 
             $.get(API_BLOG, { action: 'list', id_e: slug, page: page, per: 6 }, function (res) {
                 const grid = $('#postsGrid').empty();
@@ -108,7 +108,7 @@ include __DIR__ . '/../../includes/topbar.php';
                                 </div>
                                 <a href="<?= view_url('vistas/public/blog.php', $slug) ?>&id=${p.id}" class="inline-flex items-center text-teal-600 font-black text-sm uppercase tracking-wider group">
                                     Seguir leyendo
-                                    <i class="fas fa-arrow-right ml-2 transition group-hover:translate-x-1"></i>
+                                    <i data-lucide="arrow-right" class="ml-2 transition group-hover:translate-x-1"></i>
                                 </a>
                             </div>
                         </article>
@@ -132,7 +132,7 @@ include __DIR__ . '/../../includes/topbar.php';
         }
 
         function loadDetail(id) {
-            $('#postContent').html('<div class="p-20 text-center"><i class="fas fa-sync fa-spin text-5xl text-teal-400"></i></div>');
+            $('#postContent').html('<div class="p-20 text-center"><i data-lucide="sync" class="text-5xl text-teal-400 animate-spin"></i></div>');
             $.get(API_BLOG, { action: 'get', id_e: slug, id: id }, function (res) {
                 if (res.success && res.data) {
                     const p = res.data;
@@ -151,11 +151,11 @@ include __DIR__ . '/../../includes/topbar.php';
                         <h1 class="text-5xl font-black text-gray-900 mb-6 leading-tight">${p.titulo}</h1>
                         <div class="flex items-center gap-6 text-sm text-gray-500 mb-10 border-b pb-8">
                              <div class="flex items-center gap-2">
-                                <i class="fas fa-calendar-alt text-teal-500"></i>
+                                <i data-lucide="calendar" class="text-teal-500"></i>
                                 <span>${date}</span>
                              </div>
                              <div class="flex items-center gap-2">
-                                <i class="fas fa-user text-teal-600"></i>
+                                <i data-lucide="user" class="text-teal-600"></i>
                                 <span>Por ${p.autor || 'Redacción'}</span>
                              </div>
                         </div>

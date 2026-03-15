@@ -14,9 +14,11 @@ if (!$is_tenant_admin) {
 }
 ?>
 
-<div class="max-w-7xl mx-auto flex flex-col md:flex-row gap-6">
+<div class="max-w-7xl mx-auto">
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
 
-  <div class="w-full md:w-1/3 bg-white shadow rounded-2xl p-6 border self-start">
+  <div class="lg:col-span-4">
+      <div class="bg-white rounded-2xl shadow p-5 border">
     <div class="text-xs text-gray-500 font-semibold tracking-wider uppercase mb-1">Empresa</div>
     <div class="text-xl font-extrabold text-gray-900 mb-6">Gestionar Servicio</div>
 
@@ -31,20 +33,20 @@ if (!$is_tenant_admin) {
           required placeholder="Ej: Corte Clásico">
       </div>
 
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Precio Base ($) <span
-            class="text-red-500">*</span></label>
-        <input type="number" step="0.01" min="0" id="precio_base" name="precio_base"
-          class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500" required
-          placeholder="Ej: 15.00">
-      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Precio ($) <span class="text-red-500">*</span></label>
+          <input type="number" step="0.01" min="0" id="precio_base" name="precio_base"
+            class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500" required
+            placeholder="Ej: 15.00">
+        </div>
 
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Duración Aprox (min.) <span
-            class="text-red-500">*</span></label>
-        <input type="number" step="5" min="5" id="duracion_minutos" name="duracion_minutos"
-          class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500" required
-          placeholder="Ej: 30">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Duración (min.) <span class="text-red-500">*</span></label>
+          <input type="number" step="5" min="5" id="duracion_minutos" name="duracion_minutos"
+            class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500" required
+            placeholder="Ej: 30">
+        </div>
       </div>
 
       <div>
@@ -69,15 +71,16 @@ if (!$is_tenant_admin) {
 
       <div class="pt-4 flex items-center justify-between border-t border-gray-100">
         <button type="button" onclick="resetForm()"
-          class="text-sm text-gray-500 hover:text-gray-800 font-medium">Cancelar</button>
+          class="text-sm text-gray-500 hover:text-gray-800 border border-gray-300 rounded-lg px-2 py-2">Nuevo</button>
         <button type="submit"
-          class="bg-gray-900 hover:bg-black text-white px-5 py-2 rounded-lg font-semibold transition"
+          class="bg-teal-600 hover:bg-teal-700 text-white px-2 py-2 rounded-lg font-semibold transition"
           id="btnSave">Guardar Servicio</button>
       </div>
     </form>
   </div>
 
-  <div class="w-full md:w-2/3 bg-white shadow rounded-2xl p-6 border flex flex-col h-[calc(100vh-140px)] min-h-[500px]">
+  <div class="lg:col-span-8">
+      <div class="bg-white rounded-2xl shadow border p-5">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
       <div>
         <h2 class="text-xl font-bold text-gray-800">Directorio de Servicios</h2>
@@ -97,7 +100,7 @@ if (!$is_tenant_admin) {
           <option value="50">50 por pág</option>
         </select>
         <div class="relative">
-          <i class="fas fa-search absolute left-3 top-2.5 text-gray-400"></i>
+          <i data-lucide="search" class="absolute left-3 top-2.5 text-gray-400"></i>
           <input type="text" id="txtSearch"
             class="pl-9 border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-teal-500 w-48"
             placeholder="Buscar...">
@@ -126,7 +129,10 @@ if (!$is_tenant_admin) {
     </div>
 
   </div>
+</div>
+</div>
 
+</div>
 </div>
 
 <script>
@@ -139,7 +145,7 @@ if (!$is_tenant_admin) {
       return;
     }
 
-    html += `<button onclick="loadData(${current - 1})" class="px-3 py-1 rounded-md border bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50" ${current === 1 ? 'disabled' : ''}><i class="fas fa-chevron-left"></i></button>`;
+    html += `<button onclick="loadData(${current - 1})" class="px-3 py-1 rounded-md border bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50" ${current === 1 ? 'disabled' : ''}><i data-lucide="chevron-left"></i></button>`;
 
     for (let i = 1; i <= total_pages; i++) {
       if (i === 1 || i === total_pages || (i >= current - 1 && i <= current + 1)) {
@@ -150,7 +156,7 @@ if (!$is_tenant_admin) {
       }
     }
 
-    html += `<button onclick="loadData(${current + 1})" class="px-3 py-1 rounded-md border bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50" ${current === total_pages ? 'disabled' : ''}><i class="fas fa-chevron-right"></i></button>`;
+    html += `<button onclick="loadData(${current + 1})" class="px-3 py-1 rounded-md border bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50" ${current === total_pages ? 'disabled' : ''}><i data-lucide="chevron-right"></i></button>`;
 
     $('#pagination').html(html);
   }
@@ -162,7 +168,7 @@ if (!$is_tenant_admin) {
     const status = $('#filterStatus').val();
 
     const tbody = $('#tableBody');
-    tbody.html('<tr><td colspan="5" class="py-10 text-center"><i class="fas fa-circle-notch fa-spin text-teal-600 text-3xl mb-2"></i><br><span class="text-gray-500">Cargando servicios...</span></td></tr>');
+    tbody.html('<tr><td colspan="5" class="py-10 text-center"><i data-lucide="loader-2" class="text-teal-600 text-3xl mb-2 animate-spin"></i><br><span class="text-gray-500">Cargando servicios...</span></td></tr>');
 
     $.get('<?= app_url('api/admin/servicios.php') ?>', { action: 'list', page: currentPage, per: per, search: search, status: status }, function (res) {
       tbody.empty();
@@ -180,16 +186,16 @@ if (!$is_tenant_admin) {
                 <div class="text-xs text-gray-500 truncate max-w-xs" title="${item.descripcion}">${item.descripcion || '-'}</div>
             </td>
             <td class="py-3 px-4 font-mono text-sm text-gray-700">$${price}</td>
-            <td class="py-3 px-4 text-sm text-gray-600"><i class="far fa-clock text-gray-400 mr-1"></i> ${item.duracion_minutos} min</td>
+            <td class="py-3 px-4 text-sm text-gray-600"><i data-lucide="clock" class="text-gray-400 mr-1"></i> ${item.duracion_minutos} min</td>
             <td class="py-3 px-4">${badge}</td>
             <td class="py-3 px-4 text-right">
                 <div class="flex justify-end space-x-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                     <button onclick="editItem(${item.id})" class="text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded-lg border border-blue-200 shadow-sm" title="Editar">
-                        <i class="fas fa-edit"></i>
+                        <i data-lucide="pen"></i>
                     </button>
                     ${parseInt(item.activo) === 0 ? `
                         <button onclick="deleteItem(${item.id})" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2.5 py-1.5 rounded-lg border border-red-200 shadow-sm" title="Eliminar">
-                            <i class="fas fa-trash-alt"></i>
+                            <i data-lucide="trash-2"></i>
                         </button>`
               : ''}
                 </div>
@@ -252,9 +258,9 @@ if (!$is_tenant_admin) {
     const al = $('#formAlert');
     al.removeClass('hidden bg-red-50 text-red-700 border-red-200 bg-green-50 text-green-700 border-green-200 border');
     if (isError) {
-      al.addClass('bg-red-50 text-red-700 border-red-200 border').html(`<i class="fas fa-exclamation-circle mr-2"></i> ${msg}`);
+      al.addClass('bg-red-50 text-red-700 border-red-200 border').html(`<i data-lucide="alert-circle" class="mr-2"></i> ${msg}`);
     } else {
-      al.addClass('bg-green-50 text-green-700 border-green-200 border').html(`<i class="fas fa-check-circle mr-2"></i> ${msg}`);
+      al.addClass('bg-green-50 text-green-700 border-green-200 border').html(`<i data-lucide="check-circle-2" class="mr-2"></i> ${msg}`);
     }
     setTimeout(() => al.addClass('hidden'), 5000);
   }
@@ -268,7 +274,7 @@ if (!$is_tenant_admin) {
       e.preventDefault();
       const btn = $('#btnSave');
       const oldHtml = btn.html();
-      btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i> Guardando...');
+      btn.prop('disabled', true).html('<i data-lucide="loader-2" class="mr-2 animate-spin"></i> Guardando...');
 
       let data = $(this).serializeArray();
       if (!$("#activo").is(":checked")) {

@@ -29,8 +29,7 @@ include __DIR__ . '/../../includes/public_topbar.php';
                         <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Correo
                             Electrónico</label>
                         <div class="relative group">
-                            <i
-                                class="fas fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 transition-colors group-focus-within:text-teal-500"></i>
+                            <i data-lucide="mail" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 transition-colors group-focus-within:text-teal-500"></i>
                             <input type="email" id="email" name="email" required
                                 class="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition-all placeholder:text-gray-300"
                                 placeholder="tu@email.com">
@@ -41,8 +40,7 @@ include __DIR__ . '/../../includes/public_topbar.php';
                         <label
                             class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Contraseña</label>
                         <div class="relative group">
-                            <i
-                                class="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 transition-colors group-focus-within:text-teal-500"></i>
+                            <i data-lucide="lock" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 transition-colors group-focus-within:text-teal-500"></i>
                             <input type="password" id="password" name="password" required
                                 class="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition-all placeholder:text-gray-300"
                                 placeholder="••••••••">
@@ -62,7 +60,7 @@ include __DIR__ . '/../../includes/public_topbar.php';
                 <button type="submit" id="btnLogin"
                     class="w-full bg-teal-600 hover:bg-teal-700 text-white py-5 rounded-2xl font-black shadow-xl shadow-teal-100 transition transform active:scale-[0.98] flex items-center justify-center gap-3">
                     <span>Iniciar Sesión</span>
-                    <i class="fas fa-arrow-right text-sm"></i>
+                    <i data-lucide="arrow-right" class="text-sm"></i>
                 </button>
             </form>
 
@@ -92,7 +90,7 @@ include __DIR__ . '/../../includes/public_topbar.php';
             const btn = $('#btnLogin');
             const alert = $('#loginAlert').addClass('hidden');
 
-            btn.prop('disabled', true).html('<i class="fas fa-circle-notch fa-spin mr-2"></i> Verificando...');
+            btn.prop('disabled', true).html('<i data-lucide="loader-2" class="mr-2 animate-spin"></i> Verificando...');
 
             $.ajax({
                 url: API_AUTH,
@@ -109,7 +107,7 @@ include __DIR__ . '/../../includes/public_topbar.php';
                     }
                 },
                 error: function (xhr) {
-                    btn.prop('disabled', false).html('<span>Iniciar Sesión</span><i class="fas fa-arrow-right text-sm"></i>');
+                    btn.prop('disabled', false).html('<span>Iniciar Sesión</span><i data-lucide="arrow-right" class="text-sm"></i>');
                     let msg = 'Credenciales inválidas.';
                     try {
                         const res = JSON.parse(xhr.responseText);

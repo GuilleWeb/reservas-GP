@@ -213,7 +213,8 @@ include __DIR__ . '/../../includes/topbar.php';
                         <div class="flex items-start gap-4">
                             <div
                                 class="w-10 h-10 bg-teal-50 rounded-full flex items-center justify-center text-teal-600 mt-1">
-                                <i class="fas fa-map-marker-alt"></i></div>
+                                <i data-lucide="map-pin"></i>
+                            </div>
                             <div>
                                 <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sucursal
                                 </div>
@@ -222,8 +223,9 @@ include __DIR__ . '/../../includes/topbar.php';
                         </div>
                         <div class="flex items-start gap-4">
                             <div
-                                class="w-10 h-10 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600 mt-1">
-                                <i class="fas fa-magic"></i></div>
+                                class="w-10 h-10 bg-teal-50 rounded-full flex items-center justify-center text-teal-600 mt-1">
+                                <i data-lucide="magic"></i>
+                            </div>
                             <div>
                                 <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Servicio
                                 </div>
@@ -233,7 +235,8 @@ include __DIR__ . '/../../includes/topbar.php';
                         <div class="flex items-start gap-4">
                             <div
                                 class="w-10 h-10 bg-purple-50 rounded-full flex items-center justify-center text-purple-600 mt-1">
-                                <i class="fas fa-user-tie"></i></div>
+                                <i data-lucide="user-tie"></i>
+                            </div>
                             <div>
                                 <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Especialista
                                 </div>
@@ -245,7 +248,8 @@ include __DIR__ . '/../../includes/topbar.php';
                         <div class="flex items-start gap-4">
                             <div
                                 class="w-10 h-10 bg-yellow-50 rounded-full flex items-center justify-center text-yellow-600 mt-1">
-                                <i class="fas fa-calendar-check"></i></div>
+                                <i data-lucide="calendar-check"></i>
+                            </div>
                             <div>
                                 <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Fecha y Hora
                                 </div>
@@ -255,7 +259,8 @@ include __DIR__ . '/../../includes/topbar.php';
                         <div class="flex items-start gap-4">
                             <div
                                 class="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 mt-1">
-                                <i class="fas fa-user"></i></div>
+                                <i data-lucide="user"></i>
+                            </div>
                             <div>
                                 <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Cliente
                                 </div>
@@ -313,7 +318,7 @@ include __DIR__ . '/../../includes/topbar.php';
             $('.step-dot').removeClass('active completed text-white border-teal-500').addClass('text-gray-400 border-gray-100');
             $(`[data-step="${currentStep}"] .step-dot`).addClass('active border-teal-500 text-teal-600');
             for (let i = 1; i < currentStep; i++) {
-                $(`[data-step="${i}"] .step-dot`).addClass('completed text-white').html('<i class="fas fa-check"></i>');
+                $(`[data-step="${i}"] .step-dot`).addClass('completed text-white').html('<i data-lucide="check"></i>');
             }
             $(`[data-step="${currentStep}"] .step-dot`).text(currentStep);
 
@@ -355,7 +360,7 @@ include __DIR__ . '/../../includes/topbar.php';
                     grid.append(`
                     <div class="card-choice ${preselectedSedeId == s.id ? 'selected' : ''}" data-id="${s.id}" data-nombre="${s.nombre}" data-type="sede">
                         <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 bg-teal-50 rounded-xl flex items-center justify-center text-teal-600"><i class="fas fa-building"></i></div>
+                            <div class="w-12 h-12 bg-teal-50 rounded-xl flex items-center justify-center text-teal-600"><i data-lucide="building"></i></div>
                             <div>
                                 <div class="font-black text-gray-900">${s.nombre}</div>
                                 <div class="text-xs text-gray-400">${s.direccion || ''}</div>
@@ -372,7 +377,7 @@ include __DIR__ . '/../../includes/topbar.php';
         });
 
         function loadServicios() {
-            $('#serviciosGrid').html('<div class="text-center py-10"><i class="fas fa-sync fa-spin"></i></div>');
+            $('#serviciosGrid').html('<div class="text-center py-10"><i data-lucide="sync" class="animate-spin"></i></div>');
             $.get(API, { action: 'get_servicios', id_e: slug }, function (res) {
                 const grid = $('#serviciosGrid').empty();
                 if (res.success && res.data) {
@@ -380,7 +385,7 @@ include __DIR__ . '/../../includes/topbar.php';
                         grid.append(`
                         <div class="card-choice flex items-center justify-between" data-id="${s.id}" data-nombre="${s.nombre}" data-precio="${s.precio}" data-type="servicio">
                             <div class="flex items-center gap-4">
-                                <div class="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600"><i class="fas fa-magic"></i></div>
+                                <div class="w-10 h-10 bg-teal-50 rounded-xl flex items-center justify-center text-teal-600"><i data-lucide="magic"></i></div>
                                 <div>
                                     <div class="font-black text-gray-900">${s.nombre}</div>
                                     <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">${s.duracion || 30} MIN</div>
@@ -395,7 +400,7 @@ include __DIR__ . '/../../includes/topbar.php';
         }
 
         function loadEmpleados() {
-            $('#empleadosGrid').html('<div class="text-center py-10 col-span-full"><i class="fas fa-sync fa-spin"></i></div>');
+            $('#empleadosGrid').html('<div class="text-center py-10 col-span-full"><i data-lucide="sync" class="animate-spin"></i></div>');
             $.get(API, { action: 'get_empleados', id_e: slug, sede_id: selection.sede.id }, function (res) {
                 const grid = $('#empleadosGrid').empty();
                 if (res.success && res.data) {
@@ -478,7 +483,7 @@ include __DIR__ . '/../../includes/topbar.php';
         });
 
         function loadSlots(fecha) {
-            const grid = $('#timesGrid').html('<div class="col-span-full text-center py-10"><i class="fas fa-sync fa-spin"></i></div>');
+            const grid = $('#timesGrid').html('<div class="col-span-full text-center py-10"><i data-lucide="sync" class="animate-spin"></i></div>');
             $.get(API, {
                 action: 'get_horarios',
                 id_e: slug,
@@ -516,7 +521,7 @@ include __DIR__ . '/../../includes/topbar.php';
 
         async function finishBooking() {
             const btn = $('#nextBtn');
-            btn.prop('disabled', true).html('<i class="fas fa-circle-notch fa-spin mr-2"></i> Procesando...');
+            btn.prop('disabled', true).html('<i data-lucide="loader-2" class="mr-2 animate-spin"></i> Procesando...');
 
             try {
                 const res = await $.post(API, {
@@ -539,7 +544,7 @@ include __DIR__ . '/../../includes/topbar.php';
                     $('#wizardContainer').html(`
                     <div class="text-center py-20 animate-fade-in">
                         <div class="w-32 h-32 bg-teal-50 rounded-full flex items-center justify-center text-teal-500 text-6xl mx-auto shadow-inner mb-8">
-                            <i class="fas fa-check"></i>
+                            <i data-lucide="check"></i>
                         </div>
                         <h2 class="text-4xl font-black text-gray-900 mb-4">¡Listo, ${selection.p_nombre.split(' ')[0]}!</h2>
                         <p class="text-gray-500 max-w-sm mx-auto mb-10 text-lg">Tu cita ha sido agendada con éxito para el <span class="font-bold text-gray-900">${selection.fecha} a las ${selection.hora}</span>. Te esperamos.</p>

@@ -90,7 +90,7 @@ $home_href = $is_public_view
             <button
               class="hidden md:inline-flex text-gray-700 focus:outline-none h-10 w-10 items-center justify-center rounded-lg hover:bg-gray-50 border"
               type="button">
-              <i class="fas fa-angles-left"></i>
+              <i data-lucide="chevrons-left"></i>
             </button>
           <?php endif; ?>
         </div>
@@ -129,7 +129,7 @@ $home_href = $is_public_view
               Hola, <span class="font-medium"><?= htmlspecialchars($user['nombre'] ?? '') ?></span>
             </div>
             <button id="logoutBtn" class="px-3 py-1 rounded-md bg-red-500 text-white hover:opacity-90" type="button">
-              <i class="fas fa-sign-out-alt mr-1"></i> Salir
+              <i data-lucide="log-out" class="mr-1"></i> Salir
             </button>
           <?php else: ?>
             <a href="<?= htmlspecialchars(v2_link_with_slug('login.php', $id_e)) ?>"

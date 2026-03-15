@@ -68,7 +68,7 @@
             </select>
             <button type="button" id="btnNuevoPaciente" 
               class="px-3 py-2 bg-teal-600 text-white rounded text-sm flex items-center justify-center" title="agregar nuevo paciente">
-              <i class="fa fa-user-plus"></i>
+              <i data-lucide="user-plus"></i>
             </button>
           </div>
         </div>

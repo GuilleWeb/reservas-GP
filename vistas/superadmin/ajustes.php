@@ -97,10 +97,10 @@ $is_tenant_admin = ($id_e && in_array($role, ['admin', 'gerente']));
                     <button type="button" id="btnReloadGlobal"
                         class="px-4 py-2 text-sm font-bold text-gray-600 border rounded-xl hover:bg-gray-50 transition">Recargar</button>
                     <button type="submit"
-                        class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-lg transition transform hover:scale-[1.02]">Guardar
+                        class="px-6 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-bold shadow-lg transition transform hover:scale-[1.02]">Guardar
                         Cambios Globales</button>
                 </div>
-                <div id="saveInfoGlobal" class="hidden text-sm text-indigo-600 text-right font-bold mt-2"></div>
+                <div id="saveInfoGlobal" class="hidden text-sm text-teal-600 text-right font-bold mt-2"></div>
             </form>
         </div>
     <?php endif; ?>
@@ -109,7 +109,8 @@ $is_tenant_admin = ($id_e && in_array($role, ['admin', 'gerente']));
     <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
         <div class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Apariencia</div>
         <div class="text-2xl font-extrabold text-gray-900 mb-6">
-            <?= $is_superadmin ? 'Personalización Visual de la Plataforma' : 'Personalización de Mi Empresa' ?></div>
+            <?= $is_superadmin ? 'Personalización Visual de la Plataforma' : 'Personalización de Mi Empresa' ?>
+        </div>
 
         <form id="tenantForm" class="space-y-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

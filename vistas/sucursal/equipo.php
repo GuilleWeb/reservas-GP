@@ -6,25 +6,25 @@ $module = 'equipo';
 include __DIR__ . '/../../includes/topbar.php';
 ?>
 
-<div class="max-w-7xl mx-auto flex flex-col md:flex-row gap-6">
+<div class="max-w-7xl mx-auto">
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
 
-  <div class="w-full md:w-1/3 bg-white shadow rounded-2xl p-6 border self-start">
+  <div class="lg:col-span-4">
+      <div class="bg-white rounded-2xl shadow p-5 border">
     <div class="text-xl font-extrabold text-gray-900 mb-6">Gestionar Miembro</div>
 
     <form id="formEquipo" class="space-y-4">
       <input type="hidden" id="miembro_id" name="id" value="0">
 
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Nombre Completo <span
-            class="text-red-500">*</span></label>
-        <input type="text" id="nombre" name="nombre" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2"
-          required>
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Especialidad / Cargo</label>
-        <input type="text" id="especialidad" name="especialidad"
-          class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Nombre <span class="text-red-500">*</span></label>
+          <input type="text" id="nombre" name="nombre" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" required placeholder="Ej: Carlos Barbero">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Especialidad / Título</label>
+          <input type="text" id="especialidad" name="especialidad" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="Ej: Barber Master">
+        </div>
       </div>
 
       <div>
@@ -51,15 +51,17 @@ include __DIR__ . '/../../includes/topbar.php';
 
       <div class="pt-4 flex items-center justify-between border-t border-gray-100">
         <button type="button" onclick="resetForm()"
-          class="text-sm text-gray-500 hover:text-gray-800 font-medium">Cancelar</button>
+          class="text-sm text-gray-500 hover:text-gray-800 border border-gray-300 rounded-lg px-2 py-2">Nuevo</button>
         <button type="submit"
-          class="bg-gray-900 hover:bg-black text-white px-5 py-2 rounded-lg font-semibold transition"
+          class="bg-teal-600 hover:bg-teal-700 text-white px-2 py-2 rounded-lg font-semibold transition"
           id="btnSave">Guardar</button>
       </div>
     </form>
   </div>
+  </div>
 
-  <div class="w-full md:w-2/3 bg-white shadow rounded-2xl p-6 border flex flex-col h-[calc(100vh-140px)] min-h-[500px]">
+  <div class="lg:col-span-8">
+      <div class="bg-white rounded-2xl shadow border p-5">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
       <h2 class="text-xl font-bold text-gray-800">Nuestro Equipo</h2>
     </div>
@@ -80,8 +82,11 @@ include __DIR__ . '/../../includes/topbar.php';
     <div class="mt-4 flex flex-col sm:flex-row items-center justify-between border-t pt-4">
       <div class="text-sm text-gray-500" id="pageInfo"></div>
       <div id="pagination" class="flex items-center space-x-1"></div>
-    </div>
   </div>
+</div>
+</div>
+
+</div>
 </div>
 
 <script>
@@ -99,8 +104,8 @@ include __DIR__ . '/../../includes/topbar.php';
             <td class="py-3 px-4 font-semibold text-gray-800 text-sm italic">${item.nombre}</td>
             <td class="py-3 px-4 text-sm text-gray-600">${item.especialidad || '-'}</td>
             <td class="py-3 px-4 text-right">
-                <button onclick="editItem(${item.id})" class="text-blue-500 hover:text-blue-700 bg-blue-50 px-2.5 py-1.5 rounded-lg border border-blue-200"><i class="fas fa-edit"></i></button>
-                <button onclick="deleteItem(${item.id})" class="text-red-500 hover:text-red-700 bg-red-50 px-2.5 py-1.5 rounded-lg border border-red-200"><i class="fas fa-trash-alt"></i></button>
+                <button onclick="editItem(${item.id})" class="text-blue-500 hover:text-blue-700 bg-blue-50 px-2.5 py-1.5 rounded-lg border border-blue-200"><i data-lucide="pen"></i></button>
+                <button onclick="deleteItem(${item.id})" class="text-red-500 hover:text-red-700 bg-red-50 px-2.5 py-1.5 rounded-lg border border-red-200"><i data-lucide="trash-2"></i></button>
             </td>
           </tr>
         `);

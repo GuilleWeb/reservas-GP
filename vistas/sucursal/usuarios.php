@@ -9,7 +9,7 @@ $role = $user['rol'] ?? null;
 $es_super = ($role === 'superadmin');
 $empresa_id_user = $user['empresa_id'] ?? null;
 
-if (!$user || (!$es_super && !in_array($role, ['superadmin', 'admin','gerente']))) {
+if (!$user || (!$es_super && !in_array($role, ['superadmin', 'admin', 'gerente']))) {
   echo '<div class="max-w-3xl mx-auto bg-white p-6 rounded-xl shadow">No autorizado.</div>';
   return;
 }
@@ -68,7 +68,8 @@ if ($es_super) {
                 <option value="">Sin sucursal</option>
                 <?php foreach ($sucursales as $s): ?>
                   <option value="<?= (int) $s['id'] ?>" data-empresa="<?= (int) $s['empresa_id'] ?>">
-                    <?= htmlspecialchars($s['nombre']) ?></option>
+                    <?= htmlspecialchars($s['nombre']) ?>
+                  </option>
                 <?php endforeach; ?>
               </select>
             </div>
@@ -89,7 +90,7 @@ if ($es_super) {
 
           <div class="pt-2 flex items-center justify-between gap-2">
             <button type="button" id="btnReset" class="px-4 py-2 border rounded-lg">Nuevo</button>
-            <button type="submit" id="btnSubmit" class="px-4 py-2 bg-gray-900 text-white rounded-lg">Crear</button>
+            <button type="submit" id="btnSubmit" class="px-2 py-2 bg-teal-600 text-white rounded-lg">Crear</button>
           </div>
         </form>
       </div>
@@ -99,6 +100,7 @@ if ($es_super) {
       <div class="bg-white rounded-2xl shadow border">
         <div class="p-5 border-b">
           <div class="font-semibold text-gray-900">Listado</div>
+          <div class="text-sm text-gray-500">Acciones: editar y eliminar.</div>
 
           <div class="mt-4 grid grid-cols-1 md:grid-cols-6 gap-3">
             <input id="searchUser" type="text" placeholder="Buscar por nombre o email..."
@@ -191,8 +193,8 @@ if ($es_super) {
           <td class="px-4 py-3">${badgeActive(u.activo)}</td>
           <td class="px-4 py-3">
             <div class="flex items-center justify-end gap-2">
-              <button class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-white editBtn" title="Editar" data-id="${u.id}"><i class="fas fa-pen"></i></button>
-              <button class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-white text-red-600 deleteBtn" title="Desactivar" data-id="${u.id}"><i class="fas fa-trash"></i></button>
+              <button class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-white editBtn" title="Editar" data-id="${u.id}"><i data-lucide="pen"></i></button>
+              <button class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-white text-red-600 deleteBtn" title="Desactivar" data-id="${u.id}"><i data-lucide="trash-2"></i></button>
             </div>
           </td>
         </tr>`);
@@ -214,7 +216,7 @@ if ($es_super) {
       const totalPages = Math.ceil(total / per) || 1;
       const pag = $('#pagination').empty();
       for (let i = 1; i <= totalPages; i++) {
-        pag.append(`<button class="px-3 py-1 rounded ${i === page ? 'bg-gray-900 text-white' : 'border'}" data-page="${i}">${i}</button>`);
+        pag.append(`<button class="px-3 py-1 rounded ${i === page ? 'bg-teal-600 text-white' : 'border'}" data-page="${i}">${i}</button>`);
       }
     }
 

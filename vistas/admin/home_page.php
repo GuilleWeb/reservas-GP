@@ -13,7 +13,7 @@ include __DIR__ . '/../../includes/topbar.php';
       <div>
         <h2 class="text-2xl font-extrabold text-gray-900">Configuración de Home Page</h2>
         <a href="../../vistas/public/inicio.php?slug=<?= htmlspecialchars($empresa['slug']) ?>" class="nav-link text-teal-900">
-          <i class="fas fa-home w-5"></i>
+          <i data-lucide="home" class="w-5"></i>
           <span class="ml-2 sidebar-label">Ver vista publica</span>
         </a>
         <p class="text-sm text-gray-500">Personaliza las secciones y elementos que tus clientes verán al entrar a tu
@@ -21,7 +21,7 @@ include __DIR__ . '/../../includes/topbar.php';
       </div>
       <div id="saveStatus"
         class="hidden text-teal-600 font-bold text-sm bg-teal-50 px-3 py-1 rounded-full animate-pulse border border-teal-100">
-        <i class="fas fa-check-circle mr-1"></i> Cambios guardados
+        <i data-lucide="check-circle-2" class="mr-1"></i> Cambios guardados
       </div>
     </div>
 

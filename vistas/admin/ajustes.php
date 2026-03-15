@@ -123,27 +123,27 @@ include __DIR__ . '/../../includes/topbar.php';
           <h4 class="font-medium text-gray-900 mb-3">Redes sociales</h4>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div class="relative">
-              <span class="absolute inset-y-0 left-0 flex items-center pl-3"><i class="fab fa-facebook-f text-gray-500"></i></span>
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3"><i data-lucide="facebook-f" class="text-gray-500"></i></span>
               <input id="social_input_facebook" name="redes[facebook]" class="border rounded-lg p-2 pl-10 w-full" placeholder="https://facebook link...">
             </div>
             <div class="relative">
-              <span class="absolute inset-y-0 left-0 flex items-center pl-3"><i class="fab fa-instagram text-gray-500"></i></span>
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3"><i data-lucide="instagram" class="text-gray-500"></i></span>
               <input id="social_input_instagram" name="redes[instagram]" class="border rounded-lg p-2 pl-10 w-full" placeholder="https://instagram.com/...">
             </div>
             <div class="relative">
-              <span class="absolute inset-y-0 left-0 flex items-center pl-3"><i class="fab fa-whatsapp text-gray-500"></i></span>
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3"><i data-lucide="message-circle" class="text-gray-500"></i></span>
               <input id="social_whatsapp" name="redes[whatsapp]" class="border rounded-lg p-2 pl-10 w-full" placeholder="https://wa.me/...">
             </div>
             <div class="relative">
-              <span class="absolute inset-y-0 left-0 flex items-center pl-3"><i class="fab fa-tiktok text-gray-500"></i></span>
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3"><i data-lucide="music" class="text-gray-500"></i></span>
               <input id="social_tiktok" name="redes[tiktok]" class="border rounded-lg p-2 pl-10 w-full" placeholder="https://tiktok.com/...">
             </div>
             <div class="relative">
-              <span class="absolute inset-y-0 left-0 flex items-center pl-3"><i class="fab fa-x-twitter text-gray-500"></i></span>
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3"><i data-lucide="twitter" class="text-gray-500"></i></span>
               <input id="social_input_twitter" name="redes[x]" class="border rounded-lg p-2 pl-10 w-full" placeholder="https://x.com/...">
             </div>
             <div class="relative">
-              <span class="absolute inset-y-0 left-0 flex items-center pl-3"><i class="fas fa-globe text-gray-500"></i></span>
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3"><i data-lucide="globe" class="text-gray-500"></i></span>
               <input id="social_otro" name="redes[otro]" class="border rounded-lg p-2 pl-10 w-full" placeholder="https://dominio.com/...">
             </div>
             <p class="text-xs text-gray-500 mt-1">Solo los enlaces que agregues se mostraran en las secciones correspondientes.</p>

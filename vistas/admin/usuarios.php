@@ -34,17 +34,15 @@ include __DIR__ . '/../../includes/topbar.php';
           <div>
             <label class="block text-sm font-medium text-gray-700">Nombre Completo <span
                 class="text-red-500">*</span></label>
-            <input type="text"
-              class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 transition"
-              id="nombre" name="nombre" required placeholder="Ej: Maria López">
+            <input type="text" class="border rounded-lg p-2 w-full transition" id="nombre" name="nombre" required
+              placeholder="Ej: Maria López">
           </div>
 
           <div>
             <label class="block text-sm font-medium text-gray-700">Email Académico/Personal <span
                 class="text-red-500">*</span></label>
-            <input type="email"
-              class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 transition"
-              id="email" name="email" required placeholder="ejemplo@correo.com">
+            <input type="email" class="border rounded-lg p-2 w-full transition" id="email" name="email" required
+              placeholder="ejemplo@correo.com">
           </div>
 
           <div>
@@ -56,9 +54,7 @@ include __DIR__ . '/../../includes/topbar.php';
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700">Rol <span class="text-red-500">*</span></label>
-              <select
-                class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500"
-                id="rol" name="rol" required>
+              <select class="border rounded-lg p-2 w-full" id="rol" name="rol" required>
                 <option value="admin">Admin</option>
                 <option value="gerente">Gerente</option>
                 <option value="empleado" selected>Empleado</option>
@@ -97,7 +93,7 @@ include __DIR__ . '/../../includes/topbar.php';
             <button type="button" id="btnReset"
               class="text-sm text-gray-500 hover:text-gray-800 font-medium px-2 py-1">Cancelar</button>
             <button type="submit" id="btnSubmit"
-              class="bg-gray-900 hover:bg-black text-white px-6 py-2.5 rounded-lg font-bold shadow-lg transition transform hover:scale-[1.02]">Crear
+              class="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2.5 rounded-lg font-bold shadow-lg transition transform hover:scale-[1.02]">Crear
               Usuario</button>
           </div>
         </form>
@@ -119,7 +115,7 @@ include __DIR__ . '/../../includes/topbar.php';
 
             <div class="flex flex-wrap items-center gap-2">
               <div class="relative">
-                <i class="fas fa-search absolute left-3 top-3 text-gray-300"></i>
+                <i data-lucide="search" class="absolute left-3 top-3 text-gray-300"></i>
                 <input id="searchUser" type="text" placeholder="Buscar..."
                   class="pl-9 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 w-44">
               </div>
@@ -140,9 +136,9 @@ include __DIR__ . '/../../includes/topbar.php';
             <thead class="bg-gray-50 text-gray-600 sticky top-0 z-10 shadow-sm">
               <tr>
                 <th class="px-6 py-3 text-xs font-bold uppercase tracking-wider cursor-pointer hover:text-teal-600"
-                  data-sort="nombre">Nombre <i class="fas fa-sort ml-1 opacity-20"></i></th>
+                  data-sort="nombre">Nombre <i data-lucide="arrow-up-down" class="ml-1 opacity-20"></i></th>
                 <th class="px-6 py-3 text-xs font-bold uppercase tracking-wider cursor-pointer hover:text-teal-600"
-                  data-sort="rol">Rol <i class="fas fa-sort ml-1 opacity-20"></i></th>
+                  data-sort="rol">Rol <i data-lucide="arrow-up-down" class="ml-1 opacity-20"></i></th>
                 <th class="px-6 py-3 text-xs font-bold uppercase tracking-wider">Sucursal</th>
                 <th class="px-6 py-3 text-xs font-bold uppercase tracking-wider text-center">Estado</th>
                 <th class="px-6 py-3 text-xs font-bold uppercase tracking-wider text-right">Acciones</th>
@@ -208,8 +204,10 @@ include __DIR__ . '/../../includes/topbar.php';
             <td class="px-6 py-4 text-sm text-gray-500">${u.sucursal_nombre || '<span class="italic text-gray-300">Global</span>'}</td>
             <td class="px-6 py-4 text-center">${badge}</td>
             <td class="px-6 py-4 text-right">
-                <button class="text-blue-500 hover:text-blue-700 bg-blue-50 p-2 rounded-lg transition editBtn" data-id="${u.id}"><i class="fas fa-edit"></i></button>
-                <button class="text-red-500 hover:text-red-700 bg-red-50 p-2 rounded-lg transition deleteBtn" data-id="${u.id}"><i class="fas fa-trash-alt"></i></button>
+              <div class="flex items-center justify-center gap-1">  
+                <button class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-white editBtn" title="Editar" data-id="${u.id}"><i data-lucide="pen"></i></button>
+                <button class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-white text-red-600 deleteBtn" data-id="${u.id}"><i data-lucide="trash-2"></i></button>
+              </div>
             </td>
           </tr>
         `);

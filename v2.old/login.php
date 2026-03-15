@@ -43,7 +43,7 @@ if ($u) {
       <div class="text-center mb-6">
         <div class="flex justify-center mb-2">
           <div class="h-14 w-14 rounded-full bg-teal-600 text-white grid place-items-center text-2xl font-bold">
-            <i class="fas fa-user-circle"></i>
+            <i data-lucide="user-circle"></i>
           </div>
         </div>
         <h1 class="text-2xl font-bold text-gray-800">Bienvenido</h1>

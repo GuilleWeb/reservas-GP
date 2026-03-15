@@ -32,7 +32,7 @@ $id_e = request_id_e();
             </div>
             <a class="hidden sm:inline-flex items-center text-teal-700 font-semibold"
               href="<?= htmlspecialchars('inicio.php?id_e=' . rawurlencode($id_e)) ?>">
-              <i class="fas fa-arrow-left mr-2"></i> Volver
+              <i data-lucide="arrow-left" class="mr-2"></i> Volver
             </a>
           </div>
 
@@ -42,14 +42,14 @@ $id_e = request_id_e();
           <section id="step1" class="mt-6">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="servicesGrid">
               <div class="col-span-full text-center text-gray-500 py-10">
-                <i class="fas fa-spinner fa-spin mr-2"></i> Cargando servicios...
+                <i data-lucide="loader-2" class="mr-2 animate-spin"></i> Cargando servicios...
               </div>
             </div>
             <div class="mt-8 flex justify-end">
               <button id="btnTo2"
                 class="px-6 py-3 bg-teal-600 text-white font-semibold rounded-lg shadow-md hover:bg-teal-700 transition disabled:opacity-50"
                 disabled>
-                Siguiente <i class="fas fa-arrow-right ml-2"></i>
+                Siguiente <i data-lucide="arrow-right" class="ml-2"></i>
               </button>
             </div>
           </section>
@@ -61,12 +61,12 @@ $id_e = request_id_e();
               <button
                 class="px-4 py-2 text-teal-600 font-semibold border border-teal-600 rounded-lg hover:bg-teal-50 transition"
                 id="backTo1">
-                <i class="fas fa-arrow-left mr-2"></i> Anterior
+                <i data-lucide="arrow-left" class="mr-2"></i> Anterior
               </button>
               <button id="btnTo3"
                 class="px-6 py-3 bg-teal-600 text-white font-semibold rounded-lg shadow-md hover:bg-teal-700 transition disabled:opacity-50"
                 disabled>
-                Siguiente <i class="fas fa-arrow-right ml-2"></i>
+                Siguiente <i data-lucide="arrow-right" class="ml-2"></i>
               </button>
             </div>
           </section>
@@ -78,12 +78,12 @@ $id_e = request_id_e();
               <button
                 class="px-4 py-2 text-teal-600 font-semibold border border-teal-600 rounded-lg hover:bg-teal-50 transition"
                 id="backTo2">
-                <i class="fas fa-arrow-left mr-2"></i> Anterior
+                <i data-lucide="arrow-left" class="mr-2"></i> Anterior
               </button>
               <button id="btnTo4"
                 class="px-6 py-3 bg-teal-600 text-white font-semibold rounded-lg shadow-md hover:bg-teal-700 transition disabled:opacity-50"
                 disabled>
-                Seleccionar fecha <i class="fas fa-arrow-right ml-2"></i>
+                Seleccionar fecha <i data-lucide="arrow-right" class="ml-2"></i>
               </button>
             </div>
           </section>
@@ -93,11 +93,11 @@ $id_e = request_id_e();
             <div class="rounded-xl border bg-gray-50 p-4" id="calendarBox">
               <div class="flex items-center justify-between">
                 <button type="button" id="prevMonth" class="p-2 rounded-full hover:bg-teal-100 text-teal-700">
-                  <i class="fas fa-chevron-left"></i>
+                  <i data-lucide="chevron-left"></i>
                 </button>
                 <div class="text-lg font-bold text-gray-800" id="monthLabel">Mes</div>
                 <button type="button" id="nextMonth" class="p-2 rounded-full hover:bg-teal-100 text-teal-700">
-                  <i class="fas fa-chevron-right"></i>
+                  <i data-lucide="chevron-right"></i>
                 </button>
               </div>
 
@@ -120,12 +120,12 @@ $id_e = request_id_e();
               <button
                 class="px-4 py-2 text-teal-600 font-semibold border border-teal-600 rounded-lg hover:bg-teal-50 transition"
                 id="backTo3">
-                <i class="fas fa-arrow-left mr-2"></i> Anterior
+                <i data-lucide="arrow-left" class="mr-2"></i> Anterior
               </button>
               <button id="btnTo5"
                 class="px-6 py-3 bg-teal-600 text-white font-semibold rounded-lg shadow-md hover:bg-teal-700 transition disabled:opacity-50"
                 disabled>
-                Continuar <i class="fas fa-arrow-right ml-2"></i>
+                Continuar <i data-lucide="arrow-right" class="ml-2"></i>
               </button>
             </div>
           </section>
@@ -167,7 +167,7 @@ $id_e = request_id_e();
               <button
                 class="px-4 py-2 text-teal-600 font-semibold border border-teal-600 rounded-lg hover:bg-teal-50 transition"
                 id="backTo4">
-                <i class="fas fa-arrow-left mr-2"></i> Anterior
+                <i data-lucide="arrow-left" class="mr-2"></i> Anterior
               </button>
               <button id="btnBook"
                 class="px-8 py-3 bg-green-600 text-white font-bold rounded-lg shadow-lg hover:bg-green-700 transition">
@@ -321,7 +321,7 @@ $id_e = request_id_e();
         // --- Paso 2: sucursales ---
         const branchesGrid = document.getElementById('branchesGrid');
         async function loadBranches() {
-          branchesGrid.innerHTML = '<div class="col-span-full text-center text-gray-500 py-10"><i class="fas fa-spinner fa-spin mr-2"></i> Cargando sedes...</div>';
+          branchesGrid.innerHTML = '<div class="col-span-full text-center text-gray-500 py-10"><i data-lucide="loader-2" class="mr-2 animate-spin"></i> Cargando sedes...</div>';
           try {
             const data = await apiGet('branches', { servicio_id: state.servicio.id });
             branchesGrid.innerHTML = '';
@@ -331,8 +331,8 @@ $id_e = request_id_e();
             }
             data.forEach(b => {
               const selected = state.sucursal && state.sucursal.id === b.id;
-              const meta = `${b.direccion ? `<div class="flex items-start"><i class="fas fa-map-marker-alt w-5 text-teal-500 mr-2 mt-0.5"></i><span>${escapeHtml(b.direccion)}</span></div>` : ''}`
-                + `${b.telefono ? `<div class="mt-2 flex items-center"><i class="fas fa-phone w-5 text-teal-500 mr-2"></i><span>${escapeHtml(b.telefono)}</span></div>` : ''}`;
+              const meta = `${b.direccion ? `<div class="flex items-start"><i data-lucide="map-pin" class="w-5 text-teal-500 mr-2 mt-0.5"></i><span>${escapeHtml(b.direccion)}</span></div>` : ''}`
+                + `${b.telefono ? `<div class="mt-2 flex items-center"><i data-lucide="phone" class="w-5 text-teal-500 mr-2"></i><span>${escapeHtml(b.telefono)}</span></div>` : ''}`;
               const wrap = document.createElement('button');
               wrap.type = 'button';
               wrap.className = 'text-left';
@@ -355,7 +355,7 @@ $id_e = request_id_e();
         // --- Paso 3: empleados ---
         const employeesGrid = document.getElementById('employeesGrid');
         async function loadEmployees() {
-          employeesGrid.innerHTML = '<div class="col-span-full text-center text-gray-500 py-10"><i class="fas fa-spinner fa-spin mr-2"></i> Cargando empleados...</div>';
+          employeesGrid.innerHTML = '<div class="col-span-full text-center text-gray-500 py-10"><i data-lucide="loader-2" class="mr-2 animate-spin"></i> Cargando empleados...</div>';
           try {
             const data = await apiGet('employees', { servicio_id: state.servicio.id, sucursal_id: state.sucursal.id });
             employeesGrid.innerHTML = '';
@@ -419,7 +419,7 @@ $id_e = request_id_e();
         }
 
         async function loadCalendar() {
-          calDays.innerHTML = '<div class="col-span-7 text-center text-gray-500 py-6"><i class="fas fa-spinner fa-spin mr-2"></i> Cargando calendario...</div>';
+          calDays.innerHTML = '<div class="col-span-7 text-center text-gray-500 py-6"><i data-lucide="loader-2" class="mr-2 animate-spin"></i> Cargando calendario...</div>';
           slotsGrid.innerHTML = '<div class="col-span-full text-gray-500">Selecciona una fecha.</div>';
           selectedDateLabel.textContent = '';
           document.getElementById('btnTo5').disabled = true;
@@ -478,7 +478,7 @@ $id_e = request_id_e();
 
         async function loadSlots(date) {
           selectedDateLabel.textContent = '· ' + new Date(date + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-          slotsGrid.innerHTML = '<div class="col-span-full text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i> Cargando horarios...</div>';
+          slotsGrid.innerHTML = '<div class="col-span-full text-gray-500"><i data-lucide="loader-2" class="mr-2 animate-spin"></i> Cargando horarios...</div>';
           try {
             const slots = await apiGet('slots', { servicio_id: state.servicio.id, empleado_id: state.empleado.id, date });
             slotsGrid.innerHTML = '';

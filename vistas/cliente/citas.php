@@ -50,8 +50,7 @@ include __DIR__ . '/../../includes/topbar.php';
                 <div class="mb-6">
                     <h3 class="text-2xl font-bold text-gray-800">¿Qué servicio necesitas?</h3>
                     <p class="text-gray-500">Elige lo que deseas realizarte hoy.</p>
-                    <button onclick="goToStep(1)" class="text-teal-600 text-xs mt-2 hover:underline"><i
-                            class="fas fa-arrow-left"></i> Cambiar Sede</button>
+                    <button onclick="goToStep(1)" class="text-teal-600 text-xs mt-2 hover:underline"><i data-lucide="arrow-left"></i> Cambiar Sede</button>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="servicio-list"></div>
             </div>
@@ -61,18 +60,15 @@ include __DIR__ . '/../../includes/topbar.php';
                 <div class="mb-6">
                     <h3 class="text-2xl font-bold text-gray-800">Agenda tu visita</h3>
                     <p class="text-gray-500">Selecciona una fecha disponible en el calendario.</p>
-                    <button onclick="goToStep(2)" class="text-teal-600 text-xs mt-2 hover:underline"><i
-                            class="fas fa-arrow-left"></i> Cambiar Servicio</button>
+                    <button onclick="goToStep(2)" class="text-teal-600 text-xs mt-2 hover:underline"><i data-lucide="arrow-left"></i> Cambiar Servicio</button>
                 </div>
 
                 <div class="flex flex-col md:flex-row gap-6">
                     <div id="calendar-wrapper" class="w-full md:w-1/2 p-4 bg-gray-50 rounded-xl border">
                         <div class="flex justify-between items-center mb-4">
-                            <button onclick="changeMonth(-1)" class="p-1 hover:bg-white rounded"><i
-                                    class="fas fa-chevron-left"></i></button>
+                            <button onclick="changeMonth(-1)" class="p-1 hover:bg-white rounded"><i data-lucide="chevron-left"></i></button>
                             <span id="calendar-title" class="font-bold text-sm">Mes Año</span>
-                            <button onclick="changeMonth(1)" class="p-1 hover:bg-white rounded"><i
-                                    class="fas fa-chevron-right"></i></button>
+                            <button onclick="changeMonth(1)" class="p-1 hover:bg-white rounded"><i data-lucide="chevron-right"></i></button>
                         </div>
                         <div
                             class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-gray-400 mb-2 uppercase">
@@ -170,10 +166,10 @@ include __DIR__ . '/../../includes/topbar.php';
                             ${getEstadoBadge(c.estado)}
                         </div>
                         <div class="text-[11px] text-gray-500 mb-2">
-                             <i class="far fa-calendar-alt mr-1"></i> ${d.toLocaleDateString()} a las ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                             <i data-lucide="calendar" class="mr-1"></i> ${d.toLocaleDateString()} a las ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </div>
                         <div class="text-[10px] text-teal-600 bg-teal-50 px-2 py-1 rounded inline-block">
-                             <i class="fas fa-map-marker-alt mr-1"></i> ${c.sucursal_nombre}
+                             <i data-lucide="map-pin" class="mr-1"></i> ${c.sucursal_nombre}
                         </div>
                     </div>
                 `);
@@ -318,7 +314,7 @@ include __DIR__ . '/../../includes/topbar.php';
     function saveCita() {
         const btn = $('#btn-confirm');
         const oldHtml = btn.html();
-        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i> Agendando...');
+        btn.prop('disabled', true).html('<i data-lucide="loader-2" class="mr-2 animate-spin"></i> Agendando...');
 
         $.post(API_URL + '?action=save', {
             sede_id: State.sede.id,

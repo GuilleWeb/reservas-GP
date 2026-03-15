@@ -46,10 +46,10 @@
       <div class="bg-gradient-to-br from-teal-600 to-teal-800 p-10 lg:p-14 text-white">
         <h2 class="text-2xl font-bold">¿Qué incluye?</h2>
         <ul id="features" class="mt-6 space-y-3 text-white/95">
-          <li class="flex gap-3"><span class="mt-1"><i class="fas fa-check"></i></span><span>Panel SuperAdmin para empresas y planes.</span></li>
-          <li class="flex gap-3"><span class="mt-1"><i class="fas fa-check"></i></span><span>Panel Admin por empresa con sucursales, empleados, servicios y citas.</span></li>
-          <li class="flex gap-3"><span class="mt-1"><i class="fas fa-check"></i></span><span>Panel Empleado con su agenda y disponibilidad.</span></li>
-          <li class="flex gap-3"><span class="mt-1"><i class="fas fa-check"></i></span><span>Home público por empresa: reseñas, equipo, blog y formulario de contacto.</span></li>
+          <li class="flex gap-3"><span class="mt-1"><i data-lucide="check"></i></span><span>Panel SuperAdmin para empresas y planes.</span></li>
+          <li class="flex gap-3"><span class="mt-1"><i data-lucide="check"></i></span><span>Panel Admin por empresa con sucursales, empleados, servicios y citas.</span></li>
+          <li class="flex gap-3"><span class="mt-1"><i data-lucide="check"></i></span><span>Panel Empleado con su agenda y disponibilidad.</span></li>
+          <li class="flex gap-3"><span class="mt-1"><i data-lucide="check"></i></span><span>Home público por empresa: reseñas, equipo, blog y formulario de contacto.</span></li>
         </ul>
 
         <div class="mt-10 rounded-2xl bg-white/10 border border-white/20 p-6">

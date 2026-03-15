@@ -20,16 +20,16 @@ $planes = $pdo->query("SELECT id, nombre FROM planes ORDER BY nombre ASC")->fetc
     <div class="lg:col-span-4">
       <div class="bg-white rounded-2xl shadow p-5 border">
         <div class="text-sm text-gray-500">SuperAdmin</div>
-        <div class="mt-1 text-2xl font-extrabold text-gray-900">Empresas</div>
+        <div class="mt-1 text-2xl font-extrabold text-gray-900">Gestionar Empresas</div>
 
         <!-- Debe existir este bloque para mostrar la contraseña -->
         <div id="credBox" class="hidden mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <h4 class="font-bold text-green-800 mb-2">✅ Credenciales de acceso</h4>
+          <h4 class="font-bold text-green-800 mb-2">Credenciales de acceso</h4>
           <p><strong>URL:</strong> <span id="credUrl" class="font-mono"></span></p>
           <p><strong>Email:</strong> <span id="credEmail"></span></p>
           <p><strong>Contraseña temporal:</strong> <span id="credPass"
               class="font-mono bg-yellow-100 px-2 py-1 rounded"></span></p>
-          <p class="text-xs text-gray-600 mt-2">⚠️ Guarda esta contraseña, solo se muestra una vez.</p>
+          <p class="text-xs text-gray-600 mt-2">Guarda esta contraseña, solo se muestra una vez.</p>
         </div>
 
         <form id="empresaForm" class="mt-4 space-y-3">
@@ -78,8 +78,8 @@ $planes = $pdo->query("SELECT id, nombre FROM planes ORDER BY nombre ASC")->fetc
           </div>
 
           <div class="pt-2 flex items-center justify-between gap-2">
-            <button type="button" id="btnReset" class="px-4 py-2 border rounded-lg">Nuevo</button>
-            <button type="submit" id="btnSubmit" class="px-4 py-2 bg-gray-900 text-white rounded-lg">Crear</button>
+            <button type="button" id="btnReset" class="px-2 py-2 border rounded-lg">Nuevo</button>
+            <button type="submit" id="btnSubmit" class="px-2 py-2 bg-teal-600 text-white rounded-lg">Crear</button>
           </div>
         </form>
       </div>
@@ -91,9 +91,10 @@ $planes = $pdo->query("SELECT id, nombre FROM planes ORDER BY nombre ASC")->fetc
           <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div>
               <div class="font-semibold text-gray-900">Listado</div>
+              <div class="text-sm text-gray-500">Acciones: editar y eliminar.</div>
               <div class="text-sm text-gray-500">Acciones: entrar, editar y eliminar.</div>
             </div>
-            <div class="text-sm text-gray-500">Tip: /{slug}/dashboard</div>
+            <!-- <div class="text-sm text-gray-500">Tip: /{slug}/dashboard</div> -->
           </div>
 
           <div class="mt-4 grid grid-cols-1 md:grid-cols-6 gap-3">
@@ -182,10 +183,10 @@ $planes = $pdo->query("SELECT id, nombre FROM planes ORDER BY nombre ASC")->fetc
           <td class="px-4 py-3">${estado}</td>
           <td class="px-4 py-3">${e.created_at || ''}</td>
           <td class="px-4 py-3">
-            <div class="flex items-center justify-end gap-2">
-              <a class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-white" title="Entrar" href="<?= view_url('vistas/admin/dashboard.php') ?>?id_e=${e.id}"><i class="fas fa-arrow-right"></i></a>
-              <button class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-white editBtn" title="Editar" data-id="${e.id}"><i class="fas fa-pen"></i></button>
-              <button class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-white text-red-600 deleteBtn" title="Eliminar" data-id="${e.id}"><i class="fas fa-trash"></i></button>
+            <div class="flex items-center justify-center gap-1">
+              <a class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-white text-teal-600" title="Entrar" href="<?= view_url('vistas/admin/dashboard.php') ?>?id_e=${e.id}"><i data-lucide="arrow-right"></i></a>
+              <button class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-white editBtn" title="Editar" data-id="${e.id}"><i data-lucide="pen"></i></button>
+              <button class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-white text-red-600 deleteBtn" title="Eliminar" data-id="${e.id}"><i data-lucide="trash-2"></i></button>
             </div>
           </td>
         </tr>`);
@@ -207,7 +208,7 @@ $planes = $pdo->query("SELECT id, nombre FROM planes ORDER BY nombre ASC")->fetc
       const totalPages = Math.ceil(total / per) || 1;
       const pag = $("#pagination").empty();
       for (let i = 1; i <= totalPages; i++) {
-        pag.append(`<button class="px-3 py-1 rounded ${i === page ? 'bg-gray-900 text-white' : 'border'}" data-page="${i}">${i}</button>`);
+        pag.append(`<button class="px-3 py-1 rounded ${i === page ? 'bg-teal-600 text-white' : 'border'}" data-page="${i}">${i}</button>`);
       }
     }
 

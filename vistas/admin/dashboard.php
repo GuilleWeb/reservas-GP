@@ -75,7 +75,7 @@ if ($role === 'superadmin' && !$id_e) {
     <div class="text-sm text-gray-500">Dashboard</div>
     <div class="mt-1 text-2xl font-extrabold text-gray-900">
       <?php if ($role === 'superadmin'): ?>
-        Panel SuperAdmin
+        Panel Empresa
       <?php else: ?>
         <?= htmlspecialchars($id_e) ?>
         <?php if ($sucursal_slug): ?> / <?= htmlspecialchars($sucursal_slug) ?><?php endif; ?>
@@ -163,23 +163,112 @@ if ($role === 'superadmin' && !$id_e) {
         </div>
       </div>
     <?php else: ?>
-      <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <a href="<?= view_url('vistas/admin/admin-citas.php', $id_e) ?>"
-          class="block rounded-xl border p-4 hover:bg-gray-50">
-          <div class="font-semibold text-gray-900">Citas</div>
-          <div class="text-sm text-gray-600">Ver y gestionar agenda.</div>
+<?php 
+$s_stats = [];
+try {
+   $s_stats['citas_hoy'] = (int) $pdo->query("SELECT COUNT(*) FROM citas WHERE empresa_id = " . intval($id_e) . " AND DATE(fecha_cita) = CURDATE()")->fetchColumn();
+   $s_stats['citas_total'] = (int) $pdo->query("SELECT COUNT(*) FROM citas WHERE empresa_id = " . intval($id_e))->fetchColumn();
+   $s_stats['sucursales'] = (int) $pdo->query("SELECT COUNT(*) FROM sucursales WHERE empresa_id = " . intval($id_e))->fetchColumn();
+   $s_stats['empleados'] = (int) $pdo->query("SELECT COUNT(*) FROM usuarios WHERE empresa_id = " . intval($id_e) . " AND rol='empleado'")->fetchColumn();
+   $s_stats['clientes'] = (int) $pdo->query("SELECT COUNT(*) FROM usuarios WHERE empresa_id = " . intval($id_e) . " AND rol='cliente'")->fetchColumn();
+   $s_stats['servicios'] = (int) $pdo->query("SELECT COUNT(*) FROM servicios WHERE empresa_id = " . intval($id_e))->fetchColumn();
+   
+   $stmt = $pdo->prepare("SELECT c.fecha_cita, c.hora_inicio, c.estado, s.nombre as servicio, u.nombre as cliente 
+                          FROM citas c 
+                          LEFT JOIN servicios s ON c.servicio_id = s.id 
+                          LEFT JOIN usuarios u ON c.cliente_id = u.id
+                          WHERE c.empresa_id = ? 
+                          ORDER BY c.fecha_cita DESC, c.hora_inicio DESC LIMIT 5");
+   $stmt->execute([$id_e]);
+   $s_stats['ultimas_citas'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) { }
+?>
+      <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="rounded-2xl border bg-gradient-to-br from-white to-teal-50 p-4">
+          <div class="text-xs text-gray-500">Citas Hoy</div>
+          <div class="mt-1 text-2xl font-extrabold text-gray-900"><?= (int)($s_stats['citas_hoy'] ?? 0) ?></div>
+        </div>
+        <div class="rounded-2xl border bg-gradient-to-br from-white to-teal-50 p-4">
+          <div class="text-xs text-gray-500">Citas Totales</div>
+          <div class="mt-1 text-2xl font-extrabold text-gray-900"><?= (int)($s_stats['citas_total'] ?? 0) ?></div>
+        </div>
+        <div class="rounded-2xl border bg-gradient-to-br from-white to-teal-50 p-4">
+          <div class="text-xs text-gray-500">Sucursales</div>
+          <div class="mt-1 text-2xl font-extrabold text-gray-900"><?= (int)($s_stats['sucursales'] ?? 0) ?></div>
+        </div>
+        <div class="rounded-2xl border bg-gradient-to-br from-white to-teal-50 p-4">
+          <div class="text-xs text-gray-500">Empleados</div>
+          <div class="mt-1 text-2xl font-extrabold text-gray-900"><?= (int)($s_stats['empleados'] ?? 0) ?></div>
+        </div>
+      </div>
+
+      <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="rounded-2xl border bg-white p-4 w-full">
+          <div class="text-xs text-gray-500">Clientes</div>
+          <div class="mt-1 text-xl font-bold text-gray-900"><?= (int)($s_stats['clientes'] ?? 0) ?></div>
+        </div>
+        <div class="rounded-2xl border bg-white p-4 w-full">
+          <div class="text-xs text-gray-500">Servicios</div>
+          <div class="mt-1 text-xl font-bold text-gray-900"><?= (int)($s_stats['servicios'] ?? 0) ?></div>
+        </div>
+      </div>
+
+      <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <a href="<?= view_url('vistas/admin/admin-citas.php', $id_e) ?>" class="block rounded-xl border p-4 border-teal-100 bg-teal-50 hover:bg-teal-100 transition">
+          <div class="font-semibold text-teal-900">Citas</div>
+          <div class="text-sm text-teal-700">Ver y gestionar agenda.</div>
         </a>
-        <a href="<?= view_url('vistas/admin/sucursales.php', $id_e) ?>"
-          class="block rounded-xl border p-4 hover:bg-gray-50">
-          <div class="font-semibold text-gray-900">Sedes</div>
-          <div class="text-sm text-gray-600">Ver sucursales.</div>
+        <a href="<?= view_url('vistas/admin/sucursales.php', $id_e) ?>" class="block rounded-xl border p-4 border-teal-100 bg-teal-50 hover:bg-teal-100 transition">
+          <div class="font-semibold text-teal-900">Sedes</div>
+          <div class="text-sm text-teal-700">Ver sucursales.</div>
         </a>
         <?php if (has_permission('permiso_leer')): ?>
-          <a href="<?= view_url('vistas/admin/ajustes.php', $id_e) ?>" class="block rounded-xl border p-4 hover:bg-gray-50">
-            <div class="font-semibold text-gray-900">Administración</div>
-            <div class="text-sm text-gray-600">Panel administrativo.</div>
+          <a href="<?= view_url('vistas/admin/ajustes.php', $id_e) ?>" class="block rounded-xl border p-4 border-teal-100 bg-teal-50 hover:bg-teal-100 transition">
+            <div class="font-semibold text-teal-900">Administración</div>
+            <div class="text-sm text-teal-700">Panel administrativo.</div>
           </a>
         <?php endif; ?>
+      </div>
+
+      <div class="mt-6 rounded-2xl border bg-white p-4 shadow-sm">
+        <div class="flex items-center justify-between gap-3">
+          <div class="font-semibold text-gray-900">Últimas Citas registradas</div>
+        </div>
+        <div class="mt-3 overflow-x-auto">
+          <table class="min-w-full text-sm">
+            <thead class="bg-gray-50 text-gray-700">
+              <tr>
+                <th class="text-left px-3 py-2">Fecha/Hora</th>
+                <th class="text-left px-3 py-2">Cliente</th>
+                <th class="text-left px-3 py-2">Servicio</th>
+                <th class="text-left px-3 py-2">Estado</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y relative">
+              <?php foreach (($s_stats['ultimas_citas'] ?? []) as $c): ?>
+                <tr class="hover:bg-gray-50">
+                  <td class="px-3 py-2 font-mono text-xs text-gray-600"><?= htmlspecialchars($c['fecha_cita']) ?> <?= substr($c['hora_inicio'], 0, 5) ?></td>
+                  <td class="px-3 py-2"><?= htmlspecialchars($c['cliente'] ?? 'N/A') ?></td>
+                  <td class="px-3 py-2"><?= htmlspecialchars($c['servicio'] ?? 'N/A') ?></td>
+                  <td class="px-3 py-2">
+                    <?php if($c['estado'] === 'completada'): ?>
+                        <span class="inline-flex px-2 py-0.5 rounded text-xs bg-green-100 text-green-800">Completada</span>
+                    <?php elseif($c['estado'] === 'cancelada'): ?>
+                        <span class="inline-flex px-2 py-0.5 rounded text-xs bg-red-100 text-red-800">Cancelada</span>
+                    <?php else: ?>
+                        <span class="inline-flex px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-800"><?= ucfirst($c['estado']) ?></span>
+                    <?php endif; ?>
+                  </td>
+                </tr>
+              <?php endforeach; ?>
+              <?php if (empty($s_stats['ultimas_citas'] ?? [])): ?>
+                <tr>
+                  <td class="px-3 py-3 text-gray-500 text-center" colspan="4">No hay citas recientes registradas.</td>
+                </tr>
+              <?php endif; ?>
+            </tbody>
+          </table>
+        </div>
       </div>
     <?php endif; ?>
   </div>

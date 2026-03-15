@@ -6,10 +6,11 @@ $module = 'clientes';
 include __DIR__ . '/../../includes/topbar.php';
 ?>
 
-<div class="max-w-7xl mx-auto flex flex-col md:flex-row gap-6">
+<div class="max-w-7xl mx-auto">
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
 
-  <!-- Formulario Izquierdo -->
-  <div class="w-full md:w-1/3 bg-white shadow rounded-2xl p-6 border self-start">
+  <div class="lg:col-span-4">
+      <div class="bg-white rounded-2xl shadow p-5 border">
     <div class="text-xs text-gray-500 font-semibold tracking-wider uppercase mb-1">Empresa</div>
     <div class="text-xl font-extrabold text-gray-900 mb-6">Gestionar Cliente</div>
 
@@ -24,17 +25,19 @@ include __DIR__ . '/../../includes/topbar.php';
           placeholder="Ej: Juan Pérez">
       </div>
 
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Email</label>
-        <input type="email" id="email" name="email"
-          class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500"
-          placeholder="ejemplo@correo.com">
-      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Email</label>
+          <input type="email" id="email" name="email"
+            class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500"
+            placeholder="ejemplo@correo.com">
+        </div>
 
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Teléfono</label>
-        <input type="text" id="telefono" name="telefono"
-          class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 mt-1" placeholder="Ej: +502 ...">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Teléfono</label>
+          <input type="text" id="telefono" name="telefono"
+            class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="Ej: +502 ...">
+        </div>
       </div>
 
       <div>
@@ -63,15 +66,17 @@ include __DIR__ . '/../../includes/topbar.php';
 
       <div class="pt-4 flex items-center justify-between border-t border-gray-100">
         <button type="button" onclick="resetForm()"
-          class="text-sm text-gray-500 hover:text-gray-800 font-medium">Cancelar</button>
+          class="text-sm text-gray-500 hover:text-gray-800 border border-gray-300 rounded-lg px-2 py-2">Nuevo</button>
         <button type="submit"
-          class="bg-gray-900 hover:bg-black text-white px-5 py-2 rounded-lg font-semibold transition"
+          class="bg-teal-600 hover:bg-teal-700 text-white px-2 py-2 rounded-lg font-semibold transition"
           id="btnSave">Guardar Cliente</button>
       </div>
     </form>
   </div>
+  </div>
 
-  <div class="w-full md:w-2/3 bg-white shadow rounded-2xl p-6 border flex flex-col h-[calc(100vh-140px)] min-h-[500px]">
+  <div class="lg:col-span-8">
+      <div class="bg-white rounded-2xl shadow border p-5">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
       <div>
         <h2 class="text-xl font-bold text-gray-800">Directorio de Clientes</h2>
@@ -84,7 +89,7 @@ include __DIR__ . '/../../includes/topbar.php';
           <option value="50">50</option>
         </select>
         <div class="relative">
-          <i class="fas fa-search absolute left-3 top-2.5 text-gray-400"></i>
+          <i data-lucide="search" class="absolute left-3 top-2.5 text-gray-400"></i>
           <input type="text" id="txtSearch"
             class="pl-9 border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-teal-500 w-48"
             placeholder="Buscar cliente...">
@@ -109,8 +114,11 @@ include __DIR__ . '/../../includes/topbar.php';
     <div class="mt-4 flex flex-col sm:flex-row items-center justify-between border-t pt-4">
       <div class="text-sm text-gray-500" id="pageInfo"></div>
       <div class="flex items-center space-x-1" id="pagination"></div>
-    </div>
   </div>
+</div>
+</div>
+
+</div>
 </div>
 
 <script>
@@ -120,14 +128,14 @@ include __DIR__ . '/../../includes/topbar.php';
     let html = '';
     if (total_pages <= 1) { $('#pagination').empty(); return; }
 
-    html += `<button onclick="loadData(${current - 1})" class="px-3 py-1 rounded-md border ${current === 1 ? 'opacity-50 pointer-events-none' : ''}"><i class="fas fa-chevron-left"></i></button>`;
+    html += `<button onclick="loadData(${current - 1})" class="px-3 py-1 rounded-md border ${current === 1 ? 'opacity-50 pointer-events-none' : ''}"><i data-lucide="chevron-left"></i></button>`;
     for (let i = 1; i <= total_pages; i++) {
       let active = i === current ? 'bg-teal-600 text-white shadow' : 'border hover:bg-gray-50 text-gray-700';
       if (i === 1 || i === total_pages || (i >= current - 1 && i <= current + 1)) {
         html += `<button onclick="loadData(${i})" class="px-3 py-1 rounded-md ${active}">${i}</button>`;
       } else if (i === current - 2 || i === current + 2) html += `<span class="px-2">...</span>`;
     }
-    html += `<button onclick="loadData(${current + 1})" class="px-3 py-1 rounded-md border ${current === total_pages ? 'opacity-50 pointer-events-none' : ''}"><i class="fas fa-chevron-right"></i></button>`;
+    html += `<button onclick="loadData(${current + 1})" class="px-3 py-1 rounded-md border ${current === total_pages ? 'opacity-50 pointer-events-none' : ''}"><i data-lucide="chevron-right"></i></button>`;
     $('#pagination').html(html);
   }
 
@@ -150,13 +158,13 @@ include __DIR__ . '/../../includes/topbar.php';
                 ${item.nombre} <div class="text-xs text-gray-400 font-normal">Nacimiento: ${item.fecha_nacimiento || '-'}</div>
             </td>
             <td class="py-3 px-4 text-xs text-gray-600">
-                <div><i class="fas fa-phone text-gray-400 w-4"></i> ${item.telefono || '-'}</div>
-                <div class="mt-1"><i class="far fa-envelope text-gray-400 w-4"></i> ${item.email || '-'}</div>
+                <div><i data-lucide="phone" class="text-gray-400 w-4"></i> ${item.telefono || '-'}</div>
+                <div class="mt-1"><i data-lucide="mail" class="text-gray-400 w-4"></i> ${item.email || '-'}</div>
             </td>
             <td class="py-3 px-4">${badge}</td>
             <td class="py-3 px-4 text-right">
-                <button onclick="editItem(${item.id})" class="text-blue-500 hover:text-blue-700 bg-blue-50 px-2.5 py-1.5 rounded-lg border border-blue-200"><i class="fas fa-edit"></i></button>
-                <button onclick="deleteItem(${item.id})" class="text-red-500 hover:text-red-700 bg-red-50 px-2.5 py-1.5 rounded-lg border border-red-200"><i class="fas fa-trash-alt"></i></button>
+                <button onclick="editItem(${item.id})" class="text-blue-500 hover:text-blue-700 bg-blue-50 px-2.5 py-1.5 rounded-lg border border-blue-200"><i data-lucide="pen"></i></button>
+                <button onclick="deleteItem(${item.id})" class="text-red-500 hover:text-red-700 bg-red-50 px-2.5 py-1.5 rounded-lg border border-red-200"><i data-lucide="trash-2"></i></button>
             </td>
           </tr>
         `);

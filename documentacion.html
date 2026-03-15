@@ -137,15 +137,15 @@ const miCalendario = inicializarPlanificador({
 
         <div class="mt-12 space-x-4">
             <a href="#demo" class="inline-flex items-center px-8 py-3 text-lg font-semibold text-white bg-blue-500 rounded-full shadow-lg hover:bg-blue-600 transition duration-300 transform hover:translate-y-[-2px]">
-                <span class="mr-2"><i class="fas fa-calendar-alt"></i></span>
+                <span class="mr-2"><i data-lucide="calendar"></i></span>
                 <span>Ver Demo</span>
             </a>
             <a href="#instalacion" class="inline-flex items-center px-8 py-3 text-lg font-semibold text-white bg-gray-600 rounded-full shadow-lg hover:bg-gray-700 transition duration-300 transform hover:translate-y-[-2px]">
-                <span class="mr-2"><i class="fas fa-hammer"></i></span>
+                <span class="mr-2"><i data-lucide="hammer"></i></span>
                 <span>Instalación</span>
             </a>
             <a href="#ejemplos" class="inline-flex items-center px-8 py-3 text-lg font-semibold text-white bg-primary-calendar rounded-full shadow-lg hover:bg-primary-dark-calendar transition duration-300 transform hover:translate-y-[-2px] animate-pulse-modern">
-                <span class="mr-2"><i class="fas fa-cogs"></i></span>
+                <span class="mr-2"><i data-lucide="cogs"></i></span>
                 <span>Ejemplos de Uso</span>
             </a>
         </div>
@@ -496,7 +496,7 @@ cargarPlanificador();</code></pre>
         <div class="flex justify-between items-center border-b pb-3 mb-4">
             <h3 class="text-2xl font-bold text-plc-blue" id="modalTitulo">Detalles del Evento</h3>
             <button onclick="cerrarModal('detalleModal')" class="text-gray-400 hover:text-gray-600">
-                <i class="fas fa-times text-xl"></i>
+                <i data-lucide="x" class="text-xl"></i>
             </button>
         </div>
         <div class="space-y-3 text-gray-700">
@@ -518,7 +518,7 @@ cargarPlanificador();</code></pre>
         <div class="flex justify-between items-center border-b pb-3 mb-4">
             <h3 class="text-2xl font-bold text-primary-calendar">Crear Nuevo Evento</h3>
             <button onclick="cerrarModal('nuevoEventoModal')" class="text-gray-400 hover:text-gray-600">
-                <i class="fas fa-times text-xl"></i>
+                <i data-lucide="x" class="text-xl"></i>
             </button>
         </div>
         

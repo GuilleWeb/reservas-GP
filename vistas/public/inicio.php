@@ -53,7 +53,7 @@ include __DIR__ . '/../../includes/topbar.php';
 
     <!-- About Section - Skeleton -->
     <section id="about-section" class="grid grid-cols-1 md:grid-cols-2 gap-10">
-        <div class="bg-indigo-50 p-10 rounded-3xl border border-indigo-100">
+        <div class="bg-teal-50 p-10 rounded-3xl border border-teal-100">
             <div class="skeleton h-8 w-48 mb-6"></div>
             <div class="skeleton h-4 w-full mb-3"></div>
             <div class="skeleton h-4 w-full mb-3"></div>
@@ -84,7 +84,7 @@ include __DIR__ . '/../../includes/topbar.php';
     <!-- Blog Section - Skeleton -->
     <section class="my-16 reveal visible">
         <h2 class="text-3xl font-bold text-teal-700 mb-8 text-center sm:text-left">
-            <i class="fas fa-newspaper mr-2"></i> Nuestro Blog
+            <i data-lucide="newspaper" class="mr-2"></i> Nuestro Blog
         </h2>
         <div id="postsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
 
@@ -92,7 +92,7 @@ include __DIR__ . '/../../includes/topbar.php';
         <div class="mt-10 text-center">
             <a href="blog"
                 class="inline-flex items-center text-xl font-semibold text-teal-600 hover:text-teal-800 transition duration-300">
-                Ver todas las publicaciones <i class="fas fa-arrow-right ml-2"></i>
+                Ver todas las publicaciones <i data-lucide="arrow-right" class="ml-2"></i>
             </a>
         </div>
     </section>
@@ -100,7 +100,7 @@ include __DIR__ . '/../../includes/topbar.php';
     <!-- Equipo Section - Skeleton -->
     <section class="my-16 reveal visible">
         <h2 class="text-3xl font-bold text-teal-700 mb-8 text-center sm:text-left">
-            <i class="fas fa-user-md mr-2"></i> Nuestro Equipo
+            <i data-lucide="user" class="mr-2"></i> Nuestro Equipo
         </h2>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -242,12 +242,12 @@ include __DIR__ . '/../../includes/topbar.php';
 
             const aboutHtml = `
                 <div class="bg-white rounded-2xl shadow-xl p-8 border-t-4 border-teal-600 text-center">
-                    <i class="fas fa-bullseye text-teal-600 text-4xl mb-4"></i>
+                    <i data-lucide="bullseye" class="text-teal-600 text-4xl mb-4"></i>
                     <h3 class="text-2xl font-bold text-gray-800 mb-3">Nuestra Misión</h3>
                     <p class="text-gray-600 leading-relaxed">${data.mision.replace(/\n/g, '<br>')}</p>
                 </div>
                 <div class="bg-white rounded-2xl shadow-xl p-8 border-t-4 border-teal-600 text-center">
-                    <i class="fas fa-eye text-teal-600 text-4xl mb-4"></i>
+                    <i data-lucide="eye" class="text-teal-600 text-4xl mb-4"></i>
                     <h3 class="text-2xl font-bold text-gray-800 mb-3">Nuestra Vision</h3>
                     <p class="text-gray-600 leading-relaxed">${data.vision.replace(/\n/g, '<br>')}</p>
                 </div>
@@ -274,7 +274,7 @@ include __DIR__ . '/../../includes/topbar.php';
                 serviciosHtml += `
                     <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm transition hover:shadow-md">
                         <div class="w-12 h-12 bg-teal-50 rounded-xl flex items-center justify-center text-teal-600 text-xl mb-4">
-                            <i class="fas fa-${s.icono || 'magic'}"></i>
+                            <i data-lucide="${s.icono" class="|| 'magic'}"></i>
                         </div>
                         <h3 class="font-bold text-gray-900 text-lg mb-2">${s.nombre}</h3>
                         <p class="text-gray-500 text-sm line-clamp-2">${s.descripcion || ''}</p>
@@ -315,7 +315,7 @@ include __DIR__ . '/../../includes/topbar.php';
                             <div class="mt-4">
                                 <a href="<?= app_url('vistas/public/blog.php') ?>?id_e=${empresa_slug}&id=${p.id}"
                                     class="inline-flex items-center text-teal-600 font-semibold text-sm hover:text-teal-800 transition duration-150">
-                                    Leer artículo completo <i class="fas fa-chevron-right ml-1 text-xs"></i>
+                                    Leer artículo completo <i data-lucide="chevron-right" class="ml-1 text-xs"></i>
                                 </a>
                             </div>
                         </div>
@@ -385,13 +385,13 @@ include __DIR__ . '/../../includes/topbar.php';
                             <div class="space-y-4">
                                 <div class="flex items-center gap-4">
                                     <div class="w-10 h-10 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center">
-                                        <i class="fas fa-phone"></i>
+                                        <i data-lucide="phone"></i>
                                     </div>
                                     <span class="font-bold text-gray-700">${data.telefono}</span>
                                 </div>
                                 <div class="flex items-center gap-4">
                                     <div class="w-10 h-10 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center">
-                                        <i class="fas fa-envelope"></i>
+                                        <i data-lucide="mail"></i>
                                     </div>
                                     <span class="font-bold text-gray-700">${data.email}</span>
                                 </div>

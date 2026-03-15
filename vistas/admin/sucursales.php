@@ -21,136 +21,117 @@ if (!$is_tenant_admin) {
 }
 ?>
 
-<div class="max-w-7xl mx-auto flex flex-col md:flex-row gap-6">
+<div class="max-w-7xl mx-auto">
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+    <div class="lg:col-span-4">
+      <div class="bg-white rounded-2xl shadow p-5 border">
+        <div class="text-sm text-gray-500">Admin</div>
+        <div class="mt-1 text-2xl font-extrabold text-gray-900">Gestionar Sucursal</div>
 
-  <div class="w-full md:w-1/3 bg-white shadow rounded-2xl p-6 border self-start">
-    <div class="text-xs text-gray-500 font-semibold tracking-wider uppercase mb-1">Empresa</div>
-    <div class="text-xl font-extrabold text-gray-900 mb-6">Gestionar Sucursal</div>
+        <form id="formSucursal" class="mt-4 space-y-3">
+          <input type="hidden" id="sucursal_id" name="id" value="0">
 
-    <form id="formSucursal" class="space-y-4">
-      <input type="hidden" id="sucursal_id" name="id" value="0">
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Nombre de la Sucursal <span
-            class="text-red-500">*</span></label>
-        <input type="text" id="nombre" name="nombre"
-          class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500" required
-          placeholder="Ej: Zona 10">
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Slug (URL)</label>
-        <input type="text" id="slug" name="slug"
-          class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500"
-          placeholder="Ej: zona-10">
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Dirección</label>
-        <input type="text" id="direccion" name="direccion"
-          class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 mt-1" placeholder="Ej: 10ma Calle...">
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Teléfono</label>
-        <input type="text" id="telefono" name="telefono"
-          class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 mt-1" placeholder="Ej: +502 123456">
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Horario Visible</label>
-        <input type="text" id="horario" name="horario"
-          class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 mt-1" placeholder="Ej: Lun-Vie 8am-6pm">
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Estado</label>
-        <label class="relative inline-flex items-center cursor-pointer">
-          <input type="checkbox" id="activo" name="activo" value="1" class="sr-only peer" checked>
-          <div
-            class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 text-sm peer-checked:bg-teal-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Nombre de la Sucursal <span class="text-red-500">*</span></label>
+            <input type="text" id="nombre" name="nombre" class="mt-1 w-full border rounded-lg p-2 focus:ring-2 focus:ring-teal-500" required placeholder="Ej: Zona 10">
           </div>
-          <span class="ml-3 text-sm font-medium text-gray-700" id="estadoLabel">Activo</span>
-        </label>
-      </div>
 
-      <div id="formAlert" class="hidden rounded p-3 text-sm"></div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Dirección</label>
+            <input type="text" id="direccion" name="direccion" class="mt-1 w-full border rounded-lg p-2" placeholder="Ej: 10ma Calle...">
+          </div>
 
-      <div class="pt-4 flex items-center justify-between border-t border-gray-100">
-        <button type="button" onclick="resetForm()"
-          class="text-sm text-gray-500 hover:text-gray-800 font-medium">Cancelar</button>
-        <button type="submit"
-          class="bg-gray-900 hover:bg-black text-white px-5 py-2 rounded-lg font-semibold transition"
-          id="btnSave">Guardar Sucursal</button>
-      </div>
-    </form>
-  </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Slug (URL)</label>
+              <input type="text" id="slug" name="slug" class="mt-1 w-full border rounded-lg p-2 focus:ring-2 focus:ring-teal-500 font-mono text-sm" placeholder="Ej: zona-10">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Teléfono</label>
+              <input type="text" id="telefono" name="telefono" class="mt-1 w-full border rounded-lg p-2" placeholder="Ej: +502 123456">
+            </div>
+          </div>
 
-  <div class="w-full md:w-2/3 bg-white shadow rounded-2xl p-6 border flex flex-col h-[calc(100vh-140px)] min-h-[500px]">
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-      <div>
-        <h2 class="text-xl font-bold text-gray-800">Sucursales Activas</h2>
-        <p class="text-sm text-gray-500">Administra las ubicaciones clínicas.</p>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Horario Visible</label>
+            <input type="text" id="horario" name="horario" class="mt-1 w-full border rounded-lg p-2" placeholder="Ej: Lun-Vie 8am-6pm">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+            <select id="activo" name="activo" class="border rounded-lg p-2 w-full">
+              <option value="1">Activa</option>
+              <option value="0">Inactiva</option>
+            </select>
+          </div>
+
+          <div class="pt-2 flex items-center justify-between gap-2">
+            <button type="button" onclick="resetForm()" class="px-2 py-2 border rounded-lg">Nuevo</button>
+            <button type="submit" id="btnSave" class="px-2 py-2 bg-teal-600 text-white rounded-lg">Guardar</button>
+          </div>
+        </form>
       </div>
-      <div class="flex flex-wrap items-center gap-2">
-        <select id="filterStatus"
-          class="border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-teal-500">
-          <option value="">Todas</option>
-          <option value="1">Activas</option>
-          <option value="0">Inactivas</option>
-        </select>
-        <select id="selLimit" class="border border-gray-300 rounded-lg text-sm px-3 py-2">
-          <option value="10">10 por pág</option>
-          <option value="25">25</option>
-          <option value="50">50</option>
-        </select>
-        <div class="relative">
-          <i class="fas fa-search absolute left-3 top-2.5 text-gray-400"></i>
-          <input type="text" id="txtSearch"
-            class="pl-9 border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-teal-500 w-48"
-            placeholder="Buscar...">
+    </div>
+
+    <div class="lg:col-span-8">
+      <div class="bg-white rounded-2xl shadow border">
+        <div class="p-5 border-b">
+          <div class="font-semibold text-gray-900">Listado</div>
+          <div class="text-sm text-gray-500">Acciones: editar y eliminar.</div>
+
+          <div class="mt-4 grid grid-cols-1 md:grid-cols-5 gap-3">
+            <input id="txtSearch" type="text" placeholder="Buscar..." class="border rounded-lg p-2 md:col-span-2">
+            <select id="filterStatus" class="border rounded-lg p-2">
+              <option value="">Estado: todas</option>
+              <option value="1">Activas</option>
+              <option value="0">Inactivas</option>
+            </select>
+            <select id="selLimit" class="border rounded-lg p-2">
+              <option value="5">5</option>
+              <option value="10" selected>10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+            </select>
+            <div id="pageInfo" class="text-sm text-gray-600 self-center"></div>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-sm">
+            <thead class="bg-gray-50 text-gray-700">
+              <tr>
+                <th class="text-left px-4 py-3 cursor-pointer select-none">Sucursal</th>
+                <th class="text-left px-4 py-3 cursor-pointer select-none">Dirección</th>
+                <th class="text-left px-4 py-3 cursor-pointer select-none">Tel / Horario</th>
+                <th class="text-left px-4 py-3 cursor-pointer select-none">Estado</th>
+                <th class="text-right px-4 py-3">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody" class="divide-y"></tbody>
+          </table>
+        </div>
+
+        <div class="p-4 border-t">
+          <div id="pagination" class="flex flex-wrap gap-2 justify-end"></div>
         </div>
       </div>
-    </div>
-
-    <div class="flex-1 overflow-auto bg-gray-50 rounded-lg border border-gray-100">
-      <table class="w-full text-left border-collapse min-w-max">
-        <thead class="bg-white border-b sticky top-0 z-10 shadow-sm">
-          <tr>
-            <th class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Sucursal</th>
-            <th class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Dirección</th>
-            <th class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Tel / Horario</th>
-            <th class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Estado</th>
-            <th class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase text-right">Acciones</th>
-          </tr>
-        </thead>
-        <tbody id="tableBody" class="divide-y divide-gray-100 bg-white"></tbody>
-      </table>
-    </div>
-
-    <div class="mt-4 flex flex-col sm:flex-row items-center justify-between border-t pt-4">
-      <div class="text-sm text-gray-500" id="pageInfo"></div>
-      <div class="flex items-center space-x-1" id="pagination"></div>
     </div>
   </div>
 </div>
 
 <script>
   let currentPage = 1;
+  let t = null;
+  function debounceLoad() { if (t) clearTimeout(t); t = setTimeout(() => loadData(1), 800); }
 
   function renderPagination(total_pages, current) {
-    let html = '';
+    let ht = '';
     if (total_pages <= 1) { $('#pagination').empty(); return; }
-
-    html += `<button onclick="loadData(${current - 1})" class="px-3 py-1 rounded-md border ${current === 1 ? 'opacity-50 pointer-events-none' : ''}"><i class="fas fa-chevron-left"></i></button>`;
+    
     for (let i = 1; i <= total_pages; i++) {
-      let active = i === current ? 'bg-teal-600 text-white shadow' : 'border hover:bg-gray-50 text-gray-700';
-      if (i === 1 || i === total_pages || (i >= current - 1 && i <= current + 1)) {
-        html += `<button onclick="loadData(${i})" class="px-3 py-1 rounded-md ${active}">${i}</button>`;
-      } else if (i === current - 2 || i === current + 2) html += `<span class="px-2">...</span>`;
+        ht += `<button onclick="loadData(${i})" class="px-3 py-1 rounded ${i === current ? 'bg-teal-600 text-white' : 'border'}">${i}</button>`;
     }
-    html += `<button onclick="loadData(${current + 1})" class="px-3 py-1 rounded-md border ${current === total_pages ? 'opacity-50 pointer-events-none' : ''}"><i class="fas fa-chevron-right"></i></button>`;
-    $('#pagination').html(html);
+    $('#pagination').html(ht);
   }
 
   function loadData(page = 1) {
@@ -160,51 +141,73 @@ if (!$is_tenant_admin) {
     const status = $('#filterStatus').val();
 
     $.get('<?= app_url('api/admin/sucursales.php') ?>', { action: 'list', page: currentPage, per: per, search: search, status: status }, function (res) {
+      if(!res.success) return;
       const tbody = $('#tableBody').empty();
-      if (res.success && res.data.length > 0) {
+      if (res.data.length > 0) {
         res.data.forEach(item => {
           let badge = parseInt(item.activo) === 1
-            ? `<span class="bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs">Activo</span>`
-            : `<span class="bg-red-100 text-red-800 px-2 py-0.5 rounded text-xs">Inactivo</span>`;
+            ? `<span class="inline-flex px-2 py-1 rounded-full text-xs bg-teal-50 text-teal-800 border border-teal-100">Activo</span>`
+            : `<span class="inline-flex px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-700 border">Inactivo</span>`;
 
           let h = {};
-          try { h = JSON.parse(item.horarios_json) || {}; } catch (e) { }
-          let horText = h.texto || item.horarios_json || '-';
+          let horText = '-';
+          try {
+            h = JSON.parse(item.horarios_json) || {};
+            if (h.texto) {
+              horText = h.texto;
+            } else {
+              let parts = [];
+              for (let key in h) {
+                if (key !== 'texto' && h[key] && h[key].inicio && h[key].fin) {
+                  let dias = key;
+                  if (key === 'lun-vie') dias = 'Lun-Vie';
+                  else if (key === 'sab') dias = 'Sáb';
+                  else if (key === 'dom') dias = 'Dom';
+                  parts.push(`${dias}: ${h[key].inicio} - ${h[key].fin}`);
+                }
+              }
+              if (parts.length > 0) horText = parts.join(', ');
+              else if (item.horarios_json && item.horarios_json !== '{}') horText = item.horarios_json;
+            }
+          } catch (e) {
+            if (item.horarios_json) horText = item.horarios_json;
+          }
 
           tbody.append(`
-          <tr class="hover:bg-teal-50/30 transition-colors group">
-            <td class="py-3 px-4 font-semibold text-gray-800">
-                ${item.nombre} <div class="text-xs text-gray-400 font-normal">Slug: ${item.slug}</div>
+          <tr class="hover:bg-gray-50 border-b last:border-0 border-gray-100">
+            <td class="px-4 py-3">
+                <div class="font-medium text-gray-900">${item.nombre}</div>
+                <div class="text-xs text-gray-500 font-mono">${item.slug || ''}</div>
             </td>
-            <td class="py-3 px-4 text-sm text-gray-600 truncate max-w-[150px]">${item.direccion || '-'}</td>
-            <td class="py-3 px-4 text-xs text-gray-600">
-                <div><i class="fas fa-phone text-gray-400 w-4"></i> ${item.telefono || '-'}</div>
-                <div class="mt-1"><i class="far fa-clock text-gray-400 w-4"></i> ${horText}</div>
+            <td class="px-4 py-3 text-sm text-gray-600 truncate max-w-[150px]">${item.direccion || '-'}</td>
+            <td class="px-4 py-3 text-xs text-gray-600">
+                <div><i data-lucide="phone" class="text-gray-400 w-4"></i> ${item.telefono || '-'}</div>
+                <div class="mt-1"><i data-lucide="clock" class="text-gray-400 w-4"></i> <span class="text-gray-500">${horText}</span></div>
             </td>
-            <td class="py-3 px-4">${badge}</td>
-            <td class="py-3 px-4 text-right">
-                <button onclick="editItem(${item.id})" class="text-blue-500 hover:text-blue-700 bg-blue-50 px-2.5 py-1.5 rounded-lg border border-blue-200"><i class="fas fa-edit"></i></button>
-                <button onclick="deleteItem(${item.id})" class="text-red-500 hover:text-red-700 bg-red-50 px-2.5 py-1.5 rounded-lg border border-red-200"><i class="fas fa-trash-alt"></i></button>
+            <td class="px-4 py-3">${badge}</td>
+            <td class="px-4 py-3">
+              <div class="flex items-center justify-end gap-2">
+                <button onclick="editItem(${item.id})" class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-white editBtn" title="Editar"><i data-lucide="pen"></i></button>
+                <button onclick="deleteItem(${item.id})" class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-white text-red-600 deleteBtn" title="Eliminar"><i data-lucide="trash-2"></i></button>
+              </div>
             </td>
           </tr>
         `);
         });
-        $('#pageInfo').text(`Mostrando ${res.data.length} de ${res.total}`);
+        $('#pageInfo').text(`Total: ${res.total}`);
       } else {
-        tbody.html('<tr><td colspan="5" class="py-8 text-center text-gray-500">No hay sucursales registradas.</td></tr>');
-        $('#pageInfo').text('Mostrando 0 resultados');
+        tbody.html('<tr><td colspan="5" class="py-4 text-center text-gray-500">No hay sucursales registradas.</td></tr>');
+        $('#pageInfo').text('Total: 0');
       }
-      renderPagination(res.total_pages, currentPage);
+      renderPagination(res.total_pages || Math.ceil(res.total / per), currentPage);
     }, 'json');
   }
 
   function resetForm() {
     $('#formSucursal')[0].reset();
     $('#sucursal_id').val(0);
-    $('#formAlert').addClass('hidden');
-    $('#btnSave').text('Guardar Sucursal');
-    $('#activo').prop('checked', true);
-    $('#estadoLabel').text('Activo');
+    $('#btnSave').text('Guardar');
+    $('#activo').val('1');
   }
 
   function editItem(id) {
@@ -222,10 +225,9 @@ if (!$is_tenant_admin) {
         try { h = JSON.parse(d.horarios_json) || {}; } catch (e) { }
         $('#horario').val(h.texto || "");
 
-        const st = parseInt(d.activo) === 1;
-        $('#activo').prop('checked', st);
-        $('#estadoLabel').text(st ? 'Activo' : 'Inactivo');
-        $('#btnSave').text('Actualizar Sucursal');
+        $('#activo').val(d.activo || '0');
+        $('#btnSave').text('Actualizar');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }, 'json');
   }
@@ -235,7 +237,7 @@ if (!$is_tenant_admin) {
       $.post('<?= app_url('api/admin/sucursales.php') ?>', { action: 'delete', id: id }, function (res) {
         if (res.success) {
           loadData(currentPage);
-          showCustomAlert('Sucursal eliminada.', 5000, 'success');
+          showCustomAlert('Sucursal eliminada.', 3000, 'info');
         } else {
           showCustomAlert(res.message || 'Error al eliminar', 5000, 'error');
         }
@@ -244,14 +246,9 @@ if (!$is_tenant_admin) {
   }
 
   $(function () {
-    $('#activo').on('change', function () { $('#estadoLabel').text(this.checked ? 'Activo' : 'Inactivo'); });
-
     $('#formSucursal').on('submit', function (e) {
       e.preventDefault();
-      let data = $(this).serializeArray();
-      if (!$("#activo").is(":checked")) data.push({ name: 'activo', value: '0' });
-
-      $.post('<?= app_url('api/admin/sucursales.php') ?>?action=save', data, function (res) {
+      $.post('<?= app_url('api/admin/sucursales.php') ?>?action=save', $(this).serialize(), function (res) {
         if (res.success) {
           resetForm();
           loadData(currentPage);
@@ -263,7 +260,7 @@ if (!$is_tenant_admin) {
     });
 
     $('#selLimit, #filterStatus').on('change', () => loadData(1));
-    $('#txtSearch').on('keyup', function (e) { if (e.key === 'Enter') loadData(1); });
+    $('#txtSearch').on('keyup', debounceLoad);
 
     loadData();
   });
