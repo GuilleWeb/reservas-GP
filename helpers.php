@@ -151,7 +151,8 @@ function app_link_with_slug($path, $id_e)
     }
     $url = app_url($path);
     if ($id_e) {
-        $url .= (strpos($url, '?') === false ? '?' : '&') . 'id_e=' . rawurlencode((string) $id_e);
+        $param_name = is_numeric($id_e) ? 'id_e' : 'empresa';
+        $url .= (strpos($url, '?') === false ? '?' : '&') . $param_name . '=' . rawurlencode((string) $id_e);
     }
     return $url;
 }

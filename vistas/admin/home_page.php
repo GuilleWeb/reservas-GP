@@ -12,7 +12,7 @@ include __DIR__ . '/../../includes/topbar.php';
     <div class="flex items-center justify-between mb-6">
       <div>
         <h2 class="text-2xl font-extrabold text-gray-900">Configuración de Home Page</h2>
-        <a href="../../vistas/public/inicio.php?slug=<?= htmlspecialchars($empresa['slug']) ?>" class="nav-link text-teal-900">
+        <a href="<?= htmlspecialchars(view_url('vistas/public/inicio.php', $empresa_info['slug'] ?? get_empresa_slug())) ?>" class="nav-link text-teal-900">
           <i data-lucide="home" class="w-5"></i>
           <span class="ml-2 sidebar-label">Ver vista publica</span>
         </a>

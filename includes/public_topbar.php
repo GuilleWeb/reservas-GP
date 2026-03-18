@@ -14,7 +14,9 @@ if (!function_exists('generate_csrf')) {
 $module = isset($module) ? ' | ' . $module : '';
 $csrf = generate_csrf();
 $user = $user ?? current_user();
-$id_e = get_empresa_id();
+$empresa_slug = get_empresa_slug();
+$id_e = $empresa_slug ?: get_empresa_id();
+$slug = $id_e;
 $is_public = true;
 $is_public_view = true;
 

@@ -8,9 +8,12 @@ $module = isset($module) ? ' | ' . $module : '';
 $csrf = generate_csrf();
 $user = $user ?? current_user();
 $role = $user['rol'] ?? null;
-$id_e = get_empresa_id();
 $is_public = is_public_view();
 $is_public_view = $is_public;
+$empresa_id = get_empresa_id();
+$empresa_slug = get_empresa_slug();
+$public_empresa_ref = $empresa_slug ?: $empresa_id;
+$id_e = $empresa_id;
 $sidebar_role = get_effective_role($user, $_SERVER['REQUEST_URI'] ?? '');
 
 // Badge de contexto: superadmin o admin actuando con rol heredado
@@ -111,7 +114,7 @@ $acting_as_other = $user && $sidebar_role !== $role && $sidebar_role !== null;
 
         <a href="<?= ($user && $role === 'superadmin' && !$id_e)
           ? htmlspecialchars(view_url('vistas/superadmin/dashboard.php'))
-          : htmlspecialchars(view_url('vistas/public/inicio.php', $id_e)) ?>" class="flex items-center space-x-3">
+          : htmlspecialchars(view_url('vistas/public/inicio.php', $public_empresa_ref)) ?>" class="flex items-center space-x-3">
           <img src="<?= htmlspecialchars($logo_path) ?>" alt="logo" class="h-10 w-10 object-cover rounded-full">
           <div>
             <div class="font-semibold text-lg text-teal-700"><?= $empresa_nombre ?></div>
@@ -123,14 +126,14 @@ $acting_as_other = $user && $sidebar_role !== $role && $sidebar_role !== null;
 
         <?php if ($is_public): ?>
           <nav class="hidden md:flex flex-1 justify-center space-x-6">
-            <?php if ($id_e): ?>
-              <a href="<?= htmlspecialchars(view_url('vistas/public/inicio.php', $id_e)) ?>"
+            <?php if ($public_empresa_ref): ?>
+              <a href="<?= htmlspecialchars(view_url('vistas/public/inicio.php', $public_empresa_ref)) ?>"
                 class="text-gray-700 hover:text-teal-600 font-medium nav-link">Inicio</a>
-              <a href="<?= htmlspecialchars(view_url('vistas/public/sedes.php', $id_e)) ?>"
+              <a href="<?= htmlspecialchars(view_url('vistas/public/ver-sedes.php', $public_empresa_ref)) ?>"
                 class="text-gray-700 hover:text-teal-600 font-medium nav-link">Sedes</a>
-              <a href="<?= htmlspecialchars(view_url('vistas/public/citas.php', $id_e)) ?>"
+              <a href="<?= htmlspecialchars(view_url('vistas/public/citas.php', $public_empresa_ref)) ?>"
                 class="text-gray-700 hover:text-teal-600 font-medium nav-link">Agendar Cita</a>
-              <a href="<?= htmlspecialchars(view_url('vistas/public/blog.php', $id_e)) ?>"
+              <a href="<?= htmlspecialchars(view_url('vistas/public/blog.php', $public_empresa_ref)) ?>"
                 class="text-gray-700 hover:text-teal-600 font-medium nav-link">Blog</a>
             <?php else: ?>
               <a href="<?= htmlspecialchars(view_url('vistas/public/inicio.php')) ?>"
@@ -148,7 +151,7 @@ $acting_as_other = $user && $sidebar_role !== $role && $sidebar_role !== null;
               <i data-lucide="log-out" class="mr-1"></i> Salir
             </button>
           <?php else: ?>
-            <a href="<?= htmlspecialchars(view_url('vistas/public/login.php', $id_e)) ?>"
+            <a href="<?= htmlspecialchars(view_url('vistas/public/login.php', $public_empresa_ref)) ?>"
               class="px-3 py-1 rounded-md bg-teal-600 text-white">Iniciar sesión</a>
           <?php endif; ?>
         </div>
@@ -291,20 +294,20 @@ $acting_as_other = $user && $sidebar_role !== $role && $sidebar_role !== null;
               </a>
 
             <?php else: ?>
-              <?php if ($id_e): ?>
-                <a href="<?= htmlspecialchars(view_url('vistas/public/inicio.php', $id_e)) ?>"
+              <?php if ($public_empresa_ref): ?>
+                <a href="<?= htmlspecialchars(view_url('vistas/public/inicio.php', $public_empresa_ref)) ?>"
                   class="nav-link flex items-center p-2 rounded hover:bg-gray-50 text-gray-700">
                   <i data-lucide="home" class="w-5"></i><span class="ml-2 sidebar-label">Inicio</span>
                 </a>
-                <a href="<?= htmlspecialchars(view_url('vistas/public/sedes.php', $id_e)) ?>"
+                <a href="<?= htmlspecialchars(view_url('vistas/public/ver-sedes.php', $public_empresa_ref)) ?>"
                   class="nav-link flex items-center p-2 rounded hover:bg-gray-50 text-gray-700">
                   <i data-lucide="hospital" class="w-5"></i><span class="ml-2 sidebar-label">Sedes</span>
                 </a>
-                <a href="<?= htmlspecialchars(view_url('vistas/public/citas.php', $id_e)) ?>"
+                <a href="<?= htmlspecialchars(view_url('vistas/public/citas.php', $public_empresa_ref)) ?>"
                   class="nav-link flex items-center p-2 rounded hover:bg-gray-50 text-gray-700">
                   <i data-lucide="calendar-check" class="w-5"></i><span class="ml-2 sidebar-label">Agendar Cita</span>
                 </a>
-                <a href="<?= htmlspecialchars(view_url('vistas/public/blog.php', $id_e)) ?>"
+                <a href="<?= htmlspecialchars(view_url('vistas/public/blog.php', $public_empresa_ref)) ?>"
                   class="nav-link flex items-center p-2 rounded hover:bg-gray-50 text-gray-700">
                   <i data-lucide="newspaper" class="w-5"></i><span class="ml-2 sidebar-label">Blog</span>
                 </a>
@@ -315,7 +318,7 @@ $acting_as_other = $user && $sidebar_role !== $role && $sidebar_role !== null;
                 </a>
               <?php endif; ?>
               <?php if (!$user): ?>
-                <a href="<?= htmlspecialchars(view_url('vistas/public/login.php', $id_e)) ?>"
+                <a href="<?= htmlspecialchars(view_url('vistas/public/login.php', $public_empresa_ref)) ?>"
                   class="nav-link flex items-center p-2 rounded hover:bg-gray-50 text-gray-700 mt-4 border-t pt-4">
                   <i data-lucide="log-in" class="w-5"></i><span class="ml-2 sidebar-label">Ingresar</span>
                 </a>

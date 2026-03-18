@@ -1,26 +1,7 @@
 <?php
 require_once __DIR__ . '/../../includes/bootstrap.php';
 
-$empresa_id = $_GET['id_e'] ?? null;
-$empresa_slug = $_GET['slug'] ?? $_GET['id_e'] ?? null; // Por compatibilidad
-
-if (!$empresa_slug) {
-    http_response_code(404);
-    $module = '404';
-    include __DIR__ . '/../../includes/topbar.php';
-    include __DIR__ . '/../404.php';
-    include __DIR__ . '/../../includes/footer.php';
-    exit;
-}
-
-// Cargar solo lo mínimo necesario de la empresa (nombre, logo, colores)
-if ($empresa_slug) {
-    $stmt = $pdo->prepare("SELECT id, nombre, logo_path, colores_json, slug FROM empresas WHERE slug = ? AND activo = 1");
-    $stmt->execute([$empresa_slug]);
-}
-
-$empresa = $stmt->fetch(PDO::FETCH_ASSOC);
-
+$empresa = get_current_empresa();
 if (!$empresa) {
     http_response_code(404);
     $module = '404';
@@ -29,11 +10,7 @@ if (!$empresa) {
     include __DIR__ . '/../../includes/footer.php';
     exit;
 }
-
-// Guardar en GLOBALS para topbar
-$GLOBALS['empresa_info'] = $empresa;
-
-$module = 'inicio';
+$module = 'ver-sedes';
 include __DIR__ . '/../../includes/topbar.php';
 ?>
 <div class="max-w-6xl mx-auto">

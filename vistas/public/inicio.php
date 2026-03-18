@@ -1,26 +1,7 @@
 <?php
 require_once __DIR__ . '/../../includes/bootstrap.php';
 
-$empresa_id = $_GET['id_e'] ?? null;
-$empresa_slug = $_GET['slug'] ?? $_GET['id_e'] ?? null; // Por compatibilidad
-
-if (!$empresa_slug) {
-    http_response_code(404);
-    $module = '404';
-    include __DIR__ . '/../../includes/topbar.php';
-    include __DIR__ . '/../404.php';
-    include __DIR__ . '/../../includes/footer.php';
-    exit;
-}
-
-// Cargar solo lo mínimo necesario de la empresa (nombre, logo, colores)
-if ($empresa_slug) {
-    $stmt = $pdo->prepare("SELECT id, nombre, logo_path, colores_json, slug FROM empresas WHERE slug = ? AND activo = 1");
-    $stmt->execute([$empresa_slug]);
-}
-
-$empresa = $stmt->fetch(PDO::FETCH_ASSOC);
-
+$empresa = get_current_empresa();
 if (!$empresa) {
     http_response_code(404);
     $module = '404';
@@ -30,9 +11,7 @@ if (!$empresa) {
     exit;
 }
 
-// Guardar en GLOBALS para topbar
-$GLOBALS['empresa_info'] = $empresa;
-
+$empresa_slug = $empresa['slug'] ?? null;
 $module = 'inicio';
 include __DIR__ . '/../../includes/topbar.php';
 ?>
@@ -220,7 +199,7 @@ include __DIR__ . '/../../includes/topbar.php';
                         ${data.hero_subtitulo}
                     </p>
                     <div class="pt-4 flex flex-wrap gap-4">
-                        <a href="<?= app_url('vistas/public/citas.php') ?>?id_e=${empresa_slug}"
+                        <a href="<?= view_url('vistas/public/citas.php', $empresa_slug) ?>"
                             class="bg-teal-600 hover:bg-teal-700 text-white px-8 py-4 rounded-full font-bold shadow-lg transition transform hover:scale-105">
                             ${data.hero_btn_texto}
                         </a>
@@ -313,7 +292,7 @@ include __DIR__ . '/../../includes/topbar.php';
                             <h3 class="text-xl font-bold text-gray-800 hover:text-teal-700 transition duration-150">${p.titulo}</h3>
                             <p class="text-sm text-gray-600 mt-2">${contenidoCorto}...</p>
                             <div class="mt-4">
-                                <a href="<?= app_url('vistas/public/blog.php') ?>?id_e=${empresa_slug}&id=${p.id}"
+                                <a href="<?= view_url('vistas/public/blog.php', $empresa_slug) ?>&id=${p.id}"
                                     class="inline-flex items-center text-teal-600 font-semibold text-sm hover:text-teal-800 transition duration-150">
                                     Leer artículo completo <i data-lucide="chevron-right" class="ml-1 text-xs"></i>
                                 </a>
@@ -402,7 +381,7 @@ include __DIR__ . '/../../includes/topbar.php';
                             <div id="miniSedes" class="grid grid-cols-1 gap-3">
                                 <!-- Se cargarán por separado -->
                             </div>
-                            <a href="<?= app_url('vistas/public/sedes.php') ?>?id_e=${empresa_slug}" class="block text-center mt-6 text-sm font-bold text-gray-500 hover:text-teal-600 transition">
+                            <a href="<?= view_url('vistas/public/ver-sedes.php', $empresa_slug) ?>" class="block text-center mt-6 text-sm font-bold text-gray-500 hover:text-teal-600 transition">
                                 Ver en el mapa &rarr;
                             </a>
                         </div>

@@ -1,23 +1,9 @@
 <?php
 require_once __DIR__ . '/../../includes/bootstrap.php';
 
-$slug = $_GET['id_e'] ?? null;
-if (!$slug) {
-    http_response_code(404);
-    $module = '404';
-    include __DIR__ . '/../../includes/topbar.php';
-    include __DIR__ . '/../404.php';
-    include __DIR__ . '/../../includes/footer.php';
-    exit;
-}
-
-$stmt = $pdo->prepare("SELECT * FROM empresas WHERE slug = ? AND activo = 1 LIMIT 1");
-$stmt->execute([$slug]);
-$empresa = $stmt->fetch(PDO::FETCH_ASSOC);
-
+$empresa = get_current_empresa();
 if (!$empresa) {
     http_response_code(404);
-    $_GET['id_e'] = $_GET['_empresa'] = null; // Limpiar contexto
     $module = '404';
     include __DIR__ . '/../../includes/topbar.php';
     include __DIR__ . '/../404.php';
@@ -25,6 +11,7 @@ if (!$empresa) {
     exit;
 }
 
+$slug = $empresa['slug'] ?? null;
 $module = 'sedes';
 include __DIR__ . '/../../includes/topbar.php';
 ?>

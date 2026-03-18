@@ -54,6 +54,7 @@ if ($action === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt_st->execute([$new_token, $user['id']]);
 
     $id_e = null;
+    $empresa_id = null;
     $sucursal_slug = null;
 
     if (!empty($user['empresa_id'])) {
@@ -63,6 +64,7 @@ if ($action === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$emp || !$emp['activo']) {
             json_response(['error' => 'inactive_empresa', 'message' => 'La empresa a la que perteneces se encuentra desactivada.'], 403);
         }
+        $empresa_id = (int) $user['empresa_id'];
         $id_e = $emp['slug'] ?: null;
     }
 
@@ -98,16 +100,17 @@ if ($action === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($user['rol'] === 'superadmin') {
         $redirect_url = $base_path . '/vistas/superadmin/dashboard.php';
-    } elseif ($id_e) {
+    } elseif ($empresa_id) {
+        $tenant_query = '?id_e=' . urlencode((string) $empresa_id);
         if ($user['rol'] === 'admin') {
-            $redirect_url = $base_path . '/vistas/admin/dashboard.php';
+            $redirect_url = $base_path . '/vistas/admin/dashboard.php' . $tenant_query;
         } elseif ($user['rol'] === 'gerente') {
-            $redirect_url = $base_path . '/vistas/sucursal/dashboard.php';
+            $redirect_url = $base_path . '/vistas/sucursal/dashboard.php' . $tenant_query;
         } elseif ($user['rol'] === 'empleado' || $user['rol'] === 'cliente') {
             $target = ($user['rol'] === 'empleado') ? 'empleado' : 'cliente';
-            $redirect_url = $base_path . '/vistas/' . $target . '/dashboard.php';
+            $redirect_url = $base_path . '/vistas/' . $target . '/dashboard.php' . $tenant_query;
         } else {
-            $redirect_url = $base_path . '/vistas/admin/dashboard.php';
+            $redirect_url = $base_path . '/vistas/admin/dashboard.php' . $tenant_query;
         }
     }
 

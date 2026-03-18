@@ -1,6 +1,7 @@
 <?php
 $module = 'login';
-include __DIR__ . '/../../includes/public_topbar.php';
+require_once __DIR__ . '/../../includes/bootstrap.php';
+include __DIR__ . '/../../includes/topbar.php';
 ?>
 
 <div class="min-h-[80vh] flex items-center justify-center px-4 py-12">
