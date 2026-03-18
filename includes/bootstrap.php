@@ -50,7 +50,7 @@ $color_p = $colores['principal'] ?? '#46C9BB';
 
 // Auth: si no hay sesión activa, mostrar 403
 $user = current_user();
-if (!$user) {
+if (!is_public_view() && !$user) {
     http_response_code(403);
     include __DIR__ . '/errors/403.php';
     exit;

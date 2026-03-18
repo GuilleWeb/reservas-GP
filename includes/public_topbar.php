@@ -7,6 +7,10 @@ if (!function_exists('get_current_empresa')) {
   require_once __DIR__ . '/context.php';
 }
 
+if (!function_exists('generate_csrf')) {
+  require_once __DIR__ . '/../helpers.php';
+}
+
 $module = isset($module) ? ' | ' . $module : '';
 $csrf = generate_csrf();
 $user = $user ?? current_user();
@@ -27,6 +31,9 @@ if (!isset($color_p)) {
 }
 if (!isset($empresa_descripcion)) {
   $empresa_descripcion = '';
+}
+if (!isset($empresa_slogan )) {
+  $empresa_slogan  = 'Reservas al instante';
 }
 if (!isset($redes)) {
   $redes = [];
