@@ -6,9 +6,6 @@ $module = 'ajustes';
 include __DIR__ . '/../../includes/topbar.php';
 ?>
 
-<!-- Font Awesome para iconos sociales -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-
 <div class="max-w-7xl mx-auto">
   <div class="bg-white rounded-2xl shadow p-6 border">
     <!-- Tabs -->
@@ -123,7 +120,7 @@ include __DIR__ . '/../../includes/topbar.php';
           <h4 class="font-medium text-gray-900 mb-3">Redes sociales</h4>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div class="relative">
-              <span class="absolute inset-y-0 left-0 flex items-center pl-3"><i data-lucide="facebook-f" class="text-gray-500"></i></span>
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3"><i data-lucide="facebook" class="text-gray-500"></i></span>
               <input id="social_input_facebook" name="redes[facebook]" class="border rounded-lg p-2 pl-10 w-full" placeholder="https://facebook link...">
             </div>
             <div class="relative">

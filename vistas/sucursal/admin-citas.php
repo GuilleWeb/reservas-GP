@@ -94,10 +94,28 @@ include __DIR__ . '/../../includes/topbar.php';
 
   <div class="lg:col-span-8">
       <div class="bg-white rounded-2xl shadow border p-5">
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-      <div>
-        <h2 class="text-xl font-bold text-gray-800">Citas de la Sucursal</h2>
-        <p class="text-sm text-gray-500">Gestión de agenda.</p>
+    <div class="p-5 border-b">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+          <div class="font-semibold text-gray-900">Listado</div>
+          <div class="text-sm text-gray-500">Acciones: editar y cancelar.</div>
+        </div>
+      </div>
+      <div class="mt-4 grid grid-cols-1 md:grid-cols-6 gap-3">
+        <input type="text" id="txtSearch" placeholder="Buscar por cliente o atención..."
+          class="border rounded-lg p-2 md:col-span-2">
+        <select id="filterStatus" class="border rounded-lg p-2">
+          <option value="">Estado: todos</option>
+          <option value="pendiente">Pendientes</option>
+          <option value="confirmada">Confirmadas</option>
+          <option value="cancelada">Canceladas</option>
+          <option value="completada">Completadas</option>
+        </select>
+        <select id="selLimit" class="border rounded-lg p-2">
+          <option value="10" selected>10</option>
+          <option value="25">25</option>
+        </select>
+        <div id="pageInfo" class="text-sm text-gray-600 self-center md:col-span-2"></div>
       </div>
     </div>
 
@@ -116,7 +134,7 @@ include __DIR__ . '/../../includes/topbar.php';
     </div>
 
     <div class="mt-4 flex flex-col sm:flex-row items-center justify-between border-t pt-4">
-      <div class="text-sm text-gray-500" id="pageInfo"></div>
+      <div class="text-sm text-gray-500"></div>
       <div class="flex items-center space-x-1" id="pagination"></div>
   </div>
 </div>
@@ -175,7 +193,10 @@ include __DIR__ . '/../../includes/topbar.php';
 
   function loadData(page = 1) {
     currentPage = page;
-    $.get(API_URL, { action: 'list', page: currentPage, per: 10 }, function (res) {
+    const per = parseInt($('#selLimit').val() || '10');
+    const search = ($('#txtSearch').val() || '').trim();
+    const estado = $('#filterStatus').val() || '';
+    $.get(API_URL, { action: 'list', page: currentPage, per: per, search: search, estado: estado }, function (res) {
       const tbody = $('#tableBody').empty();
       if (res.success && res.data.length > 0) {
         res.data.forEach(item => {
@@ -203,6 +224,7 @@ include __DIR__ . '/../../includes/topbar.php';
         $('#pageInfo').text(`Mostrando ${res.data.length} de ${res.total}`);
       } else {
         tbody.html('<tr><td colspan="4" class="py-10 text-center text-gray-500">No hay citas registradas.</td></tr>');
+        $('#pageInfo').text('Mostrando 0 resultados');
       }
       renderPagination(res.total_pages, currentPage);
     }, 'json');
@@ -244,6 +266,8 @@ include __DIR__ . '/../../includes/topbar.php';
 
   $(function () {
     loadOptions();
+    $('#selLimit, #filterStatus').on('change', () => loadData(1));
+    $('#txtSearch').on('keyup', function (e) { if (e.key === 'Enter') loadData(1); });
     $('#formCita').on('submit', function (e) {
       e.preventDefault();
       $.post(API_URL + '?action=save', $(this).serialize(), function (res) {

@@ -272,7 +272,48 @@
   $(document).ready(function () {
     $("#customAlertToast").addClass('translate-x-full opacity-0');
     if (window.lucide) { lucide.createIcons(); }
+    initUniversalTableSort();
   });
+
+  // Ordenamiento universal para tablas privadas con <th data-sort="...">.
+  function initUniversalTableSort() {
+    if (!document.body.classList.contains('app-private')) return;
+    const tables = document.querySelectorAll('main table');
+    tables.forEach(table => {
+      const headers = table.querySelectorAll('thead th[data-sort]');
+      const tbody = table.querySelector('tbody');
+      if (!headers.length || !tbody) return;
+
+      headers.forEach((th, idx) => {
+        if (th.dataset.sortBound === '1') return;
+        th.dataset.sortBound = '1';
+        th.addEventListener('click', () => {
+          const nextDir = (th.dataset.sortDir === 'asc') ? 'desc' : 'asc';
+          headers.forEach(h => {
+            h.dataset.sortDir = '';
+            const ind = h.querySelector('.sort-ind');
+            if (ind) ind.textContent = '';
+          });
+          th.dataset.sortDir = nextDir;
+
+          const rows = Array.from(tbody.querySelectorAll('tr'));
+          const dir = nextDir === 'asc' ? 1 : -1;
+          rows.sort((a, b) => {
+            const av = (a.children[idx]?.textContent || '').trim();
+            const bv = (b.children[idx]?.textContent || '').trim();
+            const an = Number(av.replace(/[^0-9.-]/g, ''));
+            const bn = Number(bv.replace(/[^0-9.-]/g, ''));
+            if (!Number.isNaN(an) && !Number.isNaN(bn) && av !== '' && bv !== '') return (an - bn) * dir;
+            return av.localeCompare(bv, 'es', { sensitivity: 'base' }) * dir;
+          });
+          rows.forEach(r => tbody.appendChild(r));
+
+          const ind = th.querySelector('.sort-ind');
+          if (ind) ind.textContent = nextDir === 'asc' ? '▲' : '▼';
+        });
+      });
+    });
+  }
 
   // Re-renderizar iconos al añadir nuevo contenido dinámico (AJAX/Modales)
   let lucideIsRendering = false;
@@ -288,6 +329,7 @@
     if (hasNewIcons) {
       lucideIsRendering = true;
       lucide.createIcons();
+      initUniversalTableSort();
       setTimeout(() => { lucideIsRendering = false; }, 10);
     }
   });

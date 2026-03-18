@@ -52,10 +52,16 @@ include __DIR__ . '/../../includes/topbar.php';
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700">Estado</label>
-              <select class="border rounded-lg p-2 w-full" id="activo" name="activo">
-                <option value="1" selected>Activo</option>
-                <option value="0">Inactivo</option>
-              </select>
+              <div class="flex items-center gap-3 mt-1">
+                <input type="hidden" id="activo" name="activo" value="1">
+                <button type="button" id="activoSAUsuarioSwitch"
+                  class="relative inline-flex h-6 w-11 items-center rounded-full bg-teal-600 transition-colors"
+                  aria-pressed="true">
+                  <span id="activoSAUsuarioKnob"
+                    class="inline-block h-5 w-5 translate-x-5 rounded-full bg-white shadow transition-transform"></span>
+                </button>
+                <span id="activoSAUsuarioLabel" class="text-sm font-medium text-gray-700">Activo</span>
+              </div>
             </div>
           </div>
 
@@ -86,41 +92,48 @@ include __DIR__ . '/../../includes/topbar.php';
 
     <!-- Lado Derecho: Listado -->
     <div class="lg:col-span-8">
-      <div
-        class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col h-[calc(100vh-140px)] min-h-[600px]">
+      <div class="bg-white rounded-2xl shadow border p-5">
 
-        <!-- Header del Listado -->
-        <div class="p-6 border-b border-gray-50 bg-white sticky top-0 z-10">
-          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div class="p-5 border-b">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div>
               <div class="font-semibold text-gray-900">Listado</div>
               <div class="text-sm text-gray-500">Acciones: editar y eliminar.</div>
             </div>
+          </div>
 
-            <div class="flex flex-wrap items-center gap-2">
-              <input id="searchUser" type="text" placeholder="Buscar..."
-                class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 w-44">
-              <select id="fEmpresa" class="border border-gray-300 rounded-lg px-2 py-2 text-sm max-w-[150px]">
-                <option value="0">Empresa: Todas</option>
-                <?php foreach ($empresas as $e): ?>
-                  <option value="<?= (int) $e['id'] ?>"><?= htmlspecialchars($e['nombre']) ?></option>
-                <?php endforeach; ?>
-              </select>
-              <select id="fRol" class="border border-gray-300 rounded-lg px-2 py-2 text-sm">
-                <option value="">Rol: Todos</option>
-                <option value="admin">Admin</option>
-                <option value="gerente">Gerente</option>
-                <option value="empleado">Empleado</option>
-                <option value="superadmin">SuperAdmin</option>
-              </select>
-            </div>
+          <div class="mt-4 grid grid-cols-1 md:grid-cols-6 gap-3">
+            <input id="searchUser" type="text" placeholder="Buscar por nombre o email..."
+              class="border rounded-lg p-2 md:col-span-2">
+            <select id="fEmpresa" class="border rounded-lg p-2">
+              <option value="0">Empresa: todas</option>
+              <?php foreach ($empresas as $e): ?>
+                <option value="<?= (int) $e['id'] ?>"><?= htmlspecialchars($e['nombre']) ?></option>
+              <?php endforeach; ?>
+            </select>
+            <select id="fRol" class="border rounded-lg p-2">
+              <option value="">Rol: todos</option>
+              <option value="admin">Admin</option>
+              <option value="gerente">Gerente</option>
+              <option value="empleado">Empleado</option>
+              <option value="superadmin">SuperAdmin</option>
+            </select>
+            <select id="fActivo" class="border rounded-lg p-2">
+              <option value="">Estado: todos</option>
+              <option value="1">Activos</option>
+              <option value="0">Inactivos</option>
+            </select>
+            <select id="perPage" class="border rounded-lg p-2">
+              <option value="5">5</option>
+              <option value="10" selected>10</option>
+              <option value="20">20</option>
+            </select>
           </div>
         </div>
 
-        <!-- Tabla -->
-        <div class="flex-1 overflow-auto">
-          <table class="w-full text-left border-collapse">
-            <thead class="bg-gray-50 text-gray-600 sticky top-0 z-10 shadow-sm">
+        <div class="flex-1 overflow-auto bg-gray-50 rounded-lg border border-gray-100">
+          <table class="w-full text-left border-collapse min-w-max">
+            <thead class="bg-gray-50 text-gray-700">
               <tr>
                 <th class="px-6 py-3 text-xs font-bold uppercase tracking-wider cursor-pointer" data-sort="nombre">
                   Usuario</th>
@@ -136,9 +149,8 @@ include __DIR__ . '/../../includes/topbar.php';
           </table>
         </div>
 
-        <!-- Footer / Paginación -->
-        <div class="p-4 border-t border-gray-50 bg-white">
-          <div id="pagination" class="flex items-center justify-end space-x-1"></div>
+        <div class="p-4 border-t">
+          <div id="pagination" class="flex flex-wrap gap-2 justify-end"></div>
         </div>
 
       </div>
@@ -151,12 +163,22 @@ include __DIR__ . '/../../includes/topbar.php';
     const API_URL = <?= json_encode(app_url('api/superadmin/usuarios.php')) ?>;
     let page = 1, per = 10, search = '', empresa_id = 0, rol = '', activo = '', sort = 'id', dir = 'desc';
     let t = null;
+    function setSAUsuarioActivoSwitch(val) {
+      const active = String(val) === '1';
+      $('#activo').val(active ? '1' : '0');
+      $('#activoSAUsuarioLabel').text(active ? 'Activo' : 'Inactivo');
+      $('#activoSAUsuarioSwitch').attr('aria-pressed', active ? 'true' : 'false')
+        .toggleClass('bg-teal-600', active)
+        .toggleClass('bg-gray-300', !active);
+      $('#activoSAUsuarioKnob').toggleClass('translate-x-5', active).toggleClass('translate-x-0', !active);
+    }
 
     function resetForm() {
       $('#userForm')[0].reset();
       $('#userId').val('0');
       $('#btnSubmit').text('Crear Usuario');
       $('#empresa_id').val('');
+      setSAUsuarioActivoSwitch('1');
     }
 
 
@@ -208,9 +230,14 @@ include __DIR__ . '/../../includes/topbar.php';
     }
 
     $('#pagination').on('click', 'button', function () { page = parseInt($(this).data('page')); loadUsers(); });
+    $('#perPage').on('change', function () { per = parseInt($(this).val() || '10'); page = 1; loadUsers(); });
     $('#searchUser').on('keyup', function () { search = $(this).val(); page = 1; debounceLoad(); });
     $('#fEmpresa').on('change', function () { empresa_id = parseInt($(this).val()); page = 1; loadUsers(); });
     $('#fRol').on('change', function () { rol = $(this).val(); page = 1; loadUsers(); });
+    $('#fActivo').on('change', function () { activo = $(this).val(); page = 1; loadUsers(); });
+    $('#activoSAUsuarioSwitch').on('click', function () {
+      setSAUsuarioActivoSwitch($('#activo').val() === '1' ? '0' : '1');
+    });
     $('#btnReset').click(resetForm);
 
     $('#userForm').on('submit', function (ev) {
@@ -237,7 +264,7 @@ include __DIR__ . '/../../includes/topbar.php';
         $('#telefono').val(u.telefono || '');
         $('#rol').val(u.rol);
         $('#empresa_id').val(u.empresa_id || '');
-        $('#activo').val(u.activo);
+        setSAUsuarioActivoSwitch(u.activo);
         $('#password').val('');
         $('#btnSubmit').text('Actualizar Usuario');
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -255,6 +282,7 @@ include __DIR__ . '/../../includes/topbar.php';
       }, 'json');
     });
 
+    setSAUsuarioActivoSwitch('1');
     loadUsers();
   });
 </script>

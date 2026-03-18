@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Acceso denegado</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
 <body class="bg-gray-50 min-h-screen flex items-center justify-center font-sans">
@@ -33,5 +33,8 @@
         </div>
     </div>
 </body>
+<script>
+  if (window.lucide) lucide.createIcons();
+</script>
 
 </html>

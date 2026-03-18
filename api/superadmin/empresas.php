@@ -112,8 +112,37 @@ switch ($action) {
         $redes_json = trim($_POST['redes_json'] ?? '');
         $activo = isset($_POST['activo']) ? intval($_POST['activo']) : 1;
 
-        if ($slug === '' || $nombre === '')
-            json_response(['success' => false, 'message' => 'Slug y nombre son obligatorios.'], 200);
+        if ($nombre === '')
+            json_response(['success' => false, 'message' => 'Nombre obligatorio.'], 200);
+
+        // Si no viene slug desde el formulario, reusar el existente (edición) o generar uno (alta).
+        if ($slug === '' && $id > 0) {
+            $stmt = $pdo->prepare('SELECT slug FROM empresas WHERE id=? LIMIT 1');
+            $stmt->execute([$id]);
+            $slug = (string) ($stmt->fetchColumn() ?: '');
+        }
+        if ($slug === '') {
+            $baseSlug = strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '-', $nombre), '-'));
+            if ($baseSlug === '')
+                $baseSlug = 'empresa';
+            $baseSlug = substr($baseSlug, 0, 75);
+            $slug = $baseSlug;
+            $counter = 1;
+            while (true) {
+                $stmt = $pdo->prepare('SELECT id FROM empresas WHERE slug=?' . ($id > 0 ? ' AND id<>?' : '') . ' LIMIT 1');
+                $bind = [$slug];
+                if ($id > 0)
+                    $bind[] = $id;
+                $stmt->execute($bind);
+                if (!$stmt->fetchColumn())
+                    break;
+                $suffix = str_pad((string) $counter, 3, '0', STR_PAD_LEFT);
+                $slug = substr($baseSlug, 0, 71) . '-' . $suffix;
+                $counter++;
+                if ($counter > 999)
+                    json_response(['success' => false, 'message' => 'No se pudo generar un slug único.'], 200);
+            }
+        }
         if (!preg_match('/^[a-z0-9][a-z0-9\-]{1,78}[a-z0-9]$/', $slug)) {
             json_response(['success' => false, 'message' => 'Slug inválido. Use minúsculas, números y guiones.'], 200);
         }

@@ -75,10 +75,16 @@ if ($es_super) {
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700">Estado</label>
-              <select class="border rounded-lg p-2 w-full" id="activo" name="activo">
-                <option value="1" selected>Activo</option>
-                <option value="0">Inactivo</option>
-              </select>
+              <div class="flex items-center gap-3 mt-1">
+                <input type="hidden" id="activo" name="activo" value="1">
+                <button type="button" id="activoUsuarioSwitch"
+                  class="relative inline-flex h-6 w-11 items-center rounded-full bg-teal-600 transition-colors"
+                  aria-pressed="true">
+                  <span id="activoUsuarioKnob"
+                    class="inline-block h-5 w-5 translate-x-5 rounded-full bg-white shadow transition-transform"></span>
+                </button>
+                <span id="activoUsuarioLabel" class="text-sm font-medium text-gray-700">Activo</span>
+              </div>
             </div>
           </div>
 
@@ -99,8 +105,12 @@ if ($es_super) {
     <div class="lg:col-span-8">
       <div class="bg-white rounded-2xl shadow border">
         <div class="p-5 border-b">
-          <div class="font-semibold text-gray-900">Listado</div>
-          <div class="text-sm text-gray-500">Acciones: editar y eliminar.</div>
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <div class="font-semibold text-gray-900">Listado</div>
+              <div class="text-sm text-gray-500">Acciones: editar y eliminar.</div>
+            </div>
+          </div>
 
           <div class="mt-4 grid grid-cols-1 md:grid-cols-6 gap-3">
             <input id="searchUser" type="text" placeholder="Buscar por nombre o email..."
@@ -127,8 +137,8 @@ if ($es_super) {
           <div class="mt-3 text-sm text-gray-600" id="totalReg"></div>
         </div>
 
-        <div class="overflow-x-auto">
-          <table class="min-w-full text-sm">
+        <div class="flex-1 overflow-auto bg-gray-50 rounded-lg border border-gray-100">
+          <table class="w-full text-left border-collapse min-w-max">
             <thead class="bg-gray-50 text-gray-700">
               <tr>
                 <th class="text-left px-4 py-3 cursor-pointer select-none" data-sort="nombre">Usuario <span
@@ -160,12 +170,21 @@ if ($es_super) {
     let page = 1, per = 10, search = '', empresa_id = parseInt($('#fEmpresa').val() || '0'), rol = '', activo = '';
     let sort = 'id', dir = 'desc';
     let t = null;
+    function setUsuarioActivoSwitch(val) {
+      const active = String(val) === '1';
+      $('#activo').val(active ? '1' : '0');
+      $('#activoUsuarioLabel').text(active ? 'Activo' : 'Inactivo');
+      $('#activoUsuarioSwitch').attr('aria-pressed', active ? 'true' : 'false')
+        .toggleClass('bg-teal-600', active)
+        .toggleClass('bg-gray-300', !active);
+      $('#activoUsuarioKnob').toggleClass('translate-x-5', active).toggleClass('translate-x-0', !active);
+    }
 
     function resetForm() {
       $('#userForm')[0].reset();
       $('#userId').val('');
       $('#btnSubmit').text('Crear');
-      $('#activo').val('1');
+      setUsuarioActivoSwitch('1');
       $('#rol').val('empleado');
       $('#sucursal_id').val('');
     }
@@ -263,7 +282,7 @@ if ($es_super) {
         $('#telefono').val(u.telefono || '');
         $('#rol').val(u.rol || 'empleado');
         $('#sucursal_id').val(u.sucursal_id || '');
-        $('#activo').val(parseInt(u.activo || 0) === 1 ? '1' : '0');
+        setUsuarioActivoSwitch(parseInt(u.activo || 0) === 1 ? '1' : '0');
         $('#password').val('');
         $('#btnSubmit').text('Guardar');
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -277,6 +296,10 @@ if ($es_super) {
         if (res.success) loadUsers();
         else alert(res.message || 'No se pudo desactivar');
       }, 'json');
+    });
+
+    $('#activoUsuarioSwitch').on('click', function () {
+      setUsuarioActivoSwitch($('#activo').val() === '1' ? '0' : '1');
     });
 
     resetForm();

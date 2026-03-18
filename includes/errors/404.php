@@ -6,13 +6,13 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Página no encontrada</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
 <body class="bg-gray-50 min-h-screen flex items-center justify-center font-sans">
     <div class="max-w-lg w-full mx-4 bg-white rounded-2xl shadow-lg p-8 text-center border-t-4 border-teal-500">
         <div class="text-teal-400 text-6xl mb-4">
-            <i data-lucide="map-signs"></i>
+            <i data-lucide="map-pinned"></i>
         </div>
         <h1 class="text-3xl font-bold text-gray-900 mb-2">404</h1>
         <p class="text-lg text-gray-700 mb-1">La página que buscás no existe.</p>
@@ -44,5 +44,8 @@
         </div>
     </div>
 </body>
+<script>
+  if (window.lucide) lucide.createIcons();
+</script>
 
 </html>

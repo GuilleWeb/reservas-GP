@@ -69,11 +69,67 @@ $acting_as_other = $user && $sidebar_role !== $role && $sidebar_role !== null;
   <meta name="csrf-token" content="<?= htmlspecialchars($csrf) ?>">
 </head>
 
-<body class="bg-gray-50 min-h-screen font-sans">
+<body class="bg-gray-50 min-h-screen font-sans <?= $is_public ? 'app-public' : 'app-private' ?>">
 
   <style>
     body.sidebar-collapsed .max-w-7xl {
       max-width: 100% !important;
+    }
+
+    /* Base visual cohesion for all private modules (forms, tables, controls). */
+    body.app-private main :where(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="color"]) {
+      width: 100%;
+      border: 1px solid #d1d5db;
+      border-radius: 0.75rem;
+      background-color: #ffffff;
+      color: #111827;
+      padding: 0.55rem 0.75rem;
+      line-height: 1.3rem;
+      transition: box-shadow .2s ease, border-color .2s ease, background-color .2s ease;
+    }
+
+    body.app-private main :where(input, select, textarea):focus {
+      outline: none;
+      border-color: #0d9488;
+      box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+    }
+
+    body.app-private main textarea {
+      min-height: 2.75rem;
+    }
+
+    body.app-private main button {
+      border-radius: 0.75rem;
+      font-weight: 600;
+      transition: all .2s ease;
+    }
+
+    body.app-private main button:hover {
+      transform: translateY(-1px);
+    }
+
+    body.app-private main table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    body.app-private main table thead th {
+      background-color: #f9fafb;
+      color: #374151;
+      font-weight: 700;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    body.app-private main table tbody td {
+      border-bottom: 1px solid #f1f5f9;
+      color: #111827;
+      vertical-align: middle;
+    }
+
+    body.app-private main table thead th[data-sort] {
+      cursor: pointer;
+      user-select: none;
     }
   </style>
 

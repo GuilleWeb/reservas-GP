@@ -59,10 +59,16 @@ if (!$is_tenant_admin) {
 
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-            <select id="activo" name="activo" class="border rounded-lg p-2 w-full">
-              <option value="1">Activa</option>
-              <option value="0">Inactiva</option>
-            </select>
+            <div class="flex items-center gap-3">
+              <input type="hidden" id="activo" name="activo" value="1">
+              <button type="button" id="activoSwitch"
+                class="relative inline-flex h-6 w-11 items-center rounded-full bg-teal-600 transition-colors"
+                aria-pressed="true">
+                <span id="activoKnob"
+                  class="inline-block h-5 w-5 translate-x-5 rounded-full bg-white shadow transition-transform"></span>
+              </button>
+              <span id="activoLabel" class="text-sm font-medium text-gray-700">Activa</span>
+            </div>
           </div>
 
           <div class="pt-2 flex items-center justify-between gap-2">
@@ -76,8 +82,12 @@ if (!$is_tenant_admin) {
     <div class="lg:col-span-8">
       <div class="bg-white rounded-2xl shadow border">
         <div class="p-5 border-b">
-          <div class="font-semibold text-gray-900">Listado</div>
-          <div class="text-sm text-gray-500">Acciones: editar y eliminar.</div>
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <div class="font-semibold text-gray-900">Listado</div>
+              <div class="text-sm text-gray-500">Acciones: editar y eliminar.</div>
+            </div>
+          </div>
 
           <div class="mt-4 grid grid-cols-1 md:grid-cols-5 gap-3">
             <input id="txtSearch" type="text" placeholder="Buscar..." class="border rounded-lg p-2 md:col-span-2">
@@ -96,8 +106,8 @@ if (!$is_tenant_admin) {
           </div>
         </div>
 
-        <div class="overflow-x-auto">
-          <table class="min-w-full text-sm">
+        <div class="flex-1 overflow-auto bg-gray-50 rounded-lg border border-gray-100">
+          <table class="w-full text-left border-collapse min-w-max">
             <thead class="bg-gray-50 text-gray-700">
               <tr>
                 <th class="text-left px-4 py-3 cursor-pointer select-none">Sucursal</th>
@@ -123,6 +133,15 @@ if (!$is_tenant_admin) {
   let currentPage = 1;
   let t = null;
   function debounceLoad() { if (t) clearTimeout(t); t = setTimeout(() => loadData(1), 800); }
+  function setActivoSwitch(val) {
+    const active = String(val) === '1';
+    $('#activo').val(active ? '1' : '0');
+    $('#activoLabel').text(active ? 'Activa' : 'Inactiva');
+    $('#activoSwitch').attr('aria-pressed', active ? 'true' : 'false')
+      .toggleClass('bg-teal-600', active)
+      .toggleClass('bg-gray-300', !active);
+    $('#activoKnob').toggleClass('translate-x-5', active).toggleClass('translate-x-0', !active);
+  }
 
   function renderPagination(total_pages, current) {
     let ht = '';
@@ -207,7 +226,7 @@ if (!$is_tenant_admin) {
     $('#formSucursal')[0].reset();
     $('#sucursal_id').val(0);
     $('#btnSave').text('Guardar');
-    $('#activo').val('1');
+    setActivoSwitch('1');
   }
 
   function editItem(id) {
@@ -225,7 +244,7 @@ if (!$is_tenant_admin) {
         try { h = JSON.parse(d.horarios_json) || {}; } catch (e) { }
         $('#horario').val(h.texto || "");
 
-        $('#activo').val(d.activo || '0');
+        setActivoSwitch(d.activo || '0');
         $('#btnSave').text('Actualizar');
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
@@ -246,6 +265,10 @@ if (!$is_tenant_admin) {
   }
 
   $(function () {
+    $('#activoSwitch').on('click', function () {
+      setActivoSwitch($('#activo').val() === '1' ? '0' : '1');
+    });
+
     $('#formSucursal').on('submit', function (e) {
       e.preventDefault();
       $.post('<?= app_url('api/admin/sucursales.php') ?>?action=save', $(this).serialize(), function (res) {
@@ -262,6 +285,7 @@ if (!$is_tenant_admin) {
     $('#selLimit, #filterStatus').on('change', () => loadData(1));
     $('#txtSearch').on('keyup', debounceLoad);
 
+    setActivoSwitch('1');
     loadData();
   });
 </script>

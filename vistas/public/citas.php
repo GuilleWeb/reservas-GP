@@ -222,7 +222,7 @@ include __DIR__ . '/../../includes/topbar.php';
                         <div class="flex items-start gap-4">
                             <div
                                 class="w-10 h-10 bg-purple-50 rounded-full flex items-center justify-center text-purple-600 mt-1">
-                                <i data-lucide="user-tie"></i>
+                                <i data-lucide="user"></i>
                             </div>
                             <div>
                                 <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Especialista

@@ -55,10 +55,16 @@ if (!$user || $role !== 'superadmin') {
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">Activo</label>
-            <select id="activo" name="activo" class="border rounded-lg p-2 w-full">
-              <option value="1">Sí</option>
-              <option value="0">No</option>
-            </select>
+            <div class="flex items-center gap-3 mt-1">
+              <input type="hidden" id="activo" name="activo" value="1">
+              <button type="button" id="activoPlanSwitch"
+                class="relative inline-flex h-6 w-11 items-center rounded-full bg-teal-600 transition-colors"
+                aria-pressed="true">
+                <span id="activoPlanKnob"
+                  class="inline-block h-5 w-5 translate-x-5 rounded-full bg-white shadow transition-transform"></span>
+              </button>
+              <span id="activoPlanLabel" class="text-sm font-medium text-gray-700">Activo</span>
+            </div>
           </div>
 
           <div class="pt-2 flex items-center justify-between gap-2">
@@ -72,8 +78,12 @@ if (!$user || $role !== 'superadmin') {
     <div class="lg:col-span-8">
       <div class="bg-white rounded-2xl shadow border">
         <div class="p-5 border-b">
-          <div class="font-semibold text-gray-900">Listado</div>
-          <div class="text-sm text-gray-500">Acciones: editar y eliminar.</div>
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <div class="font-semibold text-gray-900">Listado</div>
+              <div class="text-sm text-gray-500">Acciones: editar y eliminar.</div>
+            </div>
+          </div>
 
           <div class="mt-4 grid grid-cols-1 md:grid-cols-5 gap-3">
             <input id="searchPlan" type="text" placeholder="Buscar..." class="border rounded-lg p-2 md:col-span-2">
@@ -91,8 +101,8 @@ if (!$user || $role !== 'superadmin') {
           </div>
         </div>
 
-        <div class="overflow-x-auto">
-          <table class="min-w-full text-sm">
+        <div class="flex-1 overflow-auto bg-gray-50 rounded-lg border border-gray-100">
+          <table class="w-full text-left border-collapse min-w-max">
             <thead class="bg-gray-50 text-gray-700">
               <tr>
                 <th class="text-left px-4 py-3 cursor-pointer select-none" data-sort="nombre">Nombre <span
@@ -122,6 +132,15 @@ if (!$user || $role !== 'superadmin') {
     let page = 1, per = 10, search = '', activo = '';
     let sort = 'id', dir = 'desc';
     let t = null;
+    function setPlanActivoSwitch(val) {
+      const active = String(val) === '1';
+      $('#activo').val(active ? '1' : '0');
+      $('#activoPlanLabel').text(active ? 'Activo' : 'Inactivo');
+      $('#activoPlanSwitch').attr('aria-pressed', active ? 'true' : 'false')
+        .toggleClass('bg-teal-600', active)
+        .toggleClass('bg-gray-300', !active);
+      $('#activoPlanKnob').toggleClass('translate-x-5', active).toggleClass('translate-x-0', !active);
+    }
 
     function resetForm() {
       $('#planForm')[0].reset();
@@ -131,7 +150,7 @@ if (!$user || $role !== 'superadmin') {
       $('#max_empleados').val(1);
       $('#max_servicios').val(50);
       $('#max_clientes').val(10000);
-      $('#activo').val('1');
+      setPlanActivoSwitch('1');
     }
 
     function debounceLoad() { if (t) clearTimeout(t); t = setTimeout(loadPlanes, 1000); }
@@ -156,7 +175,7 @@ if (!$user || $role !== 'superadmin') {
                 <i data-lucide="bell-ring" class="text-gray-400"></i> ${p.max_servicios}
               </span>
               <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700 border" title="Clientes">
-                <i data-lucide="user-friends" class="text-gray-400"></i> ${p.max_clientes}
+                <i data-lucide="users" class="text-gray-400"></i> ${p.max_clientes}
               </span>
             </div>
           `;
@@ -239,7 +258,7 @@ if (!$user || $role !== 'superadmin') {
         $("#max_empleados").val(p.max_empleados);
         $("#max_servicios").val(p.max_servicios);
         $("#max_clientes").val(p.max_clientes);
-        $("#activo").val(p.activo);
+        setPlanActivoSwitch(p.activo);
         $('#btnSubmit').text('Guardar');
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }, 'json');
@@ -255,6 +274,10 @@ if (!$user || $role !== 'superadmin') {
         }
         else showCustomAlert('No se pudo eliminar.', 5000, 'error');
       }, 'json');
+    });
+
+    $('#activoPlanSwitch').on('click', function () {
+      setPlanActivoSwitch($('#activo').val() === '1' ? '0' : '1');
     });
 
     resetForm();

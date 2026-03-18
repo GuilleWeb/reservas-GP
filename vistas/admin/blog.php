@@ -18,8 +18,9 @@ include __DIR__ . '/../../includes/topbar.php';
             <div class="text-sm text-gray-500">Admin</div>
             <div class="mt-1 text-2xl font-extrabold text-gray-900">Gestionar Blog</div>
           </div>
-          <button type="button" onclick="toggleExpandForm()" class="text-gray-400 hover:text-teal-600 focus:outline-none p-2 rounded hover:bg-gray-100">
-            <i id="expandIcon" class="fas fa-expand text-lg"></i>
+          <button type="button" onclick="toggleExpandForm()"
+            class="text-gray-400 hover:text-teal-600 focus:outline-none p-2 rounded hover:bg-gray-100">
+            <i id="expandIcon" data-lucide="expand" class="text-lg"></i>
           </button>
         </div>
 
@@ -27,14 +28,18 @@ include __DIR__ . '/../../includes/topbar.php';
           <input type="hidden" id="post_id" name="id" value="0">
 
           <div>
-            <label class="block text-sm font-medium text-gray-700">Título de la Entrada <span class="text-red-500">*</span></label>
-            <input type="text" id="titulo" name="titulo" class="mt-1 w-full border rounded-lg p-2 focus:ring-2 focus:ring-teal-500" required placeholder="Ej: Consejos para una sonrisa saludable">
+            <label class="block text-sm font-medium text-gray-700">Título de la Entrada <span
+                class="text-red-500">*</span></label>
+            <input type="text" id="titulo" name="titulo"
+              class="mt-1 w-full border rounded-lg p-2 focus:ring-2 focus:ring-teal-500" required
+              placeholder="Ej: Consejos para una sonrisa saludable">
           </div>
 
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-sm font-medium text-gray-700">Slug (URL)</label>
-              <input type="text" id="slug" name="slug" class="mt-1 w-full border rounded-lg p-2 font-mono text-sm" placeholder="ej-consejos-sonrisa">
+              <input type="text" id="slug" name="slug" class="mt-1 w-full border rounded-lg p-2 font-mono text-sm"
+                placeholder="ej-consejos-sonrisa">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700">Estado</label>
@@ -47,7 +52,8 @@ include __DIR__ . '/../../includes/topbar.php';
 
           <div>
             <label class="block text-sm font-medium text-gray-700">Imagen Destacada</label>
-            <input type="file" id="imagen" name="imagen" class="mt-1 w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100">
+            <input type="file" id="imagen" name="imagen"
+              class="mt-1 w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100">
             <div id="previewImg" class="mt-2 hidden">
               <img src="" class="h-20 w-auto rounded border object-cover">
             </div>
@@ -70,11 +76,16 @@ include __DIR__ . '/../../includes/topbar.php';
     <div class="lg:col-span-8">
       <div class="bg-white rounded-2xl shadow border">
         <div class="p-5 border-b">
-          <div class="font-semibold text-gray-900">Listado</div>
-          <div class="text-sm text-gray-500">Acciones: editar y eliminar.</div>
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <div class="font-semibold text-gray-900">Listado</div>
+              <div class="text-sm text-gray-500">Acciones: editar y eliminar.</div>
+            </div>
+          </div>
 
           <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-3">
-            <input id="txtSearch" type="text" placeholder="Buscar título..." class="border rounded-lg p-2 md:col-span-2">
+            <input id="txtSearch" type="text" placeholder="Buscar título..."
+              class="border rounded-lg p-2 md:col-span-2">
             <select id="selLimit" class="border rounded-lg p-2">
               <option value="5">5</option>
               <option value="10" selected>10</option>
@@ -84,8 +95,8 @@ include __DIR__ . '/../../includes/topbar.php';
           </div>
         </div>
 
-        <div class="overflow-x-auto">
-          <table class="min-w-full text-sm">
+        <div class="flex-1 overflow-auto bg-gray-50 rounded-lg border border-gray-100">
+          <table class="w-full text-left border-collapse min-w-max">
             <thead class="bg-gray-50 text-gray-700">
               <tr>
                 <th class="text-left px-4 py-3 select-none">Entrada</th>
@@ -113,23 +124,25 @@ include __DIR__ . '/../../includes/topbar.php';
 
   function toggleExpandForm() {
     const formBox = document.getElementById('formContainer');
+    const expandIcon = document.getElementById('expandIcon');
     const isExpanded = formBox.classList.contains('fixed');
-    
+
     if (!isExpanded) {
       formBox.classList.add('fixed', 'inset-4', 'z-[100]', 'border-2', 'border-teal-500', 'overflow-y-auto', 'flex', 'flex-col');
       const overlay = document.createElement('div');
       overlay.id = 'formOverlay';
       overlay.className = 'fixed inset-0 bg-black/50 z-[90]';
       document.body.appendChild(overlay);
-      document.getElementById('expandIcon').classList.replace('fa-expand', 'fa-compress');
+      expandIcon.setAttribute('data-lucide', 'minimize-2');
       document.getElementById('formBlog').classList.add('flex-1', 'flex', 'flex-col');
     } else {
       formBox.classList.remove('fixed', 'inset-4', 'z-[100]', 'border-2', 'border-teal-500', 'overflow-y-auto', 'flex', 'flex-col');
       const overlay = document.getElementById('formOverlay');
-      if(overlay) overlay.remove();
-      document.getElementById('expandIcon').classList.replace('fa-compress', 'fa-expand');
+      if (overlay) overlay.remove();
+      expandIcon.setAttribute('data-lucide', 'expand');
       document.getElementById('formBlog').classList.remove('flex-1', 'flex', 'flex-col');
     }
+    if (window.lucide) lucide.createIcons();
   }
 
   $(function () {
@@ -152,7 +165,7 @@ include __DIR__ . '/../../includes/topbar.php';
     let ht = '';
     if (total_pages <= 1) { $('#pagination').empty(); return; }
     for (let i = 1; i <= total_pages; i++) {
-        ht += `<button onclick="loadData(${i})" class="px-3 py-1 rounded ${i === current ? 'bg-teal-600 text-white' : 'border'}">${i}</button>`;
+      ht += `<button onclick="loadData(${i})" class="px-3 py-1 rounded ${i === current ? 'bg-teal-600 text-white' : 'border'}">${i}</button>`;
     }
     $('#pagination').html(ht);
   }
@@ -165,7 +178,7 @@ include __DIR__ . '/../../includes/topbar.php';
     const search = $('#txtSearch').val().trim();
 
     $.get('<?= app_url('api/admin/blog.php') ?>', { action: 'list', page: currentPage, per: per, search: search }, function (res) {
-      if(!res.success) return;
+      if (!res.success) return;
       const tbody = $('#tableBody').empty();
 
       if (res.data.length > 0) {

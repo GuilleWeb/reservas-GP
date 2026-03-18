@@ -99,7 +99,7 @@ if (!isset($direccion)) {
     </script>
   <?php endif; ?>
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
   <meta name="csrf-token" content="<?= htmlspecialchars($csrf) ?>">
 </head>
 

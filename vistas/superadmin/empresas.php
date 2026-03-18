@@ -57,10 +57,16 @@ $planes = $pdo->query("SELECT id, nombre FROM planes ORDER BY nombre ASC")->fetc
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700">Estado</label>
-              <select class="border rounded-lg p-2 w-full" id="activo_form" name="activo">
-                <option value="1">Activa</option>
-                <option value="0">Inactiva</option>
-              </select>
+              <div class="flex items-center gap-3 mt-1">
+                <input type="hidden" id="activo_form" name="activo" value="1">
+                <button type="button" id="activoEmpresaSwitch"
+                  class="relative inline-flex h-6 w-11 items-center rounded-full bg-teal-600 transition-colors"
+                  aria-pressed="true">
+                  <span id="activoEmpresaKnob"
+                    class="inline-block h-5 w-5 translate-x-5 rounded-full bg-white shadow transition-transform"></span>
+                </button>
+                <span id="activoEmpresaLabel" class="text-sm font-medium text-gray-700">Activa</span>
+              </div>
             </div>
           </div>
           <div id="adminFields" class="space-y-3">
@@ -91,7 +97,6 @@ $planes = $pdo->query("SELECT id, nombre FROM planes ORDER BY nombre ASC")->fetc
           <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div>
               <div class="font-semibold text-gray-900">Listado</div>
-              <div class="text-sm text-gray-500">Acciones: editar y eliminar.</div>
               <div class="text-sm text-gray-500">Acciones: entrar, editar y eliminar.</div>
             </div>
             <!-- <div class="text-sm text-gray-500">Tip: /{slug}/dashboard</div> -->
@@ -120,8 +125,8 @@ $planes = $pdo->query("SELECT id, nombre FROM planes ORDER BY nombre ASC")->fetc
           </div>
         </div>
 
-        <div class="overflow-x-auto">
-          <table class="min-w-full text-sm">
+        <div class="flex-1 overflow-auto bg-gray-50 rounded-lg border border-gray-100">
+          <table class="w-full text-left border-collapse min-w-max">
             <thead class="bg-gray-50 text-gray-700">
               <tr>
                 <th class="text-left px-4 py-3 cursor-pointer select-none" data-sort="nombre">Empresa <span
@@ -153,12 +158,21 @@ $planes = $pdo->query("SELECT id, nombre FROM planes ORDER BY nombre ASC")->fetc
     let page = 1, per = 10, search = '', activo = '', plan_id = 0;
     let sort = 'id', dir = 'desc';
     let t = null;
+    function setEmpresaActivoSwitch(val) {
+      const active = String(val) === '1';
+      $('#activo_form').val(active ? '1' : '0');
+      $('#activoEmpresaLabel').text(active ? 'Activa' : 'Inactiva');
+      $('#activoEmpresaSwitch').attr('aria-pressed', active ? 'true' : 'false')
+        .toggleClass('bg-teal-600', active)
+        .toggleClass('bg-gray-300', !active);
+      $('#activoEmpresaKnob').toggleClass('translate-x-5', active).toggleClass('translate-x-0', !active);
+    }
 
     function resetForm() {
       $('#credBox').addClass('hidden');
       $('#empresaForm')[0].reset();
       $('#empresaId').val('');
-      $('#activo_form').val('1');
+      setEmpresaActivoSwitch('1');
       $('#btnSubmit').text('Crear');
       $('#adminFields').removeClass('opacity-50');
       $('#admin_nombre,#admin_email').prop('disabled', false);
@@ -284,7 +298,7 @@ $planes = $pdo->query("SELECT id, nombre FROM planes ORDER BY nombre ASC")->fetc
         $("#plan_id").val(e.plan_id || '');
         $("#slug").val(e.slug || '');
         $("#nombre").val(e.nombre || '');
-        $("#activo_form").val(e.activo || '0');
+        setEmpresaActivoSwitch(e.activo || '0');
         $('#btnSubmit').text('Guardar');
         $('#adminFields').addClass('opacity-50');
         $('#admin_nombre,#admin_email').val('').prop('disabled', true);
@@ -303,6 +317,10 @@ $planes = $pdo->query("SELECT id, nombre FROM planes ORDER BY nombre ASC")->fetc
           else showCustomAlert('No se pudo eliminar: ' + (res.message || ''), 5000, 'error');
         }, 'json');
       });
+    });
+
+    $('#activoEmpresaSwitch').on('click', function () {
+      setEmpresaActivoSwitch($('#activo_form').val() === '1' ? '0' : '1');
     });
 
     resetForm();

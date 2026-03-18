@@ -94,30 +94,28 @@ include __DIR__ . '/../../includes/topbar.php';
 
   <div class="lg:col-span-8">
       <div class="bg-white rounded-2xl shadow border p-5">
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-      <div>
-        <h2 class="text-xl font-bold text-gray-800">Citas Programadas</h2>
-        <p class="text-sm text-gray-500">Administración de agenda.</p>
+    <div class="p-5 border-b">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+          <div class="font-semibold text-gray-900">Listado</div>
+          <div class="text-sm text-gray-500">Acciones: editar y cancelar.</div>
+        </div>
       </div>
-      <div class="flex flex-wrap items-center gap-2">
-        <select id="filterStatus"
-          class="border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-teal-500">
-          <option value="">Todos los Estados</option>
+      <div class="mt-4 grid grid-cols-1 md:grid-cols-6 gap-3">
+        <input type="text" id="txtSearch" placeholder="Buscar por cliente o atención..."
+          class="border rounded-lg p-2 md:col-span-2">
+        <select id="filterStatus" class="border rounded-lg p-2">
+          <option value="">Estado: todos</option>
           <option value="pendiente">Pendientes</option>
           <option value="confirmada">Confirmadas</option>
           <option value="cancelada">Canceladas</option>
           <option value="completada">Completadas</option>
         </select>
-        <select id="selLimit" class="border border-gray-300 rounded-lg text-sm px-3 py-2">
-          <option value="10">10 por pág</option>
+        <select id="selLimit" class="border rounded-lg p-2">
+          <option value="10" selected>10</option>
           <option value="25">25</option>
         </select>
-        <div class="relative">
-          <i data-lucide="search" class="absolute left-3 top-2.5 text-gray-400"></i>
-          <input type="text" id="txtSearch"
-            class="pl-9 border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-teal-500 w-48"
-            placeholder="Paciente/Atiende...">
-        </div>
+        <div id="pageInfo" class="text-sm text-gray-600 self-center md:col-span-2"></div>
       </div>
     </div>
 
@@ -138,7 +136,7 @@ include __DIR__ . '/../../includes/topbar.php';
     </div>
 
     <div class="mt-4 flex flex-col sm:flex-row items-center justify-between border-t pt-4">
-      <div class="text-sm text-gray-500" id="pageInfo"></div>
+      <div class="text-sm text-gray-500"></div>
       <div class="flex items-center space-x-1" id="pagination"></div>
   </div>
 </div>
