@@ -12,7 +12,7 @@ $empresa_info = get_current_empresa();
 
 // Definir variables que usan topbar, footer y vistas — con fallbacks seguros
 $logo_path = ($empresa_info && !empty($empresa_info['logo_path']))
-    ? '../../' . $empresa_info['logo_path']
+    ? app_url(ltrim((string) $empresa_info['logo_path'], '/'))
     : app_url('assets/logo.avif');
 $empresa_nombre = $empresa_info ? htmlspecialchars($empresa_info['nombre']) : 'Sistema de reservas GP';
 $empresa_slogan = ($empresa_info && !empty($empresa_info['slogan']))

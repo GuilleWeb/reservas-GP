@@ -85,10 +85,15 @@ if (!$is_tenant_admin) {
       <div class="bg-white rounded-2xl shadow border p-5">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <div>
-            <h2 class="text-xl font-bold text-gray-800">Directorio de Servicios</h2>
-            <p class="text-sm text-gray-500">Gestione los servicios disponibles para los clientes.</p>
-          </div>
-          <div class="flex flex-wrap items-center gap-2">
+              <div class="font-semibold text-gray-900">Listado</div>
+              <div class="text-sm text-gray-500">Acciones: entrar, editar y eliminar.</div>
+            </div>
+            <!-- <div class="text-sm text-gray-500">Tip: /{slug}/dashboard</div> -->
+
+          <div class="mt-4 grid grid-cols-1 md:grid-cols-6 gap-3">
+           <input type="text" id="txtSearch"
+                class="pl-9 border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-teal-500 w-48 p-2 md:col-span-2"
+                placeholder="Buscar...">
             <select id="filterStatus"
               class="border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-teal-500">
               <option value="">Todos (Estado)</option>
@@ -101,12 +106,6 @@ if (!$is_tenant_admin) {
               <option value="25">25 por pág</option>
               <option value="50">50 por pág</option>
             </select>
-            <div class="relative">
-              <i data-lucide="search" class="absolute left-3 top-2.5 text-gray-400"></i>
-              <input type="text" id="txtSearch"
-                class="pl-9 border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-teal-500 w-48"
-                placeholder="Buscar...">
-            </div>
           </div>
         </div>
 

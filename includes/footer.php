@@ -62,7 +62,7 @@
       </div>
       <?php endif; ?>
       <div class="flex items-center space-x-3 mt-5 p-4 border-t border-teal-500 pb-1">
-        <img src="../../assets/logo.avif" alt="Sistema" class="h-5 w-5 rounded-full">
+        <img src="<?= htmlspecialchars(app_url('assets/logo.avif')) ?>" alt="Sistema" class="h-5 w-5 rounded-full">
         <small class="text-m font-semibold">by: <b>Sistema de reservas GP</b></small>
       </div>
     </div>

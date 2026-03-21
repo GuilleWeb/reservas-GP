@@ -1,8 +1,0 @@
-<?php
-require 'conexion.php';
-try {
-    $pdo->exec("ALTER TABLE usuarios ADD COLUMN session_token VARCHAR(128) NULL");
-    echo "Column added successfully.\n";
-} catch (Exception $e) {
-    echo "Error: " . $e->getMessage() . "\n";
-}

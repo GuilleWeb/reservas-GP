@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+
+# Bloquear áreas internas no públicas
+Disallow: /api/
+Disallow: /includes/
+Disallow: /vistas/admin/
+Disallow: /vistas/superadmin/
+Disallow: /vistas/sucursal/
+Disallow: /vistas/empleado/
+Disallow: /vistas/cliente/
+
+Sitemap: /sitemap.php

@@ -12,6 +12,7 @@ if (!$empresa) {
 }
 $module = 'ver-sedes';
 include __DIR__ . '/../../includes/topbar.php';
+$empresa_ref = $empresa['slug'] ?: (string) ((int) ($empresa['id'] ?? 0));
 ?>
 <div class="max-w-6xl mx-auto">
   <div class="flex items-center justify-between">
@@ -57,9 +58,11 @@ include __DIR__ . '/../../includes/topbar.php';
 <script>
 $(function(){
   const csrf = $('meta[name="csrf-token"]').attr('content');
+  const apiPublic = <?= json_encode(app_url('api/public/sucursales/agregar_cita.php')) ?>;
+  const empresaRef = <?= json_encode($empresa_ref) ?>;
 
   function cargarSedes(){
-    $.get('/api/sedes.php', {action:'list', csrf_token:csrf}, function(res){
+    $.get(apiPublic, {action:'get_sucursales', empresa: empresaRef, csrf_token:csrf}, function(res){
       if(res.success){
         const c = $('#sedesGrid').empty();
         res.data.forEach(s=>{
@@ -94,20 +97,19 @@ $(function(){
       telefono: $('#pac_tel').val(),
       email: $('#pac_email').val()
     };
-    // 1) create paciente via API (requires permission? We allow public creation by NOT requiring permiso_crear for this path)
-    $.post('/api/pacientes.php', {...paciente, action:'create_public', csrf_token:csrf}, function(resp){
-      // create_public is handled server side to allow guest creation (see note)
-      const pacienteId = resp.data.id;
-      // 2) create cita
-      const payload = {
-        action: 'create_public',
-        paciente_id: pacienteId,
+    const payload = {
+        action: 'save_cita',
+        empresa: empresaRef,
+        nombre: paciente.nombre,
+        telefono: paciente.telefono,
+        email: paciente.email,
         sede_id: $('#sede_id').val(),
-        fecha_hora_inicio: $('#fecha_hora').val(),
+        fecha: ($('#fecha_hora').val() || '').split('T')[0],
+        hora: ($('#fecha_hora').val() || '').split('T')[1],
         notas: 'Reservada vía web pública',
         csrf_token: csrf
       };
-      $.post('/api/citas.php', payload, function(r2){
+      $.post(apiPublic, payload, function(r2){
         if(r2.success){
           alert('Cita reservada correctamente');
           $('#modalReservar').addClass('hidden').removeClass('flex');
@@ -115,9 +117,6 @@ $(function(){
           alert('Error: ' + (r2.error || ''));
         }
       }, 'json');
-    }, 'json').fail(function(xhr){
-      // If API doesn't allow public creation, fallback to create paciente with privileged endpoint - in production ensure security
-      alert('No se pudo crear paciente: ' + xhr.responseText);
     });
   });
 });

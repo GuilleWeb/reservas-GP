@@ -22,20 +22,20 @@ $response = ['success' => true];
 switch ($action) {
     case 'get_hero':
         // Obtener configuración del hero
-        $stmt = $pdo->prepare("SELECT config_json, colores_json, logo_path FROM empresas WHERE id = ?");
+        $stmt = $pdo->prepare("SELECT data_json FROM empresa_home_config WHERE id = ?");
         $stmt->execute([$empresa_id]);
-        $empresa = $stmt->fetch(PDO::FETCH_ASSOC);
+        $empresa_home_config = $stmt->fetch(PDO::FETCH_ASSOC);
+        
 
-        $config = json_decode($empresa['config_json'] ?? '{}', true);
-        $colores = json_decode($empresa['colores_json'] ?? '{}', true);
-
+        $config = json_decode($empresa_home_config['data_json'] ?? '{}', true);
+        //print_r($empresa);
         $response['data'] = [
             'hero_visible' => $config['hero_visible'] ?? true,
             'hero_titulo' => $config['hero_titulo'] ?? 'Tu salud en buenas manos',
-            'hero_subtitulo' => $config['hero_subtitulo'] ?? 'Agenda tu cita hoy mismo con los mejores profesionales.',
+            //'hero_subtitulo' => $config['hero_subtitulo'] ?? 'Agenda tu cita hoy mismo con los mejores profesionales.',
             'hero_btn_texto' => $config['hero_btn_texto'] ?? 'Agendar Cita Ahora',
-            'hero_imagen' => $empresa['logo_path'] ?: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=1000',
-            'color_principal' => $colores['principal'] ?? '#36008eff'
+            'hero_btn_link' => ($config['hero_btn_link'] ?? 'citas.php') . '?empresa_id=' . $empresa_id,
+            'hero_imagen' => $config['hero_imagen'] ?? 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=1000'
         ];
         break;
 

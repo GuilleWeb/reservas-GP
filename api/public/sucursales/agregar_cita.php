@@ -3,16 +3,22 @@ require_once __DIR__ . '/../../../helpers.php';
 header('Content-Type: application/json; charset=utf-8');
 
 $action = $_REQUEST['action'] ?? '';
-$slug = request_id_e();
+$empresa_ref = $_REQUEST['empresa'] ?? ($_REQUEST['id_e'] ?? null);
+$empresa_ref = is_string($empresa_ref) ? trim($empresa_ref) : $empresa_ref;
 
-if (!$slug) {
-    json_response(['success' => false, 'message' => 'Slug de empresa no proporcionado'], 400);
+if ($empresa_ref === null || $empresa_ref === '') {
+    json_response(['success' => false, 'message' => 'Empresa no proporcionada'], 400);
 }
 
-// Obtener ID de empresa
-$stmt = $pdo->prepare("SELECT id FROM empresas WHERE slug = ? AND activo = 1 LIMIT 1");
-$stmt->execute([$slug]);
-$empresa_id = (int) $stmt->fetchColumn();
+// Resolver empresa por slug (público) o por ID (compatibilidad).
+if (is_numeric($empresa_ref)) {
+    $stmt = $pdo->prepare("SELECT id FROM empresas WHERE id = ? AND activo = 1 LIMIT 1");
+    $stmt->execute([(int) $empresa_ref]);
+} else {
+    $stmt = $pdo->prepare("SELECT id FROM empresas WHERE slug = ? AND activo = 1 LIMIT 1");
+    $stmt->execute([(string) $empresa_ref]);
+}
+$empresa_id = (int) ($stmt->fetchColumn() ?: 0);
 
 if (!$empresa_id) {
     json_response(['success' => false, 'message' => 'Empresa no encontrada'], 404);

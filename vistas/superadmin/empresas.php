@@ -92,15 +92,13 @@ $planes = $pdo->query("SELECT id, nombre FROM planes ORDER BY nombre ASC")->fetc
     </div>
 
     <div class="lg:col-span-8">
-      <div class="bg-white rounded-2xl shadow border">
-        <div class="p-5 border-b">
-          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-            <div>
+      <div class="bg-white rounded-2xl shadow border p-5">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+          <div>
               <div class="font-semibold text-gray-900">Listado</div>
               <div class="text-sm text-gray-500">Acciones: entrar, editar y eliminar.</div>
             </div>
             <!-- <div class="text-sm text-gray-500">Tip: /{slug}/dashboard</div> -->
-          </div>
 
           <div class="mt-4 grid grid-cols-1 md:grid-cols-6 gap-3">
             <input id="searchEmpresa" type="text" placeholder="Buscar por nombre o slug..."
@@ -127,7 +125,7 @@ $planes = $pdo->query("SELECT id, nombre FROM planes ORDER BY nombre ASC")->fetc
 
         <div class="flex-1 overflow-auto bg-gray-50 rounded-lg border border-gray-100">
           <table class="w-full text-left border-collapse min-w-max">
-            <thead class="bg-gray-50 text-gray-700">
+            <thead class="bg-white border-b sticky top-0 z-10 shadow-sm">
               <tr>
                 <th class="text-left px-4 py-3 cursor-pointer select-none" data-sort="nombre">Empresa <span
                     class="sort-ind" data-for="nombre"></span></th>

@@ -225,8 +225,13 @@ $acting_as_other = $user && $sidebar_role !== $role && $sidebar_role !== null;
           <nav class="space-y-1" id="sidebarNav">
             <?php if ($user): ?>
               <div class="w-100 flex justify-center mb-5">
+                <?php
+                  $user_photo = !empty($user['foto_path'])
+                    ? app_url(ltrim((string) $user['foto_path'], '/'))
+                    : app_url('assets/logo.avif');
+                ?>
                 <img
-                  src="../../<?= !empty($user['foto_path']) ? htmlspecialchars($user['foto_path']) : 'assets/logo.avif' ?>"
+                  src="<?= htmlspecialchars($user_photo) ?>"
                   alt="Logo" class="h-16 w-16 rounded-full object-cover">
               </div>
             <?php endif; ?>

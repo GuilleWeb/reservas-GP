@@ -127,15 +127,76 @@ function request_id_e()
     return is_numeric($id) ? (int) $id : null;
 }
 
+function project_root_path()
+{
+    static $root = null;
+    if ($root === null) {
+        $root = realpath(__DIR__) ?: __DIR__;
+    }
+    return $root;
+}
+
+function project_path($path = '')
+{
+    $root = rtrim(str_replace(['\\', '/'], DIRECTORY_SEPARATOR, project_root_path()), DIRECTORY_SEPARATOR);
+    $path = ltrim(str_replace(['\\', '/'], DIRECTORY_SEPARATOR, (string) $path), DIRECTORY_SEPARATOR);
+    return $path === '' ? $root : $root . DIRECTORY_SEPARATOR . $path;
+}
+
 function app_root_path()
 {
-    $sn = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
-    $sn = '/' . ltrim($sn, '/');
-    $parts = array_values(array_filter(explode('/', $sn), fn($p) => $p !== ''));
-    if (empty($parts)) {
-        return '';
+    static $cached = null;
+    if ($cached !== null) {
+        return $cached;
     }
-    return '/' . $parts[0];
+
+    $script_name = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? ''));
+    $script_file = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_FILENAME'] ?? ''));
+
+    if ($script_name !== '' && $script_file !== '') {
+        $project_root = str_replace('\\', '/', project_root_path());
+        $project_root = rtrim($project_root, '/');
+        $script_dir_fs = str_replace('\\', '/', dirname($script_file));
+        $script_dir_fs = rtrim($script_dir_fs, '/');
+
+        if (
+            $project_root !== ''
+            && str_starts_with(strtolower($script_dir_fs), strtolower($project_root))
+        ) {
+            $relative_dir = trim(substr($script_dir_fs, strlen($project_root)), '/');
+            $script_dir_url = str_replace('\\', '/', dirname($script_name));
+            $script_dir_url = $script_dir_url === '.' ? '' : rtrim($script_dir_url, '/');
+
+            if ($relative_dir !== '') {
+                $suffix = '/' . $relative_dir;
+                if (str_ends_with(strtolower($script_dir_url), strtolower($suffix))) {
+                    $script_dir_url = substr($script_dir_url, 0, -strlen($suffix));
+                }
+            }
+
+            $script_dir_url = trim((string) $script_dir_url, '/');
+            $cached = $script_dir_url === '' ? '' : '/' . $script_dir_url;
+            return $cached;
+        }
+    }
+
+    // Fallback por heurística para contextos atípicos.
+    $sn = '/' . ltrim($script_name, '/');
+    $parts = array_values(array_filter(explode('/', $sn), static fn($p) => $p !== ''));
+    if (empty($parts)) {
+        $cached = '';
+        return $cached;
+    }
+
+    $first = $parts[0];
+    $known_project_dirs = ['api', 'assets', 'includes', 'uploads', 'vistas'];
+    if (in_array(strtolower($first), $known_project_dirs, true)) {
+        $cached = '';
+        return $cached;
+    }
+
+    $cached = '/' . $first;
+    return $cached;
 }
 
 function app_url($path)

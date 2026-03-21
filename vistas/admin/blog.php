@@ -74,16 +74,15 @@ include __DIR__ . '/../../includes/topbar.php';
     </div>
 
     <div class="lg:col-span-8">
-      <div class="bg-white rounded-2xl shadow border">
-        <div class="p-5 border-b">
-          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-            <div>
+      <div class="bg-white rounded-2xl shadow border p-5">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+          <div>
               <div class="font-semibold text-gray-900">Listado</div>
-              <div class="text-sm text-gray-500">Acciones: editar y eliminar.</div>
+              <div class="text-sm text-gray-500">Acciones: entrar, editar y eliminar.</div>
             </div>
-          </div>
+            <!-- <div class="text-sm text-gray-500">Tip: /{slug}/dashboard</div> -->
 
-          <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div class="mt-4 grid grid-cols-1 md:grid-cols-6 gap-3">
             <input id="txtSearch" type="text" placeholder="Buscar título..."
               class="border rounded-lg p-2 md:col-span-2">
             <select id="selLimit" class="border rounded-lg p-2">
