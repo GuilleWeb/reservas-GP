@@ -13,11 +13,10 @@ if ($action === 'update')
 $user = current_user();
 $id_e = request_id_e();
 $role = $user['rol'] ?? null;
-$empresa_id = (int) ($user['empresa_id'] ?? 0);
+$empresa_id = resolve_private_empresa_id($user);
+$is_tenant_admin = ($user && $empresa_id > 0 && in_array($role, ['admin', 'superadmin'], true));
 
-
-
-$is_authorized = ($user && $empresa_id > 0 && in_array($role, ['admin', 'superadmin'], true));
+$is_authorized = $is_tenant_admin;
 if (!$is_authorized && $action !== 'list_public')
     json_response(['error' => 'unauthorized'], 403);
 
@@ -40,7 +39,6 @@ switch ($action) {
     case 'list':
         if (!$is_tenant_admin)
             json_response(['error' => 'unauthorized'], 403);
-        $empresa_id = (int) ($user['empresa_id'] ?? 0);
         if ($empresa_id <= 0)
             json_response(['error' => 'unauthorized'], 403);
 
@@ -64,7 +62,6 @@ switch ($action) {
     case 'get':
         if (!$is_tenant_admin)
             json_response(['error' => 'unauthorized'], 403);
-        $empresa_id = (int) ($user['empresa_id'] ?? 0);
 
         $id = (int) ($_GET['id'] ?? 0);
         $stmt = $pdo->prepare('SELECT * FROM equipo WHERE id = ? AND empresa_id = ?');
@@ -78,7 +75,6 @@ switch ($action) {
         if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST')
             json_response(['error' => 'invalid_method'], 405);
 
-        $empresa_id = (int) ($user['empresa_id'] ?? 0);
         if ($empresa_id <= 0)
             json_response(['error' => 'unauthorized'], 403);
 
@@ -133,7 +129,6 @@ switch ($action) {
         if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST')
             json_response(['error' => 'invalid_method'], 405);
 
-        $empresa_id = (int) ($user['empresa_id'] ?? 0);
         $id = (int) ($_POST['id'] ?? 0);
         if ($id <= 0)
             json_response(['success' => false, 'message' => 'ID inválido.']);

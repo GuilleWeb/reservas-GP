@@ -26,7 +26,7 @@ include __DIR__ . '/../../includes/topbar.php';
         </p>
     </div>
 
-    <div id="sedesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    <div id="sedesGrid" class="flex flex-wrap justify-center gap-8">
         <div id="loading" class="md:col-span-2 lg:col-span-3 text-center text-gray-500 text-lg">
             Cargando sedes...
         </div>
@@ -47,7 +47,7 @@ include __DIR__ . '/../../includes/topbar.php';
                     const imageUrl = s.imagen_path || "https://guillepalma.xo.je/placeholder/api.php?text=" + encodeURIComponent(s.nombre);
 
                     const card = $(`
-                        <div class="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col">
+                        <div class="w-full max-w-md bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col">
                             <div class="h-48 bg-gray-100 overflow-hidden">
                                 <img src="${imageUrl}" class="w-full h-full object-cover">
                             </div>
@@ -82,7 +82,7 @@ include __DIR__ . '/../../includes/topbar.php';
                     grid.append(card);
                 });
             } else {
-                grid.append('<div class="md:col-span-2 lg:col-span-3 text-center text-gray-500 py-20">No hemos encontrado sedes activas para esta empresa.</div>');
+                grid.append('<div class="w-full text-center text-gray-500 py-20">No hemos encontrado sedes activas para esta empresa.</div>');
             }
         });
     });

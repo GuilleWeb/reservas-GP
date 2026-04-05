@@ -30,6 +30,10 @@ $email_contacto = $config['email_contacto'] ?? 'soporte@reservasgp.com';
 $telefono_contacto = $config['telefono_contacto'] ?? '+502 5103-6244';
 $horaios = $config['horario_general'] ?? 'Siempre abierto';
 $direccion = $config['direccion_general'] ?? 'Negocio en línea';
+$gsc_meta_tag = trim((string) ($config['gsc_meta_tag'] ?? ''));
+$moneda_code = strtoupper((string) ($config['moneda'] ?? 'GTQ'));
+$currency_meta = get_currency_meta($empresa_info);
+$currency_symbol = $currency_meta['symbol'];
 
 $redes_default = [
     'facebook' => '',
@@ -54,4 +58,29 @@ if (!is_public_view() && !$user) {
     http_response_code(403);
     include __DIR__ . '/errors/403.php';
     exit;
+}
+
+// Ejecutar tareas tipo cron cuando el superadmin inicia sesión (1 vez por día).
+if ($user && ($user['rol'] ?? null) === 'superadmin' && !request_id_e()) {
+    cron_jobs_auto_run_if_needed((int) ($user['id'] ?? 0));
+}
+
+// Enforzar permisos por plan para módulos puntuales (retrocompatible: si no hay modulos_json, permite todo).
+if ($empresa_info) {
+    $module_map = [
+        'blog' => 'blog',
+        'home_page' => 'home_page',
+        'resenas' => 'resenas',
+        'mensajes' => 'mensajes',
+        'admin-citas' => 'citas',
+        'citas' => 'citas',
+    ];
+    $m = trim((string) ($module ?? ''));
+    if (isset($module_map[$m])) {
+        $mk = $module_map[$m];
+        // superadmin siempre puede inspeccionar
+        if (!(($user['rol'] ?? null) === 'superadmin')) {
+            enforce_module_access_or_403((int) $empresa_info['id'], $mk);
+        }
+    }
 }

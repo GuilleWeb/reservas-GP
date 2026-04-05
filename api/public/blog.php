@@ -23,7 +23,7 @@ $empresa_id = $empresa['id'];
 switch ($action) {
     case 'list':
         $page = max(1, intval($_GET['page'] ?? 1));
-        $per = max(1, intval($_GET['per'] ?? 6));
+        $per = max(1, intval($_GET['per'] ?? 10));
         $search = $_GET['search'] ?? '';
 
         $where = ["empresa_id = ?", "publicado = 1"];

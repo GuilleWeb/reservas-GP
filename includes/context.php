@@ -8,7 +8,25 @@ function get_empresa_from_url()
 
     $param = $_GET['empresa'] ?? $_GET['id_e'] ?? null;
     if ($param === null || $param === '') {
-        return null;
+        // Intentar extraer slug desde la URL bonita: /{slug}/...
+        $uri = $_SERVER['REQUEST_URI'] ?? '';
+        $path = parse_url($uri, PHP_URL_PATH) ?: '';
+        $base = app_root_path();
+        if ($base !== '' && str_starts_with($path, $base)) {
+            $path = substr($path, strlen($base));
+        }
+        $path = trim((string) $path, '/');
+        if ($path !== '') {
+            $parts = explode('/', $path);
+            $candidate = $parts[0] ?? '';
+            $reserved = ['vistas', 'api', 'assets', 'includes', 'uploads', 'vendor'];
+            if ($candidate !== '' && !in_array(strtolower($candidate), $reserved, true)) {
+                $param = $candidate;
+            }
+        }
+        if ($param === null || $param === '') {
+            return null;
+        }
     }
     $param = trim($param);
 
@@ -92,11 +110,33 @@ function is_public_view($module = null)
     $m = $module ?? ($GLOBALS['module'] ?? '');
     // Eliminar el prefijo " | " que agregan los topbars
     $m = ltrim($m, ' |');
-    $publicos = ['inicio', 'login', 'blog', 'sedes', 'ver-sedes', 'citas', '404', 'landing', 'register'];
+    $publicos = ['inicio', 'login', 'blog', 'sedes', 'ver-sedes', 'servicios', 'citas', '404', 'landing', 'register', 'resena'];
     if (in_array($m, $publicos)) {
         return true;
     }
     // También detectar por ruta si el módulo aún no está definido
     $uri = $_SERVER['REQUEST_URI'] ?? '';
-    return strpos($uri, '/vistas/public/') !== false;
+    if (strpos($uri, '/vistas/public/') !== false) {
+        return true;
+    }
+    $path = parse_url($uri, PHP_URL_PATH) ?: '';
+    $base = app_root_path();
+    if ($base !== '' && str_starts_with($path, $base)) {
+        $path = substr($path, strlen($base));
+    }
+    $path = trim($path, '/');
+    if ($path === '') {
+        return true;
+    }
+    $parts = explode('/', $path);
+    $reserved = ['vistas', 'api', 'assets', 'includes', 'uploads', 'vendor'];
+    if (in_array(strtolower($parts[0] ?? ''), $reserved, true)) {
+        return false;
+    }
+    $page = $parts[1] ?? '';
+    if ($page === '') {
+        return true; // /{slug}
+    }
+    $allowed = ['inicio', 'sedes', 'servicios', 'citas', 'blog', 'login', 'resena'];
+    return in_array(strtolower($page), $allowed, true);
 }

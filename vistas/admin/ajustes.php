@@ -67,7 +67,20 @@ include __DIR__ . '/../../includes/topbar.php';
               <option value="GTQ">Quetzal (Q)</option>
               <option value="USD">Dólar ($)</option>
               <option value="EUR">Euro (€)</option>
+              <option value="MXN">Peso MXN ($)</option>
             </select>
+          </div>
+          <div class="md:col-span-2">
+            <label class="text-sm font-medium text-gray-700">Meta tag Google Search Console</label>
+            <input id="company_gsc_meta_tag" name="gsc_meta_tag" class="border rounded-lg px-3 py-2 w-full"
+              placeholder='<meta name="google-site-verification" content="...">'>
+            <p class="text-xs text-gray-500 mt-1">Opcional. Se insertará en el &lt;head&gt; de vistas públicas de tu empresa.</p>
+          </div>
+          <div class="md:col-span-2">
+            <label class="text-sm font-medium text-gray-700">URL de Sitemap</label>
+            <input id="company_sitemap_url" class="border rounded-lg px-3 py-2 w-full bg-gray-100" readonly disabled
+              value="<?= htmlspecialchars(app_url_absolute('sitemap.php?empresa=' . ($empresa_slug ?? ''))) ?>">
+            <p class="text-xs text-gray-500 mt-1">Usa esta URL en Google Search Console para tu empresa.</p>
           </div>
           <!-- Color primario con preview -->
           <div>
@@ -132,7 +145,7 @@ include __DIR__ . '/../../includes/topbar.php';
               <input id="social_whatsapp" name="redes[whatsapp]" class="border rounded-lg p-2 pl-10 w-full" placeholder="https://wa.me/...">
             </div>
             <div class="relative">
-              <span class="absolute inset-y-0 left-0 flex items-center pl-3"><i data-lucide="music" class="text-gray-500"></i></span>
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3"><i data-lucide="clapperboard" class="text-gray-500"></i></span>
               <input id="social_tiktok" name="redes[tiktok]" class="border rounded-lg p-2 pl-10 w-full" placeholder="https://tiktok.com/...">
             </div>
             <div class="relative">
@@ -226,6 +239,12 @@ include __DIR__ . '/../../includes/topbar.php';
 
 <script>
   $(function () {
+    function resolveAssetPath(path) {
+      const p = String(path || '').trim();
+      if (!p) return '';
+      if (/^https?:\/\//i.test(p)) return p;
+      return '../../' + p.replace(/^\/+/, '');
+    }
     function showInfo(msg, ok) {
       const el = $('#saveInfo');
       el.removeClass('hidden');
@@ -315,13 +334,14 @@ include __DIR__ . '/../../includes/topbar.php';
         setVal('company_direccion_general', d.direccion_general);
         setVal('company_horario_general', d.horario_general);
         setVal('company_moneda', d.moneda);
+        setVal('company_gsc_meta_tag', d.gsc_meta_tag);
         setVal('company_primary_color', d.primary_color);
         $('#company_primary_color_picker').val(d.primary_color || '#0d9488');
         updateColorPreview(d.primary_color || '#0d9488');
 
         // Logo preview
         if (d.logo_path) {
-          $('#logo_preview').attr('src', '../../' + d.logo_path);
+          $('#logo_preview').attr('src', resolveAssetPath(d.logo_path));
           $('#logo_preview_container').removeClass('hidden');
           if (d.logo_path.startsWith('http')) {
             $('#company_logo_url').val(d.logo_path);
@@ -357,7 +377,7 @@ include __DIR__ . '/../../includes/topbar.php';
         setVal('profile_rol', d.rol);
         // Foto preview
         if (d.foto_path) {
-          $('#profile_photo_preview').attr('src', '../../' + d.foto_path);
+          $('#profile_photo_preview').attr('src', resolveAssetPath(d.foto_path));
           $('#profile_photo_preview_container').removeClass('hidden');
         } else {
           $('#profile_photo_preview_container').addClass('hidden');

@@ -6,7 +6,7 @@ $action = $_REQUEST['action'] ?? 'stats';
 $user = current_user();
 $id_e = request_id_e();
 $role = $user['rol'] ?? null;
-$empresa_id = (int) ($user['empresa_id'] ?? 0);
+$empresa_id = resolve_private_empresa_id($user);
 
 
 

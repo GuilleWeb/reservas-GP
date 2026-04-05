@@ -11,3 +11,4 @@ Disallow: /vistas/empleado/
 Disallow: /vistas/cliente/
 
 Sitemap: /sitemap.php
+# Nota: cada empresa usa su propio sitemap en /sitemap.php?empresa=slug

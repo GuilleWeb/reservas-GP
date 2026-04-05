@@ -52,8 +52,18 @@ try {
       PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     ]
   );
-  $stmt = $pdo_lp->query('SELECT id, nombre, descripcion, max_sucursales, max_empleados, max_servicios, max_clientes, precio FROM planes WHERE activo = 1 ORDER BY id ASC LIMIT 6');
-  $plans = $stmt->fetchAll() ?: [];
+  try {
+    $stmt = $pdo_lp->query('SELECT id, nombre, descripcion, max_sucursales, max_empleados, max_servicios, max_clientes, precio, modulos_json FROM planes WHERE activo = 1 ORDER BY id ASC LIMIT 6');
+    $plans = $stmt->fetchAll() ?: [];
+  } catch (Throwable $e2) {
+    $stmt = $pdo_lp->query('SELECT id, nombre, descripcion, max_sucursales, max_empleados, max_servicios, max_clientes FROM planes WHERE activo = 1 ORDER BY id ASC LIMIT 6');
+    $plans = $stmt->fetchAll() ?: [];
+    foreach ($plans as &$pp) {
+      $pp['precio'] = 0;
+      $pp['modulos_json'] = '[]';
+    }
+    unset($pp);
+  }
 } catch (Throwable $e) {
   $plans = [];
 }
@@ -66,7 +76,7 @@ if (!$plans) {
       'max_empleados' => 5,
       'max_servicios' => 30,
       'max_clientes' => 3000,
-      'precio_mensual' => 0
+      'precio' => 0
     ],
     [
       'nombre' => 'Pro',
@@ -75,7 +85,7 @@ if (!$plans) {
       'max_empleados' => 20,
       'max_servicios' => 80,
       'max_clientes' => 15000,
-      'precio_mensual' => 100
+      'precio' => 100
     ],
     [
       'nombre' => 'Scale',
@@ -84,7 +94,7 @@ if (!$plans) {
       'max_empleados' => 60,
       'max_servicios' => 200,
       'max_clientes' => 50000,
-      'precio_mensual' => 190
+      'precio' => 190
     ],
   ];
 }
@@ -424,7 +434,7 @@ $faq_schema = [
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="reveal text-center">
           <h2 class="text-3xl sm:text-4xl font-extrabold">Planes</h2>
-          <p class="mt-3 text-slate-600">Actualmente todos los planes están en modalidad <strong>gratis</strong> para acelerar tu adopción.</p>
+          <p class="mt-3 text-slate-600">Elige el plan que mejor se adapta a tu operación actual y escala cuando lo necesites.</p>
         </div>
         <div class="mt-10 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           <?php foreach ($plans as $idx => $p): ?>
@@ -433,13 +443,24 @@ $faq_schema = [
                 <span class="absolute top-3 right-3 text-[11px] font-extrabold bg-teal-600 text-white px-2 py-1 rounded-full">Más elegido</span>
               <?php endif; ?>
               <div class="text-sm text-teal-700 font-extrabold uppercase tracking-wider">Plan <?= htmlspecialchars((string) ($p['nombre'] ?? '')) ?></div>
-              <div class="mt-2 text-3xl font-extrabold text-slate-900">Q<?= (int) ($p['precio_mensual'] ?? 150) ?>/mes</div>
+              <?php $precioPlan = isset($p['precio']) ? (float) $p['precio'] : 0.0; ?>
+              <div class="mt-2 text-3xl font-extrabold text-slate-900">
+                <?= $precioPlan <= 0 ? 'Gratis' : ('Q' . number_format($precioPlan, 2) . '/mes') ?>
+              </div>
               <p class="mt-2 text-sm text-slate-600 min-h-10"><?= htmlspecialchars((string) ($p['descripcion'] ?? '')) ?></p>
               <ul class="mt-5 space-y-2 text-sm text-slate-700">
                 <li class="flex items-center gap-2"><i data-lucide="check-circle-2" class="w-4 h-4 text-teal-600"></i>Hasta <?= (int) ($p['max_sucursales'] ?? 0) ?> sucursales</li>
                 <li class="flex items-center gap-2"><i data-lucide="check-circle-2" class="w-4 h-4 text-teal-600"></i>Hasta <?= (int) ($p['max_empleados'] ?? 0) ?> empleados</li>
                 <li class="flex items-center gap-2"><i data-lucide="check-circle-2" class="w-4 h-4 text-teal-600"></i>Hasta <?= (int) ($p['max_servicios'] ?? 0) ?> servicios</li>
                 <li class="flex items-center gap-2"><i data-lucide="check-circle-2" class="w-4 h-4 text-teal-600"></i>Hasta <?= (int) ($p['max_clientes'] ?? 0) ?> clientes</li>
+                <?php
+                  $mods = json_decode((string) ($p['modulos_json'] ?? '[]'), true);
+                  if (!is_array($mods)) { $mods = []; }
+                  $mods = array_slice(array_values(array_filter(array_map('strval', $mods))), 0, 3);
+                  foreach ($mods as $m):
+                ?>
+                  <li class="flex items-center gap-2"><i data-lucide="check-circle-2" class="w-4 h-4 text-teal-600"></i>Módulo: <?= htmlspecialchars(ucfirst(str_replace('_', ' ', $m))) ?></li>
+                <?php endforeach; ?>
               </ul>
               <a href="<?= htmlspecialchars($login_url) ?>" class="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-slate-900 text-white py-2.5 font-bold hover:bg-slate-800 transition">
                 Empezar gratis

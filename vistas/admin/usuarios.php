@@ -9,7 +9,8 @@ if (!$user || !in_array($role, ['superadmin', 'admin'], true)) {
   exit;
 }
 
-$empresa_id_user = $user['empresa_id'] ?? null;
+$empresa_id_user = resolve_private_empresa_id($user);
+$can_manage_admin = ($role === 'superadmin');
 $stmt = $pdo->prepare("SELECT id, nombre FROM sucursales WHERE empresa_id = ? ORDER BY nombre ASC");
 $stmt->execute([$empresa_id_user]);
 $sucursales = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -55,7 +56,9 @@ include __DIR__ . '/../../includes/topbar.php';
             <div>
               <label class="block text-sm font-medium text-gray-700">Rol <span class="text-red-500">*</span></label>
               <select class="border rounded-lg p-2 w-full" id="rol" name="rol" required>
-                <option value="admin">Admin</option>
+                <?php if ($can_manage_admin): ?>
+                  <option value="admin">Admin</option>
+                <?php endif; ?>
                 <option value="gerente">Gerente</option>
                 <option value="empleado" selected>Empleado</option>
                 <option value="cliente">Cliente</option>
@@ -73,6 +76,20 @@ include __DIR__ . '/../../includes/topbar.php';
                 </button>
                 <span id="activoUsuarioLabel" class="text-sm font-medium text-gray-700">Activo</span>
               </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Mostrar en Home Page</label>
+            <div class="flex items-center gap-3 mt-1">
+              <input type="hidden" id="show_in_home" name="show_in_home" value="0">
+              <button type="button" id="showInHomeSwitch"
+                class="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-300 transition-colors"
+                aria-pressed="false">
+                <span id="showInHomeKnob"
+                  class="inline-block h-5 w-5 translate-x-0 rounded-full bg-white shadow transition-transform"></span>
+              </button>
+              <span id="showInHomeLabel" class="text-sm font-medium text-gray-700">No mostrar</span>
             </div>
           </div>
 
@@ -123,7 +140,9 @@ include __DIR__ . '/../../includes/topbar.php';
               class="border rounded-lg p-2 md:col-span-2">
             <select id="fRol" class="border rounded-lg p-2">
               <option value="">Rol: todos</option>
-              <option value="admin">Admin</option>
+              <?php if ($can_manage_admin): ?>
+                <option value="admin">Admin</option>
+              <?php endif; ?>
               <option value="gerente">Gerente</option>
               <option value="empleado">Empleado</option>
               <option value="cliente">Cliente</option>
@@ -184,6 +203,15 @@ include __DIR__ . '/../../includes/topbar.php';
         .toggleClass('bg-gray-300', !active);
       $('#activoUsuarioKnob').toggleClass('translate-x-5', active).toggleClass('translate-x-0', !active);
     }
+    function setShowInHomeSwitch(val) {
+      const active = String(val) === '1';
+      $('#show_in_home').val(active ? '1' : '0');
+      $('#showInHomeLabel').text(active ? 'Mostrar' : 'No mostrar');
+      $('#showInHomeSwitch').attr('aria-pressed', active ? 'true' : 'false')
+        .toggleClass('bg-teal-600', active)
+        .toggleClass('bg-gray-300', !active);
+      $('#showInHomeKnob').toggleClass('translate-x-5', active).toggleClass('translate-x-0', !active);
+    }
 
     function resetForm() {
       $('#userForm')[0].reset();
@@ -192,6 +220,7 @@ include __DIR__ . '/../../includes/topbar.php';
       $('#sucursal_id').val('');
       $('#rol').val('empleado');
       setUsuarioActivoSwitch('1');
+      setShowInHomeSwitch('0');
     }
 
     function debounceLoad() { if (t) clearTimeout(t); t = setTimeout(loadUsers, 500); }
@@ -200,7 +229,13 @@ include __DIR__ . '/../../includes/topbar.php';
       $.get(API_URL, { action: 'list', page: page, per: per, search: search, rol: rol, activo: activo, sort: sort, dir: dir }, function (res) {
         if (!res.success) return;
         const tbody = $('#usersTable').empty();
+        const idE = <?= json_encode(request_id_e()) ?>;
         res.data.forEach(u => {
+          let panelUrl = '';
+          if (u.rol === 'admin') panelUrl = <?= json_encode(app_url('vistas/admin/dashboard.php')) ?> + `?id_e=${encodeURIComponent(idE)}`;
+          else if (u.rol === 'gerente') panelUrl = <?= json_encode(app_url('vistas/sucursal/dashboard.php')) ?> + `?id_e=${encodeURIComponent(idE)}`;
+          else if (u.rol === 'empleado') panelUrl = <?= json_encode(app_url('vistas/empleado/dashboard.php')) ?> + `?id_e=${encodeURIComponent(idE)}`;
+          else if (u.rol === 'cliente') panelUrl = <?= json_encode(app_url('vistas/cliente/citas.php')) ?> + `?id_e=${encodeURIComponent(idE)}`;
           const badge = u.activo == 1
             ? '<span class="bg-green-50 text-green-700 px-2.5 py-1 rounded-full text-[10px] font-bold border border-green-100">ACTIVO</span>'
             : '<span class="bg-gray-50 text-gray-400 px-2.5 py-1 rounded-full text-[10px] font-bold border border-gray-100">INACTIVO</span>';
@@ -221,6 +256,7 @@ include __DIR__ . '/../../includes/topbar.php';
             <td class="px-6 py-4 text-center">${badge}</td>
             <td class="px-6 py-4 text-right">
               <div class="flex items-center justify-center gap-1">  
+                ${panelUrl ? `<a href="${panelUrl}" class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-white text-teal-600" title="Abrir panel"><i data-lucide="log-in"></i></a>` : ''}
                 <button class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-white editBtn" title="Editar" data-id="${u.id}"><i data-lucide="pen"></i></button>
                 <button class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-white text-red-600 deleteBtn" data-id="${u.id}"><i data-lucide="trash-2"></i></button>
               </div>
@@ -230,6 +266,7 @@ include __DIR__ . '/../../includes/topbar.php';
         });
         $('#totalReg').text(`Total: ${res.total}`);
         renderPagination(res.total);
+        if (window.lucide) lucide.createIcons();
       }, 'json');
     }
 
@@ -251,6 +288,9 @@ include __DIR__ . '/../../includes/topbar.php';
     $('#fActivo').on('change', function () { activo = $(this).val(); page = 1; loadUsers(); });
     $('#activoUsuarioSwitch').on('click', function () {
       setUsuarioActivoSwitch($('#activo').val() === '1' ? '0' : '1');
+    });
+    $('#showInHomeSwitch').on('click', function () {
+      setShowInHomeSwitch($('#show_in_home').val() === '1' ? '0' : '1');
     });
     $('#btnReset').click(resetForm);
 
@@ -287,6 +327,7 @@ include __DIR__ . '/../../includes/topbar.php';
         $('#rol').val(u.rol);
         $('#sucursal_id').val(u.sucursal_id || '');
         setUsuarioActivoSwitch(u.activo);
+        setShowInHomeSwitch(u.show_in_home || 0);
         $('#password').val('');
         $('#btnSubmit').text('Actualizar Usuario');
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -302,6 +343,7 @@ include __DIR__ . '/../../includes/topbar.php';
     });
 
     setUsuarioActivoSwitch('1');
+    setShowInHomeSwitch('0');
     loadUsers();
   });
 </script>

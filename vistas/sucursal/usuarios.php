@@ -6,6 +6,7 @@ include __DIR__ . '/../../includes/topbar.php';
 <?php
 $user = current_user();
 $role = $user['rol'] ?? null;
+$is_gerente = ($role === 'gerente');
 $es_super = ($role === 'superadmin');
 $empresa_id_user = $user['empresa_id'] ?? null;
 
@@ -51,12 +52,8 @@ if ($es_super) {
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label class="block text-sm font-medium text-gray-700">Rol</label>
-              <select class="border rounded-lg p-2 w-full" id="rol" name="rol" required>
-                <option value="admin">Admin</option>
-                <option value="gerente">Gerente</option>
-                <option value="empleado">Empleado</option>
-                <option value="cliente">Cliente</option>
-              </select>
+              <input type="hidden" id="rol" name="rol" value="empleado">
+              <div class="border rounded-lg p-2 w-full bg-gray-50 text-gray-700">Empleado</div>
             </div>
             <input type="hidden" id="empresa_id" name="empresa_id" value="<?= $empresa_id_user ?>">
           </div>
@@ -95,8 +92,10 @@ if ($es_super) {
           </div>
 
           <div class="pt-2 flex items-center justify-between gap-2">
-            <button type="button" id="btnReset" class="px-4 py-2 border rounded-lg">Nuevo</button>
-            <button type="submit" id="btnSubmit" class="px-2 py-2 bg-teal-600 text-white rounded-lg">Crear</button>
+            <?php if (!$is_gerente): ?>
+              <button type="button" id="btnReset" class="px-4 py-2 border rounded-lg">Nuevo</button>
+            <?php endif; ?>
+            <button type="submit" id="btnSubmit" class="px-2 py-2 bg-teal-600 text-white rounded-lg"><?= $is_gerente ? 'Guardar' : 'Crear' ?></button>
           </div>
         </form>
       </div>
@@ -118,10 +117,7 @@ if ($es_super) {
             <input type="hidden" id="fEmpresa" value="<?= $empresa_id_user ?>">
             <select id="fRol" class="border rounded-lg p-2">
               <option value="">Rol: todos</option>
-              <option value="admin">Admin</option>
-              <option value="gerente">Gerente</option>
               <option value="empleado">Empleado</option>
-              <option value="cliente">Cliente</option>
             </select>
             <select id="fActivo" class="border rounded-lg p-2">
               <option value="">Estado: todos</option>
@@ -183,7 +179,7 @@ if ($es_super) {
     function resetForm() {
       $('#userForm')[0].reset();
       $('#userId').val('');
-      $('#btnSubmit').text('Crear');
+      $('#btnSubmit').text(<?= json_encode($is_gerente ? 'Guardar' : 'Crear') ?>);
       setUsuarioActivoSwitch('1');
       $('#rol').val('empleado');
       $('#sucursal_id').val('');
@@ -213,7 +209,7 @@ if ($es_super) {
           <td class="px-4 py-3">
             <div class="flex items-center justify-end gap-2">
               <button class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-white editBtn" title="Editar" data-id="${u.id}"><i data-lucide="pen"></i></button>
-              <button class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-white text-red-600 deleteBtn" title="Desactivar" data-id="${u.id}"><i data-lucide="trash-2"></i></button>
+              ${<?= json_encode($is_gerente) ?> ? '' : `<button class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-white text-red-600 deleteBtn" title="Desactivar" data-id="${u.id}"><i data-lucide="trash-2"></i></button>`}
             </div>
           </td>
         </tr>`);
@@ -244,7 +240,9 @@ if ($es_super) {
     $('#searchUser').on('keyup', function () { search = $(this).val(); page = 1; debounceLoad(); });
     $('#fRol').on('change', function () { rol = $(this).val(); page = 1; loadUsers(); });
     $('#fActivo').on('change', function () { activo = $(this).val(); page = 1; loadUsers(); });
+    <?php if (!$is_gerente): ?>
     $('#btnReset').click(resetForm);
+    <?php endif; ?>
 
     $('table thead').on('click', 'th[data-sort]', function () {
       const nextSort = $(this).data('sort');
@@ -260,6 +258,10 @@ if ($es_super) {
 
     $('#userForm').on('submit', function (ev) {
       ev.preventDefault();
+      if (<?= json_encode($is_gerente) ?> && parseInt($('#userId').val() || '0', 10) <= 0) {
+        showCustomAlert('Como gerente solo puedes editar empleados existentes.', 4500, 'warning');
+        return;
+      }
       const payload = $(this).serialize() + '&action=save';
       $.post(API_USUARIOS, payload, function (res) {
         if (res.success) {
@@ -280,7 +282,7 @@ if ($es_super) {
         $('#nombre').val(u.nombre || '');
         $('#email').val(u.email || '');
         $('#telefono').val(u.telefono || '');
-        $('#rol').val(u.rol || 'empleado');
+        $('#rol').val('empleado');
         $('#sucursal_id').val(u.sucursal_id || '');
         setUsuarioActivoSwitch(parseInt(u.activo || 0) === 1 ? '1' : '0');
         $('#password').val('');
@@ -290,6 +292,10 @@ if ($es_super) {
     });
 
     $('#usersTable').on('click', '.deleteBtn', function () {
+      if (<?= json_encode($is_gerente) ?>) {
+        showCustomAlert('Como gerente no puedes eliminar usuarios.', 4500, 'warning');
+        return;
+      }
       const id = $(this).data('id');
       if (!window.confirm('¿Desactivar este usuario?')) return;
       $.post(API_USUARIOS, { action: 'delete', id: id }, function (res) {

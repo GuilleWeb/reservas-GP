@@ -52,6 +52,25 @@ if (!$user || $role !== 'superadmin') {
               <input type="number" min="1" class="border rounded-lg p-2 w-full" id="max_clientes" name="max_clientes"
                 value="10000" required>
             </div>
+            <div class="col-span-2">
+              <label class="block text-sm font-medium text-gray-700">Precio mensual</label>
+              <input type="number" min="0" step="0.01" class="border rounded-lg p-2 w-full" id="precio" name="precio" value="0">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Módulos permitidos</label>
+            <div class="grid grid-cols-2 gap-2 text-sm">
+              <label class="inline-flex items-center gap-2"><input type="checkbox" name="modulos[]" value="dashboard" checked> Dashboard</label>
+              <label class="inline-flex items-center gap-2"><input type="checkbox" name="modulos[]" value="citas" checked> Citas</label>
+              <label class="inline-flex items-center gap-2"><input type="checkbox" name="modulos[]" value="servicios" checked> Servicios</label>
+              <label class="inline-flex items-center gap-2"><input type="checkbox" name="modulos[]" value="sucursales" checked> Sucursales</label>
+              <label class="inline-flex items-center gap-2"><input type="checkbox" name="modulos[]" value="usuarios" checked> Usuarios</label>
+              <label class="inline-flex items-center gap-2"><input type="checkbox" name="modulos[]" value="clientes" checked> Clientes</label>
+              <label class="inline-flex items-center gap-2"><input type="checkbox" name="modulos[]" value="mensajes" checked> Mensajes</label>
+              <label class="inline-flex items-center gap-2"><input type="checkbox" name="modulos[]" value="resenas" checked> Reseñas</label>
+              <label class="inline-flex items-center gap-2"><input type="checkbox" name="modulos[]" value="home_page" checked> Home Page</label>
+              <label class="inline-flex items-center gap-2"><input type="checkbox" name="modulos[]" value="blog" checked> Blog</label>
+            </div>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">Activo</label>
@@ -106,6 +125,7 @@ if (!$user || $role !== 'superadmin') {
               <tr>
                 <th class="text-left px-4 py-3 cursor-pointer select-none" data-sort="nombre">Nombre <span
                     class="sort-ind" data-for="nombre"></span></th>
+                <th class="text-left px-4 py-3">Precio</th>
                 <th class="text-left px-4 py-3 cursor-pointer select-none" data-sort="max_clientes">Límites <span
                     class="sort-ind" data-for="max_clientes"></span></th>
                 <th class="text-left px-4 py-3 cursor-pointer select-none" data-sort="activo">Estado <span
@@ -149,6 +169,8 @@ if (!$user || $role !== 'superadmin') {
       $('#max_empleados').val(1);
       $('#max_servicios').val(50);
       $('#max_clientes').val(10000);
+      $('#precio').val(0);
+      $('input[name="modulos[]"]').prop('checked', true);
       setPlanActivoSwitch('1');
     }
 
@@ -183,6 +205,7 @@ if (!$user || $role !== 'superadmin') {
             <div class="font-medium text-gray-900">${p.nombre || ''}</div>
             <div class="text-xs text-gray-500 line-clamp-1">${p.descripcion || ''}</div>
           </td>
+          <td class="px-4 py-3 text-sm font-semibold text-gray-800">${(window.APP_CURRENCY?.symbol || '$')}${parseFloat(p.precio || 0).toFixed(2)}</td>
           <td class="px-4 py-3 text-gray-700">${limites}</td>
           <td class="px-4 py-3">${estado}</td>
           <td class="px-4 py-3">
@@ -257,6 +280,11 @@ if (!$user || $role !== 'superadmin') {
         $("#max_empleados").val(p.max_empleados);
         $("#max_servicios").val(p.max_servicios);
         $("#max_clientes").val(p.max_clientes);
+        $("#precio").val(p.precio || 0);
+        let mods = [];
+        try { mods = JSON.parse(p.modulos_json || '[]') || []; } catch(e) { mods = []; }
+        $('input[name="modulos[]"]').prop('checked', false);
+        mods.forEach(m => $(`input[name="modulos[]"][value="${m}"]`).prop('checked', true));
         setPlanActivoSwitch(p.activo);
         $('#btnSubmit').text('Guardar');
         window.scrollTo({ top: 0, behavior: 'smooth' });

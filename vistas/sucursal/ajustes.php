@@ -7,96 +7,187 @@ include __DIR__ . '/../../includes/topbar.php';
 ?>
 
 <div class="max-w-7xl mx-auto">
-  <div class="bg-white rounded-2xl shadow p-6 border">
-    <div class="font-semibold text-gray-900">Configuración de Mi Empresa</div>
-    <div class="mt-2 text-sm text-gray-600">Personaliza los colores, logo y tu landing page (inicio).</div>
-
-    <form id="tenantForm" class="mt-4 space-y-4">
-      <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Logo (URL o ruta local)</label>
-          <input id="system_logo_path" name="system_logo_path" class="border rounded-lg p-2 w-full"
-            placeholder="assets/logo.avif">
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Color Primario (Hexadecimal)</label>
-          <input id="ui_primary_color" name="ui_primary_color" class="border rounded-lg p-2 w-full"
-            placeholder="#0d9488">
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Email de Soporte/Contacto</label>
-          <input id="support_email" name="support_email" class="border rounded-lg p-2 w-full"
-            placeholder="soporte@dominio.com">
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Teléfono de Soporte/Contacto</label>
-          <input id="support_phone" name="support_phone" class="border rounded-lg p-2 w-full" placeholder="+52 ...">
-        </div>
+  <div class="bg-white rounded-2xl shadow border">
+    <div class="p-5 border-b">
+      <div class="font-semibold text-gray-900">Configuración de Sucursal</div>
+      <div class="text-sm text-gray-500">Gestiona la información de tu sucursal y tus datos personales.</div>
+      <div class="mt-4 inline-flex rounded-xl border border-gray-200 p-1 bg-gray-50">
+        <button id="tabSucursal" class="px-4 py-2 rounded-lg text-sm font-semibold bg-teal-600 text-white">Sucursal</button>
+        <button id="tabPerfil" class="px-4 py-2 rounded-lg text-sm font-semibold text-gray-700">Mi perfil</button>
       </div>
+    </div>
 
-      <div class="mt-4 pt-4 border-t border-gray-100">
-        <h3 class="text-sm font-bold text-gray-900 mb-3">Configuración de Landing Page (Inicio)</h3>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="p-5">
+      <form id="formSucursal" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label class="block text-sm font-medium text-gray-700">Título del Hero Banner</label>
-            <input id="hero_titulo" name="hero_titulo"
-              class="border border-gray-300 focus:ring-2 focus:ring-teal-500 rounded-lg p-2 w-full mt-1">
+            <label class="block text-sm font-medium text-gray-700">Nombre sucursal</label>
+            <input id="s_nombre" name="nombre" class="border rounded-lg p-2 w-full" required>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">Subtítulo del Hero Banner</label>
-            <input id="hero_subtitulo" name="hero_subtitulo"
-              class="border border-gray-300 focus:ring-2 focus:ring-teal-500 rounded-lg p-2 w-full mt-1">
+            <label class="block text-sm font-medium text-gray-700">Foto (URL o ruta)</label>
+            <input id="s_foto_path" name="foto_path" class="border rounded-lg p-2 w-full" placeholder="assets/sucursal.jpg">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Teléfono</label>
+            <input id="s_telefono" name="telefono" class="border rounded-lg p-2 w-full">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Email</label>
+            <input id="s_email" name="email" type="email" class="border rounded-lg p-2 w-full">
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-700">Dirección</label>
+            <input id="s_direccion" name="direccion" class="border rounded-lg p-2 w-full">
           </div>
         </div>
-      </div>
 
-      <div class="mt-4 flex items-center justify-end gap-2 border-t pt-4">
-        <button type="button" id="btnReload" class="px-4 py-2 border rounded-lg">Recargar Datos</button>
-        <button type="submit" class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg">Guardar
-          Apariencia</button>
-      </div>
-      <div id="saveInfo" class="hidden text-sm text-teal-700 text-right mt-2"></div>
-    </form>
+        <div class="pt-4 border-t">
+          <div class="text-sm font-semibold text-gray-900 mb-3">Horarios</div>
+          <div id="horariosWrap" class="space-y-2"></div>
+        </div>
+
+        <div class="pt-4 border-t flex justify-end">
+          <button type="submit" class="px-4 py-2 rounded-lg bg-teal-600 text-white font-semibold hover:bg-teal-700">Guardar sucursal</button>
+        </div>
+      </form>
+
+      <form id="formPerfil" class="space-y-4 hidden">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Nombre</label>
+            <input id="p_nombre" name="nombre" class="border rounded-lg p-2 w-full" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Email</label>
+            <input id="p_email" name="email" type="email" class="border rounded-lg p-2 w-full" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Teléfono</label>
+            <input id="p_telefono" name="telefono" class="border rounded-lg p-2 w-full">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Foto (URL o ruta)</label>
+            <input id="p_foto_path" name="foto_path" class="border rounded-lg p-2 w-full">
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-700">Nueva contraseña (opcional)</label>
+            <input id="p_password" name="password" type="password" class="border rounded-lg p-2 w-full" placeholder="Dejar vacío para mantener la actual">
+          </div>
+        </div>
+
+        <div class="pt-4 border-t flex justify-end">
+          <button type="submit" class="px-4 py-2 rounded-lg bg-teal-600 text-white font-semibold hover:bg-teal-700">Guardar perfil</button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 
 <script>
-  const API_URL = '<?= app_url('api/sucursal/ajustes.php') ?>'; // Gerente usa su propia API
   $(function () {
-    function showInfo(msg, ok) {
-      const el = $('#saveInfo');
-      el.removeClass('hidden').toggleClass('text-teal-700', !!ok).toggleClass('text-red-600', !ok).text(msg);
-      setTimeout(() => el.addClass('hidden'), 2500);
+    const API_URL = <?= json_encode(app_url('api/sucursal/ajustes.php') . '?id_e=' . urlencode((string) request_id_e())) ?>;
+    const dayLabels = [
+      ['lunes', 'Lunes'], ['martes', 'Martes'], ['miercoles', 'Miércoles'], ['jueves', 'Jueves'],
+      ['viernes', 'Viernes'], ['sabado', 'Sábado'], ['domingo', 'Domingo']
+    ];
+
+    function renderHorarios(horarios) {
+      const box = $('#horariosWrap').empty();
+      dayLabels.forEach(([key, label]) => {
+        const d = horarios && horarios[key] ? horarios[key] : {};
+        const activo = parseInt(d.activo || 0, 10) === 1;
+        const ini = String(d.inicio || '09:00');
+        const fin = String(d.fin || '18:00');
+        box.append(`
+          <div class="grid grid-cols-1 md:grid-cols-5 gap-3 items-center border rounded-lg p-3 bg-gray-50">
+            <div class="font-medium text-gray-800">${label}</div>
+            <div>
+              <input type="hidden" name="${key}_activo" value="${activo ? '1' : '0'}">
+              <button type="button" class="day-switch relative inline-flex h-6 w-11 items-center rounded-full ${activo ? 'bg-teal-600' : 'bg-gray-300'}" data-day="${key}">
+                <span class="inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${activo ? 'translate-x-5' : 'translate-x-0'}"></span>
+              </button>
+            </div>
+            <div>
+              <input name="${key}_inicio" type="time" value="${ini}" class="border rounded-lg p-2 w-full">
+            </div>
+            <div>
+              <input name="${key}_fin" type="time" value="${fin}" class="border rounded-lg p-2 w-full">
+            </div>
+            <div class="text-xs text-gray-500">Activo / inicio / fin</div>
+          </div>
+        `);
+      });
+    }
+
+    function setTab(tab) {
+      const s = tab === 'sucursal';
+      $('#formSucursal').toggleClass('hidden', !s);
+      $('#formPerfil').toggleClass('hidden', s);
+      $('#tabSucursal').toggleClass('bg-teal-600 text-white', s).toggleClass('text-gray-700', !s);
+      $('#tabPerfil').toggleClass('bg-teal-600 text-white', !s).toggleClass('text-gray-700', s);
     }
 
     function loadData() {
       $.get(API_URL, { action: 'get' }, function (res) {
-        if (!res.success) return;
+        if (!res || !res.success) {
+          renderHorarios({});
+          showCustomAlert((res && res.message) || 'No se pudo cargar ajustes.', 5000, 'error');
+          return;
+        }
         const d = res.data || {};
-        $('#system_logo_path').val(d.logo_path || '');
-        $('#ui_primary_color').val(d.color_principal || '');
-        $('#support_email').val(d.email_contacto || '');
-        $('#support_phone').val(d.telefono_contacto || '');
-        $('#hero_titulo').val(d.hero_titulo || '');
-        $('#hero_subtitulo').val(d.hero_subtitulo || '');
+        const s = d.sucursal || {};
+        const p = d.perfil || {};
+        $('#s_nombre').val(s.nombre || '');
+        $('#s_direccion').val(s.direccion || '');
+        $('#s_telefono').val(s.telefono || '');
+        $('#s_email').val(s.email || '');
+        $('#s_foto_path').val(s.foto_path || '');
+        $('#p_nombre').val(p.nombre || '');
+        $('#p_email').val(p.email || '');
+        $('#p_telefono').val(p.telefono || '');
+        $('#p_foto_path').val(p.foto_path || '');
+        $('#p_password').val('');
+        renderHorarios(d.horarios || {});
       }, 'json');
     }
 
-    $('#btnReload').click(loadData);
+    $('#tabSucursal').on('click', () => setTab('sucursal'));
+    $('#tabPerfil').on('click', () => setTab('perfil'));
 
-    $('#tenantForm').on('submit', function (ev) {
-      ev.preventDefault();
-      $.post(API_URL, $(this).serialize() + '&action=save', function (res) {
-        if (res.success) {
-          showInfo('Apariencia guardada con éxito.', true);
+    $('#horariosWrap').on('click', '.day-switch', function () {
+      const active = !$(this).hasClass('bg-teal-600');
+      $(this).toggleClass('bg-teal-600', active).toggleClass('bg-gray-300', !active);
+      $(this).find('span').toggleClass('translate-x-5', active).toggleClass('translate-x-0', !active);
+      const day = $(this).data('day');
+      $(this).closest('.grid').find(`input[name="${day}_activo"]`).val(active ? '1' : '0');
+    });
+
+    $('#formSucursal').on('submit', function (e) {
+      e.preventDefault();
+      $.post(API_URL, $(this).serialize() + '&action=save_branch', function (res) {
+        if (res && res.success) {
+          showCustomAlert('Sucursal actualizada correctamente.', 3000, 'success');
           loadData();
-        } else {
-          showInfo(res.message || 'Error al guardar', false);
+          return;
         }
+        showCustomAlert((res && res.message) || 'No se pudo actualizar la sucursal.', 5000, 'error');
       }, 'json');
     });
 
+    $('#formPerfil').on('submit', function (e) {
+      e.preventDefault();
+      $.post(API_URL, $(this).serialize() + '&action=save_profile', function (res) {
+        if (res && res.success) {
+          showCustomAlert('Perfil actualizado correctamente.', 3000, 'success');
+          loadData();
+          return;
+        }
+        showCustomAlert((res && res.message) || 'No se pudo actualizar el perfil.', 5000, 'error');
+      }, 'json');
+    });
+
+    setTab('sucursal');
     loadData();
   });
 </script>

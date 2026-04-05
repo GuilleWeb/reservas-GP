@@ -13,7 +13,7 @@ if ($action === 'update')
 $user = current_user();
 $id_e = request_id_e();
 $role = $user['rol'] ?? null;
-$empresa_id = (int) ($user['empresa_id'] ?? 0);
+$empresa_id = resolve_private_empresa_id($user);
 
 
 
@@ -97,12 +97,8 @@ switch ($action) {
                 $stmt = $pdo->prepare('UPDATE clientes SET nombre=?, email=?, telefono=?, fecha_nacimiento=?, notas=?, activo=? WHERE id=?');
                 $stmt->execute([$nombre, $email ?: null, $telefono ?: null, $fecha_nacimiento, $notas ?: null, $activo, $id]);
             } else {
-                $stmt = $pdo->prepare('INSERT INTO clientes (nombre, email, telefono, fecha_nacimiento, notas, activo) VALUES (?,?,?,?,?,?)');
-                $stmt->execute([$nombre, $email ?: null, $telefono ?: null, $fecha_nacimiento, $notas ?: null, $activo]);
-                $id = (int) $pdo->lastInsertId();
-
-                $stmt = $pdo->prepare('INSERT IGNORE INTO cliente_empresas (cliente_id, empresa_id, creado_por_usuario_id) VALUES (?,?,?)');
-                $stmt->execute([$id, $empresa_id, (int) $user['id']]);
+                $pdo->rollBack();
+                json_response(['success' => false, 'message' => 'Los clientes no se crean manualmente desde admin. Se generan por registro/autogestión.'], 200);
             }
 
             $pdo->commit();

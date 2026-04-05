@@ -6,11 +6,11 @@ $action = $_REQUEST['action'] ?? '';
 $user = current_user();
 $id_e = request_id_e();
 
-if (!$user || ($user['rol'] ?? null) !== 'cliente') {
+if (!$user || !can_act_as_role($user['rol'] ?? null, 'cliente')) {
     json_response(['error' => 'unauthorized'], 403);
 }
 
-$empresa_id = (int) ($user['empresa_id'] ?? 0);
+$empresa_id = resolve_private_empresa_id($user);
 $cliente_id = (int) ($user['id'] ?? 0);
 
 switch ($action) {

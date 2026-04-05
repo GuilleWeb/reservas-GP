@@ -6,7 +6,7 @@ $action = $_REQUEST['action'] ?? '';
 $user = current_user();
 $id_e = request_id_e();
 $role = $user['rol'] ?? null;
-$empresa_id = (int) ($user['empresa_id'] ?? 0);
+$empresa_id = resolve_private_empresa_id($user);
 
 if (!$user || $empresa_id <= 0) {
     json_response(['error' => 'unauthorized'], 403);
@@ -47,6 +47,7 @@ switch ($action) {
             'moneda'          => $config['moneda'] ?? 'GTQ',
             'direccion_general' => $config['direccion_general'] ?? '',
             'horario_general' => $config['horario_general'] ?? '',
+            'gsc_meta_tag'    => $config['gsc_meta_tag'] ?? '',
         ];
         json_response(['success' => true, 'data' => $data]);
         break;
@@ -137,6 +138,7 @@ switch ($action) {
         $config['moneda'] = trim($_POST['moneda'] ?? 'GTQ');
         $config['direccion_general'] = trim($_POST['direccion_general'] ?? '');
         $config['horario_general'] = trim($_POST['horario_general'] ?? '');
+        $config['gsc_meta_tag'] = trim($_POST['gsc_meta_tag'] ?? '');
 
         $config_json = json_encode($config, JSON_UNESCAPED_UNICODE);
 

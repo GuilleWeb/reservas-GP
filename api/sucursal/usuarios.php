@@ -17,12 +17,13 @@ if (!$user || !in_array($user['rol'] ?? null, $roles_permitidos)) {
     json_response(['error' => 'unauthorized'], 403);
 }
 $role = $user['rol'] ?? null;
-if (!$id_e || $role !== 'gerente')
+if (!can_act_as_role($role, 'gerente'))
     json_response(['error' => 'unauthorized'], 403);
 
-$empresa_id = (int) ($user['empresa_id'] ?? 0);
+$empresa_id = resolve_private_empresa_id($user);
 if ($empresa_id <= 0)
     json_response(['error' => 'unauthorized'], 403);
+$sucursal_id_filtro = (int) ($user['sucursal_id'] ?? 0);
 
 switch ($action) {
     case 'list':
@@ -44,13 +45,17 @@ switch ($action) {
         ];
         $orderBy = $sortMap[$sort] ?? 'u.id';
 
-        $where = ['u.empresa_id = :eid'];
+        $where = ['u.empresa_id = :eid', "u.rol = 'empleado'"];
         $params = [':eid' => $empresa_id];
+        if ($sucursal_id_filtro > 0) {
+            $where[] = 'u.sucursal_id = :sid';
+            $params[':sid'] = $sucursal_id_filtro;
+        }
         if ($search !== '') {
             $where[] = '(u.nombre LIKE :s OR u.email LIKE :s)';
             $params[':s'] = "%$search%";
         }
-        if ($rol !== '' && in_array($rol, ['admin', 'gerente', 'empleado', 'cliente'], true)) {
+        if ($rol !== '' && $rol === 'empleado') {
             $where[] = 'u.rol = :rol';
             $params[':rol'] = $rol;
         }
@@ -95,7 +100,7 @@ switch ($action) {
         $stmt = $pdo->prepare('SELECT id, empresa_id, sucursal_id, rol, nombre, email, telefono, activo FROM usuarios WHERE id=? LIMIT 1');
         $stmt->execute([$id]);
         $data = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
-        if ($data && (int) $data['empresa_id'] !== $empresa_id)
+        if ($data && ((int) $data['empresa_id'] !== $empresa_id || ($sucursal_id_filtro > 0 && (int) ($data['sucursal_id'] ?? 0) !== $sucursal_id_filtro)))
             $data = [];
         json_response(['success' => true, 'data' => $data]);
         break;
@@ -114,13 +119,19 @@ switch ($action) {
         $activoRaw = $_POST['activo'] ?? '';
         $activo = ($activoRaw === '0' || $activoRaw === 0) ? 0 : 1;
         $password = trim($_POST['password'] ?? '');
+        if ($role === 'gerente' && $id <= 0) {
+            json_response(['success' => false, 'message' => 'El gerente no puede crear usuarios; solo editar empleados existentes.'], 200);
+        }
 
         if ($nombre === '' || $email === '')
             json_response(['success' => false, 'message' => 'Nombre y email son obligatorios.'], 200);
         if (!filter_var($email, FILTER_VALIDATE_EMAIL))
             json_response(['success' => false, 'message' => 'Email inválido.'], 200);
-        if (!in_array($rol, ['admin', 'gerente', 'empleado', 'cliente'], true))
-            json_response(['success' => false, 'message' => 'Rol inválido.'], 200);
+        if ($rol !== 'empleado')
+            json_response(['success' => false, 'message' => 'Desde este módulo solo puedes gestionar empleados.'], 200);
+        if ($sucursal_id_filtro > 0) {
+            $sucursal_id = $sucursal_id_filtro;
+        }
 
         if ($sucursal_id !== null && $sucursal_id > 0) {
             $stmt = $pdo->prepare('SELECT id, empresa_id FROM sucursales WHERE id=? LIMIT 1');
@@ -139,6 +150,10 @@ switch ($action) {
                 $before = $stmt->fetch(PDO::FETCH_ASSOC);
                 if (!$before || (int) $before['empresa_id'] !== $empresa_id)
                     json_response(['success' => false, 'message' => 'No autorizado.'], 403);
+                if ((string) ($before['rol'] ?? '') !== 'empleado')
+                    json_response(['success' => false, 'message' => 'Solo puedes editar usuarios con rol empleado.'], 200);
+                if ($sucursal_id_filtro > 0 && (int) ($before['sucursal_id'] ?? 0) !== $sucursal_id_filtro)
+                    json_response(['success' => false, 'message' => 'Solo puedes editar empleados de tu sucursal.'], 200);
 
                 $stmt = $pdo->prepare('UPDATE usuarios SET sucursal_id=?, rol=?, nombre=?, email=?, telefono=?, activo=? WHERE id=? AND empresa_id=?');
                 $stmt->execute([$sucursal_id, $rol, $nombre, $email, $telefono ?: null, $activo, $id, $empresa_id]);
@@ -167,12 +182,17 @@ switch ($action) {
     case 'delete':
         if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST')
             json_response(['error' => 'invalid_method'], 405);
+        if ($role === 'gerente') {
+            json_response(['success' => false, 'message' => 'El gerente no puede eliminar usuarios.'], 200);
+        }
         $id = (int) ($_POST['id'] ?? 0);
         if ($id <= 0)
             json_response(['success' => false, 'message' => 'ID inválido.'], 200);
 
-        $stmt = $pdo->prepare('UPDATE usuarios SET activo = 0 WHERE id = ? AND empresa_id = ?');
-        $stmt->execute([$id, $empresa_id]);
+        $stmt = $pdo->prepare("UPDATE usuarios SET activo = 0 WHERE id = ? AND empresa_id = ? AND rol = 'empleado'" . ($sucursal_id_filtro > 0 ? " AND sucursal_id = ?" : ""));
+        $paramsDel = [$id, $empresa_id];
+        if ($sucursal_id_filtro > 0) $paramsDel[] = $sucursal_id_filtro;
+        $stmt->execute($paramsDel);
         json_response(['success' => true]);
         break;
 

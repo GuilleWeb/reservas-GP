@@ -31,7 +31,7 @@ include __DIR__ . '/../../includes/topbar.php';
 
     <!-- Contenedor de Listado -->
     <div id="listView" class="<?= $postId ? 'hidden' : '' ?>">
-        <div id="postsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+        <div id="postsGrid" class="flex flex-wrap justify-center gap-10">
             <!-- Cargado por JS -->
             <div class="col-span-full text-center py-20 text-gray-400">
                 <i data-lucide="sync" class="text-4xl mb-4 text-teal-200 animate-spin"></i>
@@ -46,9 +46,17 @@ include __DIR__ . '/../../includes/topbar.php';
 
     <!-- Contenedor de Detalle -->
     <div id="detailView" class="<?= $postId ? '' : 'hidden' ?>">
-        <div id="postContent"
-            class="max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
-            <!-- Cargado por JS -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <aside class="lg:col-span-1 bg-white rounded-2xl border border-gray-100 p-4 h-fit shadow-sm">
+                <div class="font-semibold text-gray-900 mb-3">Artículos Relacionados</div>
+                <div id="relatedPosts" class="space-y-3 text-sm text-gray-600">
+                    <div class="text-gray-400">Cargando...</div>
+                </div>
+            </aside>
+            <div id="postContent"
+                class="lg:col-span-3 bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
+                <!-- Cargado por JS -->
+            </div>
         </div>
     </div>
 
@@ -71,7 +79,7 @@ include __DIR__ . '/../../includes/topbar.php';
             currentPage = page;
             $('#postsGrid').html('<div class="col-span-full text-center py-20"><i data-lucide="sync" class="text-4xl text-teal-400 animate-spin"></i></div>');
 
-            $.get(API_BLOG, { action: 'list', id_e: slug, page: page, per: 6 }, function (res) {
+            $.get(API_BLOG, { action: 'list', id_e: slug, page: page, per: 10 }, function (res) {
                 const grid = $('#postsGrid').empty();
                 const pag = $('#pagination').empty();
 
@@ -81,7 +89,7 @@ include __DIR__ . '/../../includes/topbar.php';
                         const date = p.publicado_at ? new Date(p.publicado_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' }) : '';
 
                         grid.append(`
-                        <article class="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 flex flex-col h-full transform hover:-translate-y-2">
+                        <article class="w-full max-w-md bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 flex flex-col h-full transform hover:-translate-y-2">
                             <div class="h-56 bg-gray-100 relative">
                                 <img src="../../${img}" class="w-full h-full object-cover">
                                 <div class="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-black uppercase text-gray-900 tracking-widest shadow-sm">
@@ -154,6 +162,21 @@ include __DIR__ . '/../../includes/topbar.php';
                 } else {
                     $('#postContent').html('<div class="p-20 text-center text-red-500 font-bold">Error: Publicación no encontrada.</div>');
                 }
+            });
+            $.get(API_BLOG, { action: 'list', id_e: slug, page: 1, per: 10 }, function (res) {
+                const box = $('#relatedPosts').empty();
+                if (!(res && res.success && Array.isArray(res.data))) {
+                    box.html('<div class="text-gray-400">Sin relacionados.</div>');
+                    return;
+                }
+                const related = res.data.filter(p => parseInt(p.id, 10) !== parseInt(id, 10)).slice(0, 5);
+                if (!related.length) {
+                    box.html('<div class="text-gray-400">Sin relacionados.</div>');
+                    return;
+                }
+                related.forEach(p => {
+                    box.append(`<a href="<?= view_url('vistas/public/blog.php', $slug) ?>&id=${p.id}" class="block p-3 rounded-lg border hover:bg-gray-50"><div class="font-semibold text-gray-800 line-clamp-2">${p.titulo}</div></a>`);
+                });
             });
         }
 

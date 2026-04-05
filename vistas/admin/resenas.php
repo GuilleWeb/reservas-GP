@@ -2,12 +2,9 @@
 require_once __DIR__ . '/../../includes/bootstrap.php';
 $module = 'resenas';
 include __DIR__ . '/../../includes/topbar.php';
-?>
-<?php
 $user = current_user();
 $id_e = request_id_e();
 $is_tenant_admin = ($user && $id_e && in_array($user['rol'] ?? null, ['superadmin', 'admin'], true));
-
 if (!$is_tenant_admin) {
   echo '<div class="max-w-3xl mx-auto bg-white p-6 rounded-xl shadow">No autorizado.</div>';
   return;
@@ -15,72 +12,30 @@ if (!$is_tenant_admin) {
 ?>
 
 <div class="max-w-7xl mx-auto">
-  <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-
-  <div class="lg:col-span-4">
-      <div class="bg-white rounded-2xl shadow p-5 border">
-    <div class="text-xs text-gray-500 font-semibold tracking-wider uppercase mb-1">Empresa</div>
-    <div class="text-xl font-extrabold text-gray-900 mb-6">Gestionar Reseñas</div>
-
-    <form id="formResena" class="space-y-4">
-      <input type="hidden" id="resena_id" name="id" value="0">
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Nombre del Autor <span
-            class="text-red-500">*</span></label>
-        <input type="text" id="autor_nombre" name="autor_nombre"
-          class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" required placeholder="Ej: Juan Pérez">
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Calificación (1 a 5) <span
-            class="text-red-500">*</span></label>
-        <input type="number" min="1" max="5" id="rating" name="rating"
-          class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" required value="5">
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Comentario <span class="text-red-500">*</span></label>
-        <textarea id="comentario" name="comentario" rows="4"
-          class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" required
-          placeholder="Excelente servicio..."></textarea>
-      </div>
-
-      <div class="space-y-3">
-        <label class="relative inline-flex items-center cursor-pointer">
-          <input type="checkbox" id="visible_en_home" name="visible_en_home" value="1" class="sr-only peer">
-          <div
-            class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 text-sm peer-checked:bg-teal-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all">
-          </div>
-          <span class="ml-3 text-sm font-medium text-gray-700">Mostrar en el inicio (Landing)</span>
-        </label>
-
-        <label class="relative inline-flex items-center cursor-pointer">
-          <input type="checkbox" id="activo" name="activo" value="1" class="sr-only peer" checked>
-          <div
-            class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 text-sm peer-checked:bg-teal-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all">
-          </div>
-          <span class="ml-3 text-sm font-medium text-gray-700">Activa</span>
-        </label>
-      </div>
-
-      <div class="pt-4 flex items-center justify-between border-t border-gray-100">
-        <button type="button" onclick="resetForm()"
-          class="text-sm text-gray-500 hover:text-gray-800 border border-gray-300 rounded-lg px-2 py-2">Nuevo</button>
-        <button type="submit"
-          class="bg-teal-600 hover:bg-teal-700 text-white px-2 py-2 rounded-lg font-semibold transition"
-          id="btnSave">Guardar</button>
-      </div>
-    </form>
-  </div>
-  </div>
-
-  <div class="lg:col-span-8">
-      <div class="bg-white rounded-2xl shadow border p-5">
+  <div class="bg-white rounded-2xl shadow border p-5">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
       <div>
-        <h2 class="text-xl font-bold text-gray-800">Testimonios</h2>
-        <p class="text-sm text-gray-500">Solo reseñas marcadas como visibles (Y activas) saldrán en el Home Page.</p>
+        <div class="font-semibold text-gray-900">Listado</div>
+        <div class="text-sm text-gray-500">Acciones: entrar, editar y eliminar.</div>
+      </div>
+      <div class="mt-4 grid grid-cols-1 md:grid-cols-6 gap-3">
+        <input id="txtSearch" type="text" placeholder="Buscar por autor o comentario..." class="border rounded-lg p-2 md:col-span-2">
+        <select id="filterStatus" class="border rounded-lg p-2">
+          <option value="">Estado: todos</option>
+          <option value="1">Aprobadas</option>
+          <option value="0">Rechazadas</option>
+        </select>
+        <select id="sortBy" class="border rounded-lg p-2">
+          <option value="new">Más nuevas</option>
+          <option value="old">Más antiguas</option>
+          <option value="rating_desc">Rating desc</option>
+          <option value="rating_asc">Rating asc</option>
+        </select>
+        <select id="selLimit" class="border rounded-lg p-2">
+          <option value="10" selected>10</option>
+          <option value="25">25</option>
+        </select>
+        <div id="pageInfo" class="text-sm text-gray-600 self-center"></div>
       </div>
     </div>
 
@@ -89,8 +44,9 @@ if (!$is_tenant_admin) {
         <thead class="bg-white border-b sticky top-0 z-10 shadow-sm">
           <tr>
             <th class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Autor</th>
+            <th class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Puntuación</th>
             <th class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Comentario</th>
-            <th class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Visible en Home</th>
+            <th class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Estado / Home</th>
             <th class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase text-right">Acciones</th>
           </tr>
         </thead>
@@ -99,126 +55,164 @@ if (!$is_tenant_admin) {
     </div>
 
     <div class="mt-4 flex flex-col sm:flex-row items-center justify-between border-t pt-4">
-      <div class="text-sm text-gray-500" id="pageInfo"></div>
+      <div class="text-sm text-gray-500" id="totalReg"></div>
       <div class="flex items-center space-x-1" id="pagination"></div>
+    </div>
   </div>
 </div>
-</div>
 
-</div>
+<div id="resenaModal" class="fixed inset-0 bg-black/40 z-50 hidden items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-xl border w-full max-w-2xl p-5">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-semibold text-gray-900">Detalle de reseña</h3>
+      <button type="button" id="btnCloseModal" class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-gray-50"><i data-lucide="x"></i></button>
+    </div>
+    <div id="modalInfo" class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm mb-4"></div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div class="md:col-span-2">
+        <label class="text-xs text-gray-600">Mostrar en Home Page</label>
+        <label class="relative inline-flex items-center cursor-pointer mt-1">
+          <input type="checkbox" id="mShowHome" class="sr-only peer">
+          <div class="w-11 h-6 bg-gray-200 rounded-full peer-checked:bg-teal-600 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+          <span class="ml-3 text-sm text-gray-700">Visible</span>
+        </label>
+      </div>
+      <div>
+        <label class="text-xs text-gray-600">Estado</label>
+        <select id="mEstado" class="border rounded-lg p-2 w-full">
+          <option value="1">Aprobada</option>
+          <option value="0">Rechazada</option>
+        </select>
+      </div>
+      <div class="text-xs text-gray-500 self-end">Una reseña aprobada solo puede cambiar de estado por superadmin.</div>
+    </div>
+    <div class="mt-4 pt-4 border-t flex justify-end">
+      <button type="button" id="btnSaveModal" class="px-3 py-2 rounded-lg bg-teal-600 text-white text-sm font-semibold hover:bg-teal-700">Guardar cambios</button>
+    </div>
+  </div>
 </div>
 
 <script>
+  const ROLE = <?= json_encode($user['rol'] ?? '') ?>;
   let currentPage = 1;
+  let modalItem = null;
 
-  function renderPagination(total_pages, current) {
-    let html = '';
-    if (total_pages <= 1) { $('#pagination').empty(); return; }
-
-    html += `<button onclick="loadData(${current - 1})" class="px-3 py-1 rounded-md border text-gray-600 disabled:opacity-50 hover:bg-gray-50"><i data-lucide="chevron-left"></i></button>`;
-    for (let i = 1; i <= total_pages; i++) {
-      let activeClass = i === current ? 'bg-teal-600 text-white font-medium shadow' : 'border bg-white text-gray-700 hover:bg-gray-50';
-      if (i === 1 || i === total_pages || (i >= current - 1 && i <= current + 1)) {
-        html += `<button onclick="loadData(${i})" class="px-3 py-1 rounded-md ${activeClass}">${i}</button>`;
-      } else if (i === current - 2 || i === current + 2) html += `<span class="px-2 text-gray-400">...</span>`;
+  function renderPagination(totalPages, current) {
+    const pag = $('#pagination').empty();
+    if (!totalPages || totalPages <= 1) return;
+    const prev = current <= 1 ? 'opacity-50 pointer-events-none' : '';
+    const next = current >= totalPages ? 'opacity-50 pointer-events-none' : '';
+    pag.append(`<button onclick="loadData(${current - 1})" class="px-3 py-1 rounded border ${prev}"><i data-lucide="chevron-left"></i></button>`);
+    for (let i = 1; i <= totalPages; i++) {
+      if (i === 1 || i === totalPages || (i >= current - 1 && i <= current + 1)) {
+        const cls = i === current ? 'bg-teal-600 text-white' : 'border hover:bg-gray-50';
+        pag.append(`<button onclick="loadData(${i})" class="px-3 py-1 rounded ${cls}">${i}</button>`);
+      } else if (i === current - 2 || i === current + 2) pag.append('<span class="px-2 text-gray-400">...</span>');
     }
-    html += `<button onclick="loadData(${current + 1})" class="px-3 py-1 rounded-md border text-gray-600 hover:bg-gray-50"><i data-lucide="chevron-right"></i></button>`;
-    $('#pagination').html(html);
+    pag.append(`<button onclick="loadData(${current + 1})" class="px-3 py-1 rounded border ${next}"><i data-lucide="chevron-right"></i></button>`);
+    if (window.lucide) lucide.createIcons();
   }
 
   function loadData(page = 1) {
     currentPage = page;
-    $.get('<?= app_url('api/admin/resenas.php') ?>', { action: 'list', page: currentPage, per: 15 }, function (res) {
+    $.get('<?= app_url('api/admin/resenas.php') ?>', {
+      action: 'list',
+      page: currentPage,
+      per: $('#selLimit').val() || 10,
+      search: ($('#txtSearch').val() || '').trim(),
+      status: $('#filterStatus').val() || '',
+      order: $('#sortBy').val() || 'new'
+    }, function (res) {
       const tbody = $('#tableBody').empty();
-      if (res.success && res.data.length > 0) {
+      if (res.success && res.data.length) {
         res.data.forEach(item => {
-          let stars = '';
-          for (let i = 1; i <= 5; i++) {
-            stars += i <= parseInt(item.rating) ? '<i data-lucide="star" class="text-yellow-500"></i>' : '<i data-lucide="star" class="text-yellow-300"></i>';
-          }
-
-          let visible = parseInt(item.visible_en_home) ? `<span class="bg-teal-100 text-teal-800 px-2 py-0.5 rounded text-xs">Home Page</span>` : '';
-          let status = parseInt(item.activo) === 0 ? `<span class="bg-gray-100 text-gray-800 px-2 py-0.5 rounded text-xs ml-1">Inactiva</span>` : '';
-
+          const activo = parseInt(item.activo || 0, 10) === 1;
+          const enHome = parseInt(item.visible_en_home || 0, 10) === 1;
+          const score = parseInt(item.rating || 0, 10) || 0;
+          const comentario = String(item.comentario || '');
+          const short = comentario.length > 120 ? comentario.substring(0, 120) + '...' : comentario;
           tbody.append(`
-          <tr class="hover:bg-teal-50/30 transition-colors group">
-            <td class="py-3 px-4 font-semibold text-gray-800">
-                ${item.autor_nombre} <div class="text-[0.6rem] text-gray-400 space-x-1">${stars}</div>
-            </td>
-            <td class="py-3 px-4 text-sm text-gray-600 truncate max-w-xs" title="${item.comentario}">${item.comentario}</td>
-            <td class="py-3 px-4">${visible}${status}</td>
-            <td class="py-3 px-4 text-right">
-                <button onclick="editItem(${item.id})" class="text-blue-500 hover:text-blue-700 bg-blue-50 px-2.5 py-1.5 rounded-lg border border-blue-200"><i data-lucide="pen"></i></button>
-                <button onclick="deleteItem(${item.id})" class="text-red-500 hover:text-red-700 bg-red-50 px-2.5 py-1.5 rounded-lg border border-red-200"><i data-lucide="trash-2"></i></button>
-            </td>
-          </tr>
-        `);
+            <tr class="hover:bg-teal-50/30 transition-colors">
+              <td class="py-3 px-4 font-semibold text-gray-800">${item.autor_nombre || '-'}</td>
+              <td class="py-3 px-4"><span class="inline-flex px-2 py-0.5 rounded text-xs bg-amber-100 text-amber-800 border border-amber-200">${score}/5</span></td>
+              <td class="py-3 px-4 text-sm text-gray-600 truncate max-w-md" title="${comentario.replace(/"/g, '&quot;')}">${short || '-'}</td>
+              <td class="py-3 px-4">${activo ? '<span class="bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs">Aprobada</span>' : '<span class="bg-red-100 text-red-800 px-2 py-0.5 rounded text-xs">Rechazada</span>'} ${enHome ? '<span class="bg-teal-100 text-teal-800 px-2 py-0.5 rounded text-xs ml-1">Home</span>' : ''}</td>
+              <td class="py-3 px-4 text-right">
+                <button onclick="openModalById(${item.id})" class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-gray-50 text-blue-600" title="Editar">
+                  <i data-lucide="pen"></i>
+                </button>
+              </td>
+            </tr>
+          `);
         });
+        $('#pageInfo').text(`Mostrando ${res.data.length} de ${res.total || res.data.length}`);
       } else {
-        tbody.html('<tr><td colspan="4" class="py-10 text-center text-gray-500">No hay reseñas registradas.</td></tr>');
+        tbody.html('<tr><td colspan="5" class="py-10 text-center text-gray-500">No hay reseñas registradas.</td></tr>');
+        $('#pageInfo').text('Mostrando 0 resultados');
       }
-      renderPagination(res.total_pages, currentPage);
+      renderPagination(res.total_pages || 1, currentPage);
+      if (window.lucide) lucide.createIcons();
     }, 'json');
   }
 
-  function resetForm() {
-    $('#formResena')[0].reset();
-    $('#resena_id').val(0);
-    $('#btnSave').text('Guardar');
-    $('#activo').prop('checked', true);
-    $('#visible_en_home').prop('checked', false);
+  function openModal(item) {
+    modalItem = item || null;
+    if (!modalItem) return;
+    const info = $('#modalInfo').empty();
+    const rows = [
+      ['Autor', modalItem.autor_nombre || '-'],
+      ['Puntuación', `${modalItem.rating || 0}/5`],
+      ['Comentario', modalItem.comentario || '-']
+    ];
+    rows.forEach(r => info.append(`<div class="bg-gray-50 border rounded-lg p-2 md:col-span-${r[0] === 'Comentario' ? '2' : '1'}"><div class="text-xs text-gray-500">${r[0]}</div><div class="font-medium text-gray-800 whitespace-pre-wrap">${r[1]}</div></div>`));
+    $('#mShowHome').prop('checked', parseInt(modalItem.visible_en_home || 0, 10) === 1);
+    const approved = parseInt(modalItem.activo || 0, 10) === 1;
+    $('#mEstado').val(approved ? '1' : '0');
+    const canChangeEstado = !(approved && ROLE !== 'superadmin');
+    $('#mEstado').prop('disabled', !canChangeEstado).toggleClass('bg-gray-100', !canChangeEstado);
+    $('#resenaModal').removeClass('hidden').addClass('flex');
+    if (window.lucide) lucide.createIcons();
   }
 
-  function editItem(id) {
-    $.get('<?= app_url('api/admin/resenas.php') ?>', { action: 'get', id: id }, function (res) {
-      if (res.success && res.data) {
-        resetForm();
-        const d = res.data;
-        $('#resena_id').val(d.id);
-        $('#autor_nombre').val(d.autor_nombre);
-        $('#rating').val(d.rating);
-        $('#comentario').val(d.comentario);
-        $('#activo').prop('checked', parseInt(d.activo) === 1);
-        $('#visible_en_home').prop('checked', parseInt(d.visible_en_home) === 1);
-        $('#btnSave').text('Actualizar');
+  function openModalById(id) {
+    $.get('<?= app_url('api/admin/resenas.php') ?>', { action: 'get', id }, function (res) {
+      if (res && res.success && res.data) {
+        openModal(res.data);
+      } else {
+        showCustomAlert('No se pudo cargar la reseña.', 4000, 'error');
       }
     }, 'json');
   }
 
-  function deleteItem(id) {
-    showCustomConfirm("¿Deseas desactivar esta reseña?", function () {
-      $.post('<?= app_url('api/admin/resenas.php') ?>', { action: 'delete', id: id }, function (res) {
-        if (res.success) {
-          loadData(currentPage);
-          showCustomAlert('Reseña desactivada.', 5000, 'success');
-        } else {
-          showCustomAlert(res.message || 'Error al desactivar', 5000, 'error');
-        }
-      }, 'json');
-    });
+  function closeModal() {
+    $('#resenaModal').addClass('hidden').removeClass('flex');
+  }
+
+  function saveModal() {
+    if (!modalItem) return;
+    $.post('<?= app_url('api/admin/resenas.php') ?>?action=save', {
+      id: modalItem.id,
+      activo: parseInt($('#mEstado').val() || '0', 10),
+      show_in_home: $('#mShowHome').is(':checked') ? 1 : 0
+    }, function (res) {
+      if (res && res.success) {
+        showCustomAlert('Reseña actualizada.', 3000, 'success');
+        closeModal();
+        loadData(currentPage);
+      } else {
+        showCustomAlert((res && res.message) || 'No se pudo actualizar.', 5000, 'error');
+      }
+    }, 'json');
   }
 
   $(function () {
-    $('#formResena').on('submit', function (e) {
-      e.preventDefault();
-      let data = $(this).serializeArray();
-      if (!$("#activo").is(":checked")) data.push({ name: 'activo', value: '0' });
-      if (!$("#visible_en_home").is(":checked")) data.push({ name: 'visible_en_home', value: '0' });
-
-      $.post('<?= app_url('api/admin/resenas.php') ?>?action=save', data, function (res) {
-        if (res.success) {
-          resetForm();
-          loadData(currentPage);
-          showCustomAlert('Reseña guardada correctamente.', 5000, 'success');
-        } else {
-          showCustomAlert(res.message || 'Error al guardar', 5000, 'error');
-        }
-      }, 'json');
-    });
-
     loadData();
+    $('#txtSearch').on('keyup', function (e) { if (e.key === 'Enter') loadData(1); });
+    $('#filterStatus,#sortBy,#selLimit').on('change', () => loadData(1));
+    $('#btnCloseModal').on('click', closeModal);
+    $('#resenaModal').on('click', function (e) { if (e.target === this) closeModal(); });
+    $('#btnSaveModal').on('click', saveModal);
   });
 </script>
 
-<?php
-include __DIR__ . '/../../includes/footer.php';
+<?php include __DIR__ . '/../../includes/footer.php'; ?>

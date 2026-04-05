@@ -38,33 +38,68 @@
 
     <!-- Columna 4: Redes + créditos -->
     <div>
+      <?php
+      $socials = [
+        'facebook' => ['label' => 'Facebook', 'icon' => 'facebook'],
+        'instagram' => ['label' => 'Instagram', 'icon' => 'instagram'],
+        'whatsapp' => ['label' => 'WhatsApp', 'icon' => 'whatsapp'],
+        'tiktok' => ['label' => 'TikTok', 'icon' => 'tiktok'],
+        'x' => ['label' => 'X', 'icon' => 'x'],
+        'twitter' => ['label' => 'X', 'icon' => 'x'],
+        'otro' => ['label' => 'Web', 'icon' => 'googlechrome'],
+      ];
+      $rendered_any_social = false;
+      ?>
       <?php if (!empty($redes)): ?>
       <h4 class="font-semibold text-lg mb-3 border-b border-teal-500 pb-1">Síguenos</h4>
-      <div class="flex space-x-4 text-2xl items-center text-center">
-        <?php if (!empty($redes['facebook'])): ?>
-          <a href="<?= htmlspecialchars($redes['facebook']) ?>" target="_blank" class="hover:text-gray-300"><i data-lucide="facebook"></i></a>
-        <?php endif; ?>
-        <?php if (!empty($redes['instagram'])): ?>
-          <a href="<?= htmlspecialchars($redes['instagram']) ?>" target="_blank" class="hover:text-gray-300"><i data-lucide="instagram"></i></a>
-        <?php endif; ?>
-        <?php if (!empty($redes['whatsapp'])): ?>
-          <a href="<?= htmlspecialchars($redes['whatsapp']) ?>" target="_blank" class="hover:text-gray-300"><i data-lucide="message-circle"></i></a>
-        <?php endif; ?>
-        <?php if (!empty($redes['tiktok'])): ?>
-          <a href="<?= htmlspecialchars($redes['tiktok']) ?>" target="_blank" class="hover:text-gray-300"><i data-lucide="music"></i></a>
-        <?php endif; ?>
-        <?php if (!empty($redes['x'])): ?>
-          <a href="<?= htmlspecialchars($redes['x']) ?>" target="_blank" class="hover:text-gray-300"><i data-lucide="twitter"></i></a>
-        <?php endif; ?>
-        <?php if (!empty($redes['otro'])): ?>
-          <a href="<?= htmlspecialchars($redes['otro']) ?>" target="_blank" class="hover:text-gray-300"><i data-lucide="globe"></i></a>
-        <?php endif; ?>
+      <div class="flex flex-wrap gap-3 items-center">
+        <?php
+        foreach ($socials as $key => $meta):
+          $url = trim((string) ($redes[$key] ?? ''));
+          if ($url === '')
+            continue;
+          $rendered_any_social = true;
+          $cdn = 'https://cdn.simpleicons.org/' . rawurlencode($meta['icon']) . '/ffffff';
+          ?>
+          <a href="<?= htmlspecialchars($url) ?>" target="_blank" rel="noopener"
+            class="h-9 min-w-9 px-2 rounded-lg border border-teal-500/40 hover:bg-teal-600/40 inline-flex items-center justify-center gap-2"
+            title="<?= htmlspecialchars($meta['label']) ?>">
+            <img src="<?= htmlspecialchars($cdn) ?>" alt="<?= htmlspecialchars($meta['label']) ?>" class="h-4 w-4" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
+            <span class="h-4 w-4 hidden items-center justify-center text-[10px] font-black border border-white/60 rounded"><?= htmlspecialchars(mb_substr((string) $meta['label'], 0, 1)) ?></span>
+            <span class="text-xs font-semibold"><?= htmlspecialchars($meta['label']) ?></span>
+          </a>
+        <?php endforeach; ?>
       </div>
+      <?php if (!$rendered_any_social): ?>
+        <div class="text-sm text-teal-100">Agrega enlaces de redes sociales para mostrarlos aquí.</div>
+      <?php endif; ?>
       <?php endif; ?>
       <div class="flex items-center space-x-3 mt-5 p-4 border-t border-teal-500 pb-1">
         <img src="<?= htmlspecialchars(app_url('assets/logo.avif')) ?>" alt="Sistema" class="h-5 w-5 rounded-full">
         <small class="text-m font-semibold">by: <b>Sistema de reservas GP</b></small>
       </div>
+      <?php
+        if (!isset($show_ads)) {
+          $show_ads = (!$is_public_view && !empty($empresa_info) && empresa_is_basic_plan((int) ($empresa_info['id'] ?? 0)));
+          $ads_map = $show_ads ? anuncios_get_active_map() : [];
+          $ad_footer = $ads_map['footer'] ?? null;
+        }
+      ?>
+      <?php if ($show_ads && $ad_footer && (int) ($ad_footer['activo'] ?? 0) === 1 && !empty($ad_footer['imagen_path'])): ?>
+        <?php
+          $adFooterImg = app_url(ltrim((string) $ad_footer['imagen_path'], '/'));
+          $adFooterLink = trim((string) ($ad_footer['link_url'] ?? ''));
+        ?>
+        <div class="mt-4 flex justify-center">
+          <?php if ($adFooterLink !== ''): ?>
+            <a href="<?= htmlspecialchars($adFooterLink) ?>" target="_blank" rel="noopener">
+              <img src="<?= htmlspecialchars($adFooterImg) ?>" alt="Anuncio" class="w-[200px] h-[200px] object-cover rounded-xl border border-teal-500/30 bg-white">
+            </a>
+          <?php else: ?>
+            <img src="<?= htmlspecialchars($adFooterImg) ?>" alt="Anuncio" class="w-[200px] h-[200px] object-cover rounded-xl border border-teal-500/30 bg-white">
+          <?php endif; ?>
+        </div>
+      <?php endif; ?>
     </div>
 
   </div>
@@ -149,6 +184,18 @@
   overlay.on('click', () => {
     sidebar.addClass('-translate-x-full');
     overlay.addClass('hidden');
+  });
+
+  const notifBtn = $('#notifBtn');
+  const notifMenu = $('#notifMenu');
+  notifBtn.on('click', function (e) {
+    e.stopPropagation();
+    notifMenu.toggleClass('hidden');
+  });
+  $(document).on('click', function (e) {
+    if (!$(e.target).closest('#notifMenu, #notifBtn').length) {
+      notifMenu.addClass('hidden');
+    }
   });
 
   // Configuración de íconos y estilos
@@ -272,8 +319,17 @@
   $(document).ready(function () {
     $("#customAlertToast").addClass('translate-x-full opacity-0');
     if (window.lucide) { lucide.createIcons(); }
+    compactTableActionButtons();
     initUniversalTableSort();
   });
+
+  function compactTableActionButtons() {
+    document.querySelectorAll('main table td button, main table td a').forEach(el => {
+      if (!el.querySelector('i[data-lucide], svg.lucide')) return;
+      const text = (el.textContent || '').replace(/\s+/g, '');
+      if (text === '') el.classList.add('action-btn');
+    });
+  }
 
   // Ordenamiento universal para tablas privadas con <th data-sort="...">.
   function initUniversalTableSort() {
@@ -329,6 +385,7 @@
     if (hasNewIcons) {
       lucideIsRendering = true;
       lucide.createIcons();
+      compactTableActionButtons();
       initUniversalTableSort();
       setTimeout(() => { lucideIsRendering = false; }, 10);
     }

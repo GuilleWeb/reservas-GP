@@ -65,6 +65,8 @@ switch ($action) {
             'smtp_port',
             'smtp_user',
             'smtp_pass',
+            'smtp_secure',
+            'smtp_timeout',
             'smtp_from_email',
             'smtp_from_name',
         ];
@@ -79,6 +81,7 @@ switch ($action) {
             $val = json_decode($r['valor_json'] ?? '', true);
             $data[$r['clave']] = $val;
         }
+        $data['email_metrics'] = email_delivery_stats(30);
         json_response(['success' => true, 'data' => $data]);
         break;
 
@@ -105,6 +108,8 @@ switch ($action) {
             'smtp_port' => intval($_POST['smtp_port'] ?? 0),
             'smtp_user' => trim($_POST['smtp_user'] ?? ''),
             'smtp_pass' => trim($_POST['smtp_pass'] ?? ''),
+            'smtp_secure' => trim($_POST['smtp_secure'] ?? 'tls'),
+            'smtp_timeout' => intval($_POST['smtp_timeout'] ?? 12),
             'smtp_from_email' => trim($_POST['smtp_from_email'] ?? ''),
             'smtp_from_name' => trim($_POST['smtp_from_name'] ?? ''),
         ];
@@ -114,6 +119,18 @@ switch ($action) {
         }
         if ($payload['smtp_port'] <= 0) {
             $payload['smtp_port'] = 587;
+        }
+        if ($payload['smtp_pass'] === '') {
+            $keep = get_global_setting('smtp_pass', '');
+            if (is_string($keep) && $keep !== '') {
+                $payload['smtp_pass'] = $keep;
+            }
+        }
+        if (!in_array($payload['smtp_secure'], ['none', 'tls', 'ssl'], true)) {
+            $payload['smtp_secure'] = 'tls';
+        }
+        if ($payload['smtp_timeout'] <= 0) {
+            $payload['smtp_timeout'] = 12;
         }
 
         try {
@@ -131,6 +148,22 @@ switch ($action) {
         }
 
         json_response(['success' => true]);
+        break;
+
+    case 'test_smtp':
+        if (!$is_superadmin)
+            json_response(['error' => 'unauthorized'], 403);
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST')
+            json_response(['error' => 'invalid_method'], 405);
+        $to = trim((string) ($_POST['to_email'] ?? ''));
+        if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
+            json_response(['success' => false, 'message' => 'Correo de prueba inválido.'], 200);
+        }
+        $ok = send_superadmin_smtp_test_email($to);
+        if ($ok) {
+            json_response(['success' => true, 'message' => 'Correo de prueba enviado correctamente.']);
+        }
+        json_response(['success' => false, 'message' => 'No se pudo enviar el correo de prueba. Revisa SMTP.'], 200);
         break;
 
     case 'get':

@@ -5,6 +5,7 @@ header('Content-Type: application/json; charset=utf-8');
 $action = $_REQUEST['action'] ?? '';
 $user = current_user();
 if (!$user || (($user['rol'] ?? null) !== 'superadmin')) json_response(['error' => 'unauthorized'], 403);
+ensure_planes_extra_columns();
 
 switch ($action) {
     case 'list':
@@ -75,17 +76,24 @@ switch ($action) {
         $max_empleados = intval($_POST['max_empleados'] ?? 1);
         $max_servicios = intval($_POST['max_servicios'] ?? 50);
         $max_clientes = intval($_POST['max_clientes'] ?? 10000);
+        $precio = (float) ($_POST['precio'] ?? 0);
         $activo = isset($_POST['activo']) ? intval($_POST['activo']) : 1;
+        $modulos = $_POST['modulos'] ?? [];
+        if (!is_array($modulos)) {
+            $modulos = [];
+        }
+        $modulos = array_values(array_unique(array_filter(array_map('strval', $modulos), static fn($v) => $v !== '')));
+        $modulos_json = json_encode($modulos, JSON_UNESCAPED_UNICODE);
 
         if ($nombre === '') json_response(['success' => false, 'message' => 'El nombre es obligatorio.'], 200);
 
         try {
             if ($id > 0) {
-                $stmt = $pdo->prepare('UPDATE planes SET nombre=?, descripcion=?, max_sucursales=?, max_empleados=?, max_servicios=?, max_clientes=?, activo=? WHERE id=?');
-                $stmt->execute([$nombre, $descripcion ?: null, $max_sucursales, $max_empleados, $max_servicios, $max_clientes, $activo ? 1 : 0, $id]);
+                $stmt = $pdo->prepare('UPDATE planes SET nombre=?, descripcion=?, max_sucursales=?, max_empleados=?, max_servicios=?, max_clientes=?, precio=?, modulos_json=?, activo=? WHERE id=?');
+                $stmt->execute([$nombre, $descripcion ?: null, $max_sucursales, $max_empleados, $max_servicios, $max_clientes, $precio, $modulos_json, $activo ? 1 : 0, $id]);
             } else {
-                $stmt = $pdo->prepare('INSERT INTO planes (nombre, descripcion, max_sucursales, max_empleados, max_servicios, max_clientes, activo) VALUES (?,?,?,?,?,?,?)');
-                $stmt->execute([$nombre, $descripcion ?: null, $max_sucursales, $max_empleados, $max_servicios, $max_clientes, $activo ? 1 : 0]);
+                $stmt = $pdo->prepare('INSERT INTO planes (nombre, descripcion, max_sucursales, max_empleados, max_servicios, max_clientes, precio, modulos_json, activo) VALUES (?,?,?,?,?,?,?,?,?)');
+                $stmt->execute([$nombre, $descripcion ?: null, $max_sucursales, $max_empleados, $max_servicios, $max_clientes, $precio, $modulos_json, $activo ? 1 : 0]);
                 $id = (int)$pdo->lastInsertId();
             }
         } catch (Throwable $e) {

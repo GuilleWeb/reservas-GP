@@ -2,12 +2,13 @@
 require_once __DIR__ . '/../../includes/bootstrap.php';
 $role = $user['rol'] ?? null;
 $module = 'dashboard';
-include __DIR__ . '/../../includes/topbar.php';
 ?>
 <?php
 // vistas/dashboard.php
 $user = current_user();
-$id_e = request_id_e();
+$requested_id_e = request_id_e();
+$resolved_id_e = resolve_private_empresa_id($user);
+$id_e = $role === 'superadmin' ? $requested_id_e : $resolved_id_e;
 $sucursal_slug = request_sucursal_slug();
 $target_user_id = isset($_GET['_user_id']) ? intval($_GET['_user_id']) : null;
 
@@ -24,8 +25,9 @@ if (!$role) {
 $effective_role = ($role === 'superadmin' && $id_e) ? 'admin' : $role;
 
 if (!$id_e && $role !== 'superadmin') {
-  echo '<div class="max-w-3xl mx-auto bg-white p-6 rounded-xl shadow">Empresa no definida en la URL.</div>';
-  return;
+  http_response_code(403);
+  include __DIR__ . '/../../includes/errors/403.php';
+  exit;
 }
 
 $can_view = true;
@@ -39,6 +41,8 @@ if (!$can_view) {
   echo '<div class="max-w-3xl mx-auto bg-white p-6 rounded-xl shadow">No autorizado.</div>';
   return;
 }
+
+include __DIR__ . '/../../includes/topbar.php';
 
 $stats = [];
 
@@ -88,19 +92,19 @@ if ($role === 'superadmin' && !$id_e) {
 
     <?php if ($role === 'superadmin' && !$id_e): ?>
       <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="rounded-2xl border bg-gradient-to-br from-white to-teal-50 p-4">
+        <div class="rounded-2xl border bg-white p-4">
           <div class="text-xs text-gray-500">Empresas activas</div>
           <div class="mt-1 text-2xl font-extrabold text-gray-900"><?= (int) ($stats['empresas_activas'] ?? 0) ?></div>
         </div>
-        <div class="rounded-2xl border bg-gradient-to-br from-white to-teal-50 p-4">
+        <div class="rounded-2xl border bg-white p-4">
           <div class="text-xs text-gray-500">Sucursales activas</div>
           <div class="mt-1 text-2xl font-extrabold text-gray-900"><?= (int) ($stats['sucursales_activas'] ?? 0) ?></div>
         </div>
-        <div class="rounded-2xl border bg-gradient-to-br from-white to-teal-50 p-4">
+        <div class="rounded-2xl border bg-white p-4">
           <div class="text-xs text-gray-500">Usuarios activos</div>
           <div class="mt-1 text-2xl font-extrabold text-gray-900"><?= (int) ($stats['usuarios_activos'] ?? 0) ?></div>
         </div>
-        <div class="rounded-2xl border bg-gradient-to-br from-white to-teal-50 p-4">
+        <div class="rounded-2xl border bg-white p-4">
           <div class="text-xs text-gray-500">Mensajes nuevos</div>
           <div class="mt-1 text-2xl font-extrabold text-gray-900"><?= (int) ($stats['mensajes_nuevos'] ?? 0) ?></div>
         </div>
@@ -166,37 +170,41 @@ if ($role === 'superadmin' && !$id_e) {
 <?php 
 $s_stats = [];
 try {
-   $s_stats['citas_hoy'] = (int) $pdo->query("SELECT COUNT(*) FROM citas WHERE empresa_id = " . intval($id_e) . " AND DATE(fecha_cita) = CURDATE()")->fetchColumn();
-   $s_stats['citas_total'] = (int) $pdo->query("SELECT COUNT(*) FROM citas WHERE empresa_id = " . intval($id_e))->fetchColumn();
-   $s_stats['sucursales'] = (int) $pdo->query("SELECT COUNT(*) FROM sucursales WHERE empresa_id = " . intval($id_e))->fetchColumn();
-   $s_stats['empleados'] = (int) $pdo->query("SELECT COUNT(*) FROM usuarios WHERE empresa_id = " . intval($id_e) . " AND rol='empleado'")->fetchColumn();
-   $s_stats['clientes'] = (int) $pdo->query("SELECT COUNT(*) FROM usuarios WHERE empresa_id = " . intval($id_e) . " AND rol='cliente'")->fetchColumn();
-   $s_stats['servicios'] = (int) $pdo->query("SELECT COUNT(*) FROM servicios WHERE empresa_id = " . intval($id_e))->fetchColumn();
-   
-   $stmt = $pdo->prepare("SELECT c.fecha_cita, c.hora_inicio, c.estado, s.nombre as servicio, u.nombre as cliente 
-                          FROM citas c 
-                          LEFT JOIN servicios s ON c.servicio_id = s.id 
-                          LEFT JOIN usuarios u ON c.cliente_id = u.id
-                          WHERE c.empresa_id = ? 
-                          ORDER BY c.fecha_cita DESC, c.hora_inicio DESC LIMIT 5");
-   $stmt->execute([$id_e]);
+   $eid = (int) $id_e;
+   $s_stats['citas_hoy'] = (int) $pdo->query("SELECT COUNT(*) FROM citas WHERE empresa_id = {$eid} AND DATE(inicio) = CURDATE()")->fetchColumn();
+   $s_stats['citas_total'] = (int) $pdo->query("SELECT COUNT(*) FROM citas WHERE empresa_id = {$eid}")->fetchColumn();
+   $s_stats['sucursales'] = (int) $pdo->query("SELECT COUNT(*) FROM sucursales WHERE empresa_id = {$eid} AND activo = 1")->fetchColumn();
+   $s_stats['empleados'] = (int) $pdo->query("SELECT COUNT(*) FROM usuarios WHERE empresa_id = {$eid} AND rol IN ('admin','gerente','empleado') AND activo = 1")->fetchColumn();
+   $s_stats['clientes'] = (int) $pdo->query("SELECT COUNT(*) FROM clientes c JOIN cliente_empresas ce ON ce.cliente_id = c.id WHERE ce.empresa_id = {$eid} AND c.activo = 1")->fetchColumn();
+   $s_stats['servicios'] = (int) $pdo->query("SELECT COUNT(*) FROM servicios WHERE empresa_id = {$eid} AND activo = 1")->fetchColumn();
+   $s_stats['citas_mes'] = (int) $pdo->query("SELECT COUNT(*) FROM citas WHERE empresa_id = {$eid} AND YEAR(inicio)=YEAR(CURDATE()) AND MONTH(inicio)=MONTH(CURDATE())")->fetchColumn();
+   $s_stats['citas_mes_prev'] = (int) $pdo->query("SELECT COUNT(*) FROM citas WHERE empresa_id = {$eid} AND YEAR(inicio)=YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND MONTH(inicio)=MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))")->fetchColumn();
+   $s_stats['ingresos_mes'] = (float) $pdo->query("SELECT COALESCE(SUM(s.precio_base),0) FROM citas c JOIN servicios s ON s.id=c.servicio_id WHERE c.empresa_id = {$eid} AND c.estado IN ('confirmada','completada') AND YEAR(c.inicio)=YEAR(CURDATE()) AND MONTH(c.inicio)=MONTH(CURDATE())")->fetchColumn();
+   $s_stats['ingresos_mes_prev'] = (float) $pdo->query("SELECT COALESCE(SUM(s.precio_base),0) FROM citas c JOIN servicios s ON s.id=c.servicio_id WHERE c.empresa_id = {$eid} AND c.estado IN ('confirmada','completada') AND YEAR(c.inicio)=YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND MONTH(c.inicio)=MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))")->fetchColumn();
+
+   $stmt = $pdo->prepare("SELECT c.inicio, c.estado, s.nombre as servicio, c.cliente_nombre as cliente
+                          FROM citas c
+                          LEFT JOIN servicios s ON c.servicio_id = s.id
+                          WHERE c.empresa_id = ?
+                          ORDER BY c.inicio DESC LIMIT 8");
+   $stmt->execute([$eid]);
    $s_stats['ultimas_citas'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Throwable $e) { }
 ?>
       <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="rounded-2xl border bg-gradient-to-br from-white to-teal-50 p-4">
+        <div class="rounded-2xl border bg-white p-4">
           <div class="text-xs text-gray-500">Citas Hoy</div>
           <div class="mt-1 text-2xl font-extrabold text-gray-900"><?= (int)($s_stats['citas_hoy'] ?? 0) ?></div>
         </div>
-        <div class="rounded-2xl border bg-gradient-to-br from-white to-teal-50 p-4">
+        <div class="rounded-2xl border bg-white p-4">
           <div class="text-xs text-gray-500">Citas Totales</div>
           <div class="mt-1 text-2xl font-extrabold text-gray-900"><?= (int)($s_stats['citas_total'] ?? 0) ?></div>
         </div>
-        <div class="rounded-2xl border bg-gradient-to-br from-white to-teal-50 p-4">
+        <div class="rounded-2xl border bg-white p-4">
           <div class="text-xs text-gray-500">Sucursales</div>
           <div class="mt-1 text-2xl font-extrabold text-gray-900"><?= (int)($s_stats['sucursales'] ?? 0) ?></div>
         </div>
-        <div class="rounded-2xl border bg-gradient-to-br from-white to-teal-50 p-4">
+        <div class="rounded-2xl border bg-white p-4">
           <div class="text-xs text-gray-500">Empleados</div>
           <div class="mt-1 text-2xl font-extrabold text-gray-900"><?= (int)($s_stats['empleados'] ?? 0) ?></div>
         </div>
@@ -210,6 +218,31 @@ try {
         <div class="rounded-2xl border bg-white p-4 w-full">
           <div class="text-xs text-gray-500">Servicios</div>
           <div class="mt-1 text-xl font-bold text-gray-900"><?= (int)($s_stats['servicios'] ?? 0) ?></div>
+        </div>
+        <div class="rounded-2xl border bg-white p-4 w-full">
+          <div class="text-xs text-gray-500">Citas este mes</div>
+          <div class="mt-1 text-xl font-bold text-gray-900"><?= (int)($s_stats['citas_mes'] ?? 0) ?></div>
+          <div class="text-[11px] text-gray-500">Mes anterior: <?= (int)($s_stats['citas_mes_prev'] ?? 0) ?></div>
+        </div>
+        <div class="rounded-2xl border bg-white p-4 w-full">
+          <div class="text-xs text-gray-500">Ingresos estimados del mes</div>
+          <div class="mt-1 text-xl font-bold text-gray-900">$<?= number_format((float)($s_stats['ingresos_mes'] ?? 0), 2) ?></div>
+          <div class="text-[11px] text-gray-500">Mes anterior: $<?= number_format((float)($s_stats['ingresos_mes_prev'] ?? 0), 2) ?></div>
+        </div>
+      </div>
+
+      <div class="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="rounded-2xl border bg-white p-4">
+          <div class="text-sm font-semibold text-gray-800 mb-2">Comparativa de Citas</div>
+          <div class="relative h-56">
+            <canvas id="chartCitasCompare"></canvas>
+          </div>
+        </div>
+        <div class="rounded-2xl border bg-white p-4">
+          <div class="text-sm font-semibold text-gray-800 mb-2">Comparativa de Ingresos</div>
+          <div class="relative h-56">
+            <canvas id="chartIngresosCompare"></canvas>
+          </div>
         </div>
       </div>
 
@@ -247,7 +280,7 @@ try {
             <tbody class="divide-y relative">
               <?php foreach (($s_stats['ultimas_citas'] ?? []) as $c): ?>
                 <tr class="hover:bg-gray-50">
-                  <td class="px-3 py-2 font-mono text-xs text-gray-600"><?= htmlspecialchars($c['fecha_cita']) ?> <?= substr($c['hora_inicio'], 0, 5) ?></td>
+                  <td class="px-3 py-2 font-mono text-xs text-gray-600"><?= htmlspecialchars($c['inicio'] ?? '') ?></td>
                   <td class="px-3 py-2"><?= htmlspecialchars($c['cliente'] ?? 'N/A') ?></td>
                   <td class="px-3 py-2"><?= htmlspecialchars($c['servicio'] ?? 'N/A') ?></td>
                   <td class="px-3 py-2">
@@ -276,3 +309,51 @@ try {
 
 <?php
 include __DIR__ . '/../../includes/footer.php';
+
+if (!($role === 'superadmin' && !$id_e)):
+?>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  (function(){
+    const teal = <?= json_encode($color_p ?: '#0d9488') ?>;
+    const gray = '#94a3b8';
+    const labels = ['Mes anterior', 'Mes actual'];
+    const citasData = [<?= (int)($s_stats['citas_mes_prev'] ?? 0) ?>, <?= (int)($s_stats['citas_mes'] ?? 0) ?>];
+    const ingresosData = [<?= (float)($s_stats['ingresos_mes_prev'] ?? 0) ?>, <?= (float)($s_stats['ingresos_mes'] ?? 0) ?>];
+    function hexToRgba(hex, alpha) {
+      const h = String(hex || '').replace('#', '');
+      const full = h.length === 3 ? h.split('').map(ch => ch + ch).join('') : h.padEnd(6, '0').slice(0, 6);
+      const n = parseInt(full, 16);
+      const r = (n >> 16) & 255;
+      const g = (n >> 8) & 255;
+      const b = n & 255;
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+    const opts = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#64748b' } },
+        y: { beginAtZero: true, grid: { color: 'rgba(148,163,184,.2)' }, ticks: { color: '#64748b' } }
+      }
+    };
+    const el1 = document.getElementById('chartCitasCompare');
+    const el2 = document.getElementById('chartIngresosCompare');
+    if (el1) {
+      new Chart(el1, {
+        type: 'bar',
+        data: { labels, datasets: [{ label: 'Citas', data: citasData, backgroundColor: [gray, hexToRgba(teal, 0.72)], borderColor: [gray, teal], borderWidth: 1.2, borderRadius: 8 }] },
+        options: opts
+      });
+    }
+    if (el2) {
+      new Chart(el2, {
+        type: 'line',
+        data: { labels, datasets: [{ label: 'Ingresos', data: ingresosData, borderColor: teal, backgroundColor: hexToRgba(teal, 0.12), tension: 0.35, fill: true, pointBackgroundColor: teal }] },
+        options: opts
+      });
+    }
+  })();
+</script>
+<?php endif; ?>

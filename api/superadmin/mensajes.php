@@ -14,6 +14,7 @@ switch ($action) {
         $search = trim($_GET['search'] ?? '');
         $estado = trim($_GET['estado'] ?? '');
         $empresa_id = intval($_GET['empresa_id'] ?? 0);
+        $folder = trim((string) ($_GET['folder'] ?? 'inbox')); // inbox | sent
         $sort = trim($_GET['sort'] ?? 'id');
         $dir = strtolower(trim($_GET['dir'] ?? 'desc'));
         $dir = in_array($dir, ['asc', 'desc'], true) ? $dir : 'desc';
@@ -42,37 +43,88 @@ switch ($action) {
             $params[':eid'] = $empresa_id;
         }
 
-        $whereSql = $where ? ('WHERE ' . implode(' AND ', $where)) : '';
-
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM mensajes_contacto mc $whereSql");
-        $stmt->execute($params);
-        $total = (int) $stmt->fetchColumn();
-        $total_pages = (int) ceil($total / $per);
-
-        $offset = ($page - 1) * $per;
-        $sql = "
-            SELECT mc.id, mc.empresa_id, e.slug AS id_e, e.nombre AS empresa_nombre,
-                   mc.nombre, mc.email, mc.telefono, mc.asunto, mc.estado, mc.created_at
-            FROM mensajes_contacto mc
-            JOIN empresas e ON e.id = mc.empresa_id
-            $whereSql
-            ORDER BY $orderBy $dir
-            LIMIT :o,:p
-        ";
-        $stmt = $pdo->prepare($sql);
-        foreach ($params as $k => $v) {
-            $stmt->bindValue($k, $v, is_int($v) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        if ($folder === 'sent') {
+            $where2 = ['mi.de_usuario_id = :uid'];
+            $params2 = [':uid' => (int) $user['id']];
+            if ($search !== '') {
+                $where2[] = '(mi.titulo LIKE :s OR mi.cuerpo LIKE :s)';
+                $params2[':s'] = "%$search%";
+            }
+            if ($empresa_id > 0) {
+                $where2[] = 'mi.empresa_id = :eid';
+                $params2[':eid'] = $empresa_id;
+            }
+            $whereSql2 = 'WHERE ' . implode(' AND ', $where2);
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM mensajes_internos mi $whereSql2");
+            $stmt->execute($params2);
+            $total = (int) $stmt->fetchColumn();
+            $total_pages = (int) ceil($total / $per);
+            $offset = ($page - 1) * $per;
+            $stmt = $pdo->prepare("SELECT mi.id, mi.empresa_id, e.slug AS id_e, e.nombre AS empresa_nombre,
+                                          COALESCE(u.nombre, CONCAT('Rol ', mi.para_rol), 'General') AS nombre,
+                                          '' AS email, '' AS telefono, mi.titulo AS asunto,
+                                          mi.estado, mi.created_at
+                                   FROM mensajes_internos mi
+                                   LEFT JOIN usuarios u ON u.id = mi.para_usuario_id
+                                   LEFT JOIN empresas e ON e.id = mi.empresa_id
+                                   $whereSql2
+                                   ORDER BY mi.id DESC
+                                   LIMIT :o,:p");
+            foreach ($params2 as $k => $v) {
+                $stmt->bindValue($k, $v, is_int($v) ? PDO::PARAM_INT : PDO::PARAM_STR);
+            }
+            $stmt->bindValue(':o', $offset, PDO::PARAM_INT);
+            $stmt->bindValue(':p', $per, PDO::PARAM_INT);
+            $stmt->execute();
+            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($data as &$r) {
+                $r['es_mio'] = 1;
+            }
+            unset($r);
+        } else {
+            $whereSql = $where ? ('WHERE ' . implode(' AND ', $where)) : '';
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM mensajes_contacto mc $whereSql");
+            $stmt->execute($params);
+            $total = (int) $stmt->fetchColumn();
+            $total_pages = (int) ceil($total / $per);
+            $offset = ($page - 1) * $per;
+            $sql = "
+                SELECT mc.id, mc.empresa_id, e.slug AS id_e, e.nombre AS empresa_nombre,
+                       mc.nombre, mc.email, mc.telefono, mc.asunto, mc.estado, mc.created_at
+                FROM mensajes_contacto mc
+                JOIN empresas e ON e.id = mc.empresa_id
+                $whereSql
+                ORDER BY $orderBy $dir
+                LIMIT :o,:p
+            ";
+            $stmt = $pdo->prepare($sql);
+            foreach ($params as $k => $v) {
+                $stmt->bindValue($k, $v, is_int($v) ? PDO::PARAM_INT : PDO::PARAM_STR);
+            }
+            $stmt->bindValue(':o', $offset, PDO::PARAM_INT);
+            $stmt->bindValue(':p', $per, PDO::PARAM_INT);
+            $stmt->execute();
+            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
-        $stmt->bindValue(':o', $offset, PDO::PARAM_INT);
-        $stmt->bindValue(':p', $per, PDO::PARAM_INT);
-        $stmt->execute();
-        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         json_response(['success' => true, 'data' => $data, 'total' => $total, 'total_pages' => $total_pages]);
         break;
 
     case 'get':
         $id = intval($_GET['id'] ?? 0);
+        $folder = trim((string) ($_GET['folder'] ?? 'inbox'));
+        if ($folder === 'sent') {
+            $stmt = $pdo->prepare("SELECT mi.id, mi.empresa_id, mi.titulo as asunto, mi.cuerpo as mensaje, mi.created_at,
+                                          COALESCE(u.nombre, CONCAT('Rol ', mi.para_rol), 'General') AS nombre,
+                                          e.slug AS id_e, e.nombre AS empresa_nombre, mi.estado
+                                   FROM mensajes_internos mi
+                                   LEFT JOIN usuarios u ON u.id = mi.para_usuario_id
+                                   LEFT JOIN empresas e ON e.id = mi.empresa_id
+                                   WHERE mi.id = ? AND mi.de_usuario_id = ?
+                                   LIMIT 1");
+            $stmt->execute([$id, (int) $user['id']]);
+            json_response(['success' => true, 'data' => $stmt->fetch(PDO::FETCH_ASSOC) ?: []]);
+        }
         $sql = "
             SELECT mc.*, e.slug AS id_e, e.nombre AS empresa_nombre
             FROM mensajes_contacto mc
@@ -160,6 +212,16 @@ switch ($action) {
                     (int) $user['id'],
                     $titulo,
                     $cuerpo
+                ]);
+                create_notification([
+                    'empresa_id' => (int) ($t['empresa_id'] ?? 0),
+                    'usuario_id' => (int) ($t['id'] ?? 0),
+                    'rol_destino' => 'admin',
+                    'tipo' => 'mensaje_interno',
+                    'titulo' => 'Nuevo mensaje interno',
+                    'descripcion' => $titulo,
+                    'url' => view_url('vistas/admin/mensajes.php', (int) ($t['empresa_id'] ?? 0)),
+                    'referencia_tipo' => 'mensaje',
                 ]);
             }
 

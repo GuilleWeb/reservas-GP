@@ -35,23 +35,16 @@ include __DIR__ . '/../../includes/topbar.php';
               placeholder="Ej: Consejos para una sonrisa saludable">
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Slug (URL)</label>
-              <input type="text" id="slug" name="slug" class="mt-1 w-full border rounded-lg p-2 font-mono text-sm"
-                placeholder="ej-consejos-sonrisa">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Estado</label>
-              <select id="publicado" name="publicado" class="mt-1 w-full border rounded-lg p-2">
-                <option value="1">Publicado</option>
-                <option value="0">Borrador</option>
-              </select>
-            </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Estado</label>
+            <select id="publicado" name="publicado" class="mt-1 w-full border rounded-lg p-2">
+              <option value="1">Publicado</option>
+              <option value="0">Borrador</option>
+            </select>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700">Imagen Destacada</label>
+            <label class="block text-sm font-medium text-gray-700">Portada del Post (opcional)</label>
             <input type="file" id="imagen" name="imagen"
               class="mt-1 w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100">
             <div id="previewImg" class="mt-2 hidden">
@@ -63,6 +56,19 @@ include __DIR__ . '/../../includes/topbar.php';
             <label class="block text-sm font-medium text-gray-700 mb-1">Contenido</label>
             <div id="editor-container" class="bg-white min-h-[300px] flex-1 rounded-b-lg"></div>
             <input type="hidden" id="contenido" name="contenido">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Mostrar en Home Page</label>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="show_in_home" name="show_in_home" value="1" class="sr-only peer">
+              <div
+                class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full
+                peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+                after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all
+                peer-checked:bg-teal-600"></div>
+              <span class="ml-3 text-sm font-medium text-gray-700">Incluir esta entrada en el inicio</span>
+            </label>
           </div>
 
           <div class="pt-2 flex items-center justify-between gap-2">
@@ -152,7 +158,7 @@ include __DIR__ . '/../../includes/topbar.php';
         toolbar: [
           [{ 'header': [1, 2, 3, false] }],
           ['bold', 'italic', 'underline', 'strike'],
-          ['link', 'image'],
+          ['link'],
           [{ 'list': 'ordered' }, { 'list': 'bullet' }],
           ['clean']
         ]
@@ -188,6 +194,7 @@ include __DIR__ . '/../../includes/topbar.php';
 
           let img = item.imagen_path ? `<img src="../../${item.imagen_path}" class="w-10 h-10 rounded object-cover mr-3 bg-gray-200">` : `<div class="w-10 h-10 rounded bg-gray-200 mr-3 flex items-center justify-center text-gray-400"><i data-lucide="image"></i></div>`;
 
+          const publicUrl = <?= json_encode(view_url('vistas/public/blog.php', (get_current_empresa()['slug'] ?? request_id_e()))) ?> + '&id=' + encodeURIComponent(item.id);
           tbody.append(`
           <tr class="hover:bg-gray-50 border-b last:border-0 border-gray-100">
             <td class="px-4 py-3 flex items-center min-w-[200px]">
@@ -204,6 +211,9 @@ include __DIR__ . '/../../includes/topbar.php';
             <td class="px-4 py-3">${badge}</td>
             <td class="px-4 py-3">
               <div class="flex items-center justify-end gap-2">
+                <a href="${publicUrl}" target="_blank" class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-white text-teal-600" title="Ver publicación">
+                  <i data-lucide="external-link"></i>
+                </a>
                 <button onclick="editItem(${item.id})" class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-white editBtn" title="Editar"><i data-lucide="pen"></i></button>
                 <button onclick="deleteItem(${item.id})" class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-white text-red-600 deleteBtn" title="Eliminar"><i data-lucide="trash-2"></i></button>
               </div>
@@ -217,6 +227,7 @@ include __DIR__ . '/../../includes/topbar.php';
         $('#pageInfo').text('Total: 0');
       }
       renderPagination(res.total_pages || Math.ceil(res.total / per), currentPage);
+      if (window.lucide) lucide.createIcons();
     }, 'json');
   }
 
@@ -227,6 +238,7 @@ include __DIR__ . '/../../includes/topbar.php';
     $('#publicado').val('1');
     $('#previewImg').addClass('hidden').find('img').attr('src', '');
     quill.setContents([]);
+    $('#show_in_home').prop('checked', false);
   }
 
   function editItem(id) {
@@ -236,9 +248,9 @@ include __DIR__ . '/../../includes/topbar.php';
         const d = res.data;
         $('#post_id').val(d.id);
         $('#titulo').val(d.titulo);
-        $('#slug').val(d.slug);
         quill.root.innerHTML = d.contenido || '';
         $('#publicado').val(d.publicado || '0');
+        $('#show_in_home').prop('checked', parseInt(d.show_in_home || 0, 10) === 1);
 
         if (d.imagen_path) {
           $('#previewImg').removeClass('hidden').find('img').attr('src', '../../' + d.imagen_path);
@@ -270,6 +282,7 @@ include __DIR__ . '/../../includes/topbar.php';
 
       let formData = new FormData(this);
       formData.append('action', 'save');
+      if (!$('#show_in_home').is(':checked')) formData.set('show_in_home', '0');
 
       $.ajax({
         url: '<?= app_url('api/admin/blog.php') ?>',

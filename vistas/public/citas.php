@@ -23,35 +23,81 @@ include __DIR__ . '/../../includes/topbar.php';
     }
 
     .step-dot.active {
-        @apply bg-teal-600 scale-125 shadow-lg shadow-teal-200;
+        background-color: #0d9488;
+        color: #fff;
+        transform: scale(1.08);
+        box-shadow: 0 10px 18px rgba(13, 148, 136, 0.25);
     }
 
     .step-dot.completed {
-        @apply bg-teal-500;
+        background-color: #14b8a6;
+        color: #fff;
+    }
+    .step-nav {
+        cursor: pointer;
+    }
+    .step-nav.disabled {
+        pointer-events: none;
+        opacity: .7;
+        cursor: default;
+    }
+    .summary-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        padding: .35rem .6rem;
+        border-radius: 9999px;
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        font-size: .78rem;
+        line-height: 1rem;
+        white-space: nowrap;
     }
 
     .card-choice {
-        @apply border-2 border-transparent bg-white shadow-sm hover:shadow-md hover:border-teal-200 transition-all cursor-pointer rounded-2xl p-5;
+        border: 2px solid transparent;
+        background: #fff;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, .05);
+        transition: all .2s ease;
+        cursor: pointer;
+        border-radius: 1rem;
+        padding: 1.25rem;
     }
 
     .card-choice.selected {
-        @apply border-teal-500 bg-teal-50/30 shadow-teal-100;
+        border-color: #14b8a6;
+        background: rgba(20, 184, 166, 0.08);
+        box-shadow: 0 12px 24px rgba(20, 184, 166, 0.16);
     }
 
     .time-pill {
-        @apply px-4 py-3 rounded-xl border font-bold text-center transition-all cursor-pointer;
+        padding: .75rem 1rem;
+        border-radius: .75rem;
+        border: 1px solid #e5e7eb;
+        font-weight: 700;
+        text-align: center;
+        transition: all .2s ease;
+        cursor: pointer;
     }
 
     .time-pill.available {
-        @apply bg-white border-gray-200 hover:border-teal-500 hover:text-teal-600;
+        background: #fff;
+        border-color: #e5e7eb;
+        color: #111827;
     }
 
     .time-pill.selected {
-        @apply bg-teal-600 border-teal-600 text-white shadow-lg;
+        background: #0d9488;
+        border-color: #0d9488;
+        color: #fff;
+        box-shadow: 0 10px 18px rgba(13, 148, 136, 0.25);
     }
 
     .time-pill.occupied {
-        @apply bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed;
+        background: #f9fafb;
+        border-color: #f3f4f6;
+        color: #d1d5db;
+        cursor: not-allowed;
     }
 </style>
 
@@ -69,37 +115,37 @@ include __DIR__ . '/../../includes/topbar.php';
             class="absolute top-1/2 left-0 w-0 h-1 bg-teal-500 -translate-y-1/2 -z-10 transition-all duration-500">
         </div>
 
-        <div class="flex flex-col items-center gap-2 group" data-step="1">
+        <div class="step-nav flex flex-col items-center gap-2 group" data-step="1">
             <div
                 class="step-dot active w-10 h-10 rounded-full flex items-center justify-center bg-white border-4 border-gray-100 text-sm font-black text-gray-400">
                 1</div>
             <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Sede</span>
         </div>
-        <div class="flex flex-col items-center gap-2" data-step="2">
+        <div class="step-nav flex flex-col items-center gap-2 disabled" data-step="2">
             <div
                 class="step-dot w-10 h-10 rounded-full flex items-center justify-center bg-white border-4 border-gray-100 text-sm font-black text-gray-400">
                 2</div>
             <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Servicio</span>
         </div>
-        <div class="flex flex-col items-center gap-2" data-step="3">
+        <div class="step-nav flex flex-col items-center gap-2 disabled" data-step="3">
             <div
                 class="step-dot w-10 h-10 rounded-full flex items-center justify-center bg-white border-4 border-gray-100 text-sm font-black text-gray-400">
                 3</div>
             <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Empleado</span>
         </div>
-        <div class="flex flex-col items-center gap-2" data-step="4">
+        <div class="step-nav flex flex-col items-center gap-2 disabled" data-step="4">
             <div
                 class="step-dot w-10 h-10 rounded-full flex items-center justify-center bg-white border-4 border-gray-100 text-sm font-black text-gray-400">
                 4</div>
             <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Fecha</span>
         </div>
-        <div class="flex flex-col items-center gap-2" data-step="5">
+        <div class="step-nav flex flex-col items-center gap-2 disabled" data-step="5">
             <div
                 class="step-dot w-10 h-10 rounded-full flex items-center justify-center bg-white border-4 border-gray-100 text-sm font-black text-gray-400">
                 5</div>
             <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Datos</span>
         </div>
-        <div class="flex flex-col items-center gap-2" data-step="6">
+        <div class="step-nav flex flex-col items-center gap-2 disabled" data-step="6">
             <div
                 class="step-dot w-10 h-10 rounded-full flex items-center justify-center bg-white border-4 border-gray-100 text-sm font-black text-gray-400">
                 6</div>
@@ -110,6 +156,10 @@ include __DIR__ . '/../../includes/topbar.php';
     <!-- Wizard Steps Container -->
     <div id="wizardContainer"
         class="bg-white/50 backdrop-blur-sm rounded-[2.5rem] p-8 md:p-12 border border-white shadow-2xl relative min-h-[500px]">
+        <div id="selectedSummary" class="hidden mb-5 bg-white rounded-2xl border border-teal-100 shadow-sm p-3 md:p-3.5">
+            <div class="text-[11px] font-black uppercase tracking-widest text-teal-700 mb-2">Resumen de tu selección</div>
+            <div id="selectedSummaryGrid" class="flex flex-wrap gap-2 overflow-x-auto"></div>
+        </div>
 
         <!-- Step 1: Sede -->
         <div id="stepView1" class="step-view space-y-8">
@@ -123,7 +173,7 @@ include __DIR__ . '/../../includes/topbar.php';
         <!-- Step 2: Servicio -->
         <div id="stepView2" class="step-view hidden space-y-8">
             <h2 class="text-2xl font-black text-gray-900 border-l-4 border-teal-500 pl-4">¿Qué servicio necesitas?</h2>
-            <div id="serviciosGrid" class="grid grid-cols-1 gap-4 max-h-[400px] overflow-y-auto pr-2">
+            <div id="serviciosGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[400px] overflow-y-auto pr-2">
                 <!-- Servicios loaded via dynamic JS -->
             </div>
         </div>
@@ -140,14 +190,24 @@ include __DIR__ . '/../../includes/topbar.php';
         <!-- Step 4: Fecha y Hora -->
         <div id="stepView4" class="step-view hidden space-y-8">
             <h2 class="text-2xl font-black text-gray-900 border-l-4 border-teal-500 pl-4">Elige el día y la hora</h2>
+            <div id="sucursalHorarioResumen" class="text-sm text-teal-700 bg-teal-50 border border-teal-100 rounded-xl px-4 py-3 hidden"></div>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
                 <div id="calendar" class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+                    <div class="mb-4 flex items-center justify-between gap-2">
+                        <div class="inline-flex items-center gap-2">
+                            <button id="btnPrevMonth" type="button" class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-gray-50"><i data-lucide="chevron-left"></i></button>
+                            <button id="btnTodayMonth" type="button" class="px-3 h-9 rounded-lg border text-sm font-semibold hover:bg-gray-50">Hoy</button>
+                            <button id="btnNextMonth" type="button" class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-gray-50"><i data-lucide="chevron-right"></i></button>
+                        </div>
+                        <div id="calendarMonthLabel" class="text-sm font-black text-gray-700"></div>
+                    </div>
                     <!-- Custom Calendar JS -->
                 </div>
                 <div class="space-y-6">
                     <h3
                         class="font-black text-gray-900 uppercase text-xs tracking-widest text-center py-2 bg-gray-50 rounded-lg">
                         Horas Disponibles</h3>
+                    <div id="diaHorarioInfo" class="text-xs text-gray-600 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">Selecciona una fecha para ver el horario de la sucursal.</div>
                     <div id="timesGrid" class="grid grid-cols-3 gap-3">
                         <div class="col-span-full text-center py-10 text-gray-400 italic">Selecciona una fecha...</div>
                     </div>
@@ -159,6 +219,22 @@ include __DIR__ . '/../../includes/topbar.php';
         <div id="stepView5" class="step-view hidden space-y-8">
             <h2 class="text-2xl font-black text-gray-900 border-l-4 border-teal-500 pl-4">Tus Datos de Contacto</h2>
             <form id="datosForm" class="max-w-2xl space-y-6">
+                <div class="bg-teal-50 border border-teal-100 rounded-2xl p-4 space-y-3">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                        <div>
+                            <div class="text-sm font-black text-teal-800">¿Ya soy cliente?</div>
+                            <div class="text-xs text-teal-700">Ingresa tu correo para recuperar tus datos de forma segura.</div>
+                        </div>
+                        <button id="btnSoyCliente" type="button" class="px-4 py-2 rounded-xl bg-white border text-teal-700 font-semibold hover:bg-teal-50">Ya soy cliente</button>
+                    </div>
+                    <div id="soyClientePanel" class="hidden space-y-3">
+                        <div class="flex flex-col md:flex-row gap-2">
+                            <input id="clienteLookupEmail" type="email" class="flex-1 p-3 bg-white border border-teal-200 rounded-xl" placeholder="correo@ejemplo.com">
+                            <button id="btnBuscarCliente" type="button" class="px-4 py-2 rounded-xl bg-teal-600 text-white font-semibold hover:bg-teal-700">Buscar</button>
+                        </div>
+                        <div id="clienteLookupHint" class="hidden text-xs text-teal-800 bg-white border border-teal-100 rounded-xl p-3"></div>
+                    </div>
+                </div>
                 <div class="space-y-1">
                     <label class="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Nombre
                         Completo</label>
@@ -188,6 +264,19 @@ include __DIR__ . '/../../includes/topbar.php';
                         class="w-full p-4 bg-white border border-gray-100 rounded-2xl focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition-all"
                         rows="3" placeholder="¿Algo que debamos saber?"></textarea>
                 </div>
+                <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4 space-y-3">
+                    <label class="flex items-start gap-3 cursor-pointer">
+                        <input id="cli_registrarme" type="checkbox" class="mt-1 w-4 h-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+                        <span>
+                            <span class="block text-sm font-black text-gray-800">Crear cuenta con estos datos</span>
+                            <span class="block text-xs text-gray-500">Opcional. Así podrás ver tu historial y gestionar tus citas después.</span>
+                        </span>
+                    </label>
+                    <div id="registerPassWrap" class="hidden">
+                        <label class="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Contraseña para tu cuenta</label>
+                        <input id="cli_password" type="password" class="w-full p-4 bg-white border border-gray-100 rounded-2xl focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition-all" placeholder="Mínimo 6 caracteres">
+                    </div>
+                </div>
             </form>
         </div>
 
@@ -206,6 +295,7 @@ include __DIR__ . '/../../includes/topbar.php';
                                 <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sucursal
                                 </div>
                                 <div id="resSede" class="text-lg font-black text-gray-900">...</div>
+                                <div id="resSedeDir" class="text-xs text-gray-500 mt-1">...</div>
                             </div>
                         </div>
                         <div class="flex items-start gap-4">
@@ -217,6 +307,7 @@ include __DIR__ . '/../../includes/topbar.php';
                                 <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Servicio
                                 </div>
                                 <div id="resServicio" class="text-lg font-black text-gray-900">...</div>
+                                <div id="resDuracion" class="text-xs text-gray-500 mt-1">Duración: --</div>
                             </div>
                         </div>
                         <div class="flex items-start gap-4">
@@ -257,7 +348,10 @@ include __DIR__ . '/../../includes/topbar.php';
                     </div>
                 </div>
                 <div class="pt-8 border-t border-gray-100 flex items-center justify-between">
-                    <div class="text-gray-400 italic text-sm">Al confirmar, tu cita quedará registrada.</div>
+                    <div class="text-gray-500 text-sm">
+                        <div>Al confirmar, tu cita quedará registrada.</div>
+                        <div class="text-xs mt-1">Recomendación: llega 5-10 minutos antes para validar tu ingreso.</div>
+                    </div>
                     <div class="text-3xl font-black text-teal-600" id="resPrecio">$0</div>
                 </div>
             </div>
@@ -283,19 +377,175 @@ include __DIR__ . '/../../includes/topbar.php';
         const slug = '<?= $slug ?>';
         const preselectedSedeId = <?= json_encode($preselected_sede_id) ?>;
         const API = '<?= app_url('api/public/sucursales/agregar_cita.php') ?>';
+        const CURRENCY = window.APP_CURRENCY || { code: 'GTQ', symbol: 'Q' };
+        const initialUser = <?= json_encode([
+            'nombre' => (string) (($user['nombre'] ?? '')),
+            'email' => (string) (($user['email'] ?? '')),
+            'telefono' => (string) (($user['telefono'] ?? ''))
+        ]) ?>;
 
         let currentStep = 1;
+        let maxReachedStep = 1;
+        let reservationCode = '';
+        let autoFillLock = false;
+        let clienteLookupToken = '';
+        let clienteLookupData = null;
         const selection = {
             sede: null,
             servicio: null,
             empleado: null,
             fecha: null,
             hora: null,
+            monthCursor: new Date(),
             p_nombre: '',
             p_email: '',
             p_telefono: '',
             p_notas: ''
         };
+        const sedesMap = {};
+        const DAY_KEYS = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+        const DAY_LABELS = { domingo: 'Dom', lunes: 'Lun', martes: 'Mar', miercoles: 'Mié', jueves: 'Jue', viernes: 'Vie', sabado: 'Sáb' };
+
+        function fmtFechaHora(fecha, hora) {
+            const d = new Date(`${fecha}T${hora}:00`);
+            if (Number.isNaN(d.getTime())) return `${fecha} ${hora}`;
+            return d.toLocaleString('es-MX', { dateStyle: 'long', timeStyle: 'short' });
+        }
+
+        function updateStepPerms() {
+            $('.step-nav').each(function () {
+                const step = parseInt($(this).data('step'), 10);
+                const canGo = step <= maxReachedStep;
+                $(this).toggleClass('disabled', !canGo);
+            });
+        }
+
+        function maskName(name) {
+            const words = String(name || '').trim().split(/\s+/).filter(Boolean);
+            if (!words.length) return '***';
+            return words.map(w => (w.length <= 1 ? '*' : `${w[0]}${'*'.repeat(Math.max(2, w.length - 1))}`)).join(' ');
+        }
+
+        function maskPhone(phone) {
+            const d = String(phone || '').replace(/\D/g, '');
+            if (!d) return '***';
+            const keep = d.slice(-2);
+            return `${'*'.repeat(Math.max(4, d.length - 2))}${keep}`;
+        }
+
+        function clearDownstream(fromStep) {
+            if (fromStep <= 1) {
+                selection.servicio = null;
+                $('#serviciosGrid').empty();
+                maxReachedStep = 1;
+            }
+            if (fromStep <= 2) {
+                selection.empleado = null;
+                $('#empleadosGrid').empty();
+                maxReachedStep = Math.min(maxReachedStep, 2);
+            }
+            if (fromStep <= 3) {
+                selection.fecha = null;
+                selection.hora = null;
+                $('[data-date]').removeClass('bg-teal-600 text-white').addClass('hover:bg-teal-50');
+                $('#timesGrid').html('<div class="col-span-full text-center py-10 text-gray-400 italic">Selecciona una fecha...</div>');
+                $('#diaHorarioInfo').text('Selecciona una fecha para ver el horario de la sucursal.');
+                maxReachedStep = Math.min(maxReachedStep, 3);
+            }
+            if (fromStep <= 4) {
+                maxReachedStep = Math.min(maxReachedStep, 4);
+            }
+        }
+
+        function updateUrlReserva(code) {
+            if (!window.history || !window.history.replaceState) return;
+            const url = new URL(window.location.href);
+            if (code) url.searchParams.set('reserva', code);
+            else url.searchParams.delete('reserva');
+            window.history.replaceState({}, '', url.toString());
+        }
+
+        function parseHorarios(raw) {
+            try {
+                if (!raw) return {};
+                return typeof raw === 'string' ? (JSON.parse(raw) || {}) : (raw || {});
+            } catch (e) {
+                return {};
+            }
+        }
+
+        function getSedeDayRange(dateObj) {
+            const h = parseHorarios(selection.sede?.horarios_json);
+            const key = DAY_KEYS[dateObj.getDay()];
+            const row = h[key];
+            if (row && typeof row === 'object') {
+                const activo = !(row.activo === 0 || row.activo === '0' || row.activo === false);
+                if (!activo) return { active: false, inicio: null, fin: null };
+                if (row.inicio && row.fin) return { active: true, inicio: row.inicio, fin: row.fin };
+            }
+            const legacyKey = dateObj.getDay() === 0 ? 'dom' : (dateObj.getDay() === 6 ? 'sab' : 'lun-vie');
+            const legacy = h[legacyKey];
+            if (legacy && legacy.inicio && legacy.fin) return { active: true, inicio: legacy.inicio, fin: legacy.fin };
+            return { active: true, inicio: null, fin: null };
+        }
+
+        function renderSedeHorarioResumen() {
+            const box = $('#sucursalHorarioResumen');
+            if (!selection.sede) {
+                box.addClass('hidden').text('');
+                return;
+            }
+            const h = parseHorarios(selection.sede.horarios_json);
+            const order = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
+            const labels = { lunes: 'Lun', martes: 'Mar', miercoles: 'Mié', jueves: 'Jue', viernes: 'Vie', sabado: 'Sáb', domingo: 'Dom' };
+            const state = order.map((d, idx) => {
+                const row = (h && typeof h[d] === 'object') ? h[d] : null;
+                const active = !!(row && !(row.activo === 0 || row.activo === '0' || row.activo === false) && row.inicio && row.fin);
+                return { idx, day: d, active, range: active ? `${row.inicio}-${row.fin}` : null };
+            });
+
+            const openGroups = [];
+            const closedGroups = [];
+            let cur = null;
+            for (const s of state) {
+                const key = s.active ? `open:${s.range}` : 'closed';
+                if (!cur || cur.key !== key || s.idx !== (cur.endIdx + 1)) {
+                    if (cur) {
+                        (cur.kind === 'open' ? openGroups : closedGroups).push(cur);
+                    }
+                    cur = {
+                        key,
+                        kind: s.active ? 'open' : 'closed',
+                        range: s.range,
+                        startIdx: s.idx,
+                        endIdx: s.idx
+                    };
+                } else {
+                    cur.endIdx = s.idx;
+                }
+            }
+            if (cur) {
+                (cur.kind === 'open' ? openGroups : closedGroups).push(cur);
+            }
+
+            const fmtSpan = (g) => {
+                const d1 = labels[order[g.startIdx]];
+                const d2 = labels[order[g.endIdx]];
+                return g.startIdx === g.endIdx ? d1 : `${d1}-${d2}`;
+            };
+
+            const openText = openGroups.map(g => `${fmtSpan(g)}: ${g.range}`);
+            const closedText = closedGroups.map(g => fmtSpan(g));
+
+            if (!openText.length && !closedText.length) {
+                box.removeClass('hidden').text(`Horario de ${selection.sede.nombre}: consulta disponibilidad por fecha.`);
+                return;
+            }
+            const parts = [];
+            if (openText.length) parts.push(openText.join(' · '));
+            if (closedText.length) parts.push(`Cerrado: ${closedText.join(', ')}`);
+            box.removeClass('hidden').text(`Horario de ${selection.sede.nombre}: ${parts.join(' | ')}`);
+        }
 
         function updateWizard() {
             $('.step-view').addClass('hidden');
@@ -317,7 +567,29 @@ include __DIR__ . '/../../includes/topbar.php';
             $('#nextBtn').toggleClass('hidden', currentStep === 7);
             $('#nextBtn').html(currentStep === 6 ? 'Confirmar Cita' : 'Siguiente Paso &rarr;');
 
+            renderSelectedSummary();
+            updateStepPerms();
             validateStep();
+        }
+
+        function renderSelectedSummary() {
+            const rows = [];
+            if (selection.sede) rows.push(['Sede', selection.sede.nombre]);
+            if (selection.servicio) rows.push(['Servicio', `${selection.servicio.nombre} · ${CURRENCY.symbol}${selection.servicio.precio || 0}`]);
+            if (selection.empleado) rows.push(['Especialista', selection.empleado.nombre]);
+            if (selection.fecha && selection.hora) rows.push(['Fecha y hora', fmtFechaHora(selection.fecha, selection.hora)]);
+            if (selection.p_email) rows.push(['Correo', selection.p_email]);
+
+            const box = $('#selectedSummary');
+            const grid = $('#selectedSummaryGrid').empty();
+            if (!rows.length || currentStep === 1 || currentStep >= 6) {
+                box.addClass('hidden');
+                return;
+            }
+            rows.forEach(([k, v]) => {
+                grid.append(`<span class="summary-chip"><span class="text-gray-500">${k}:</span><span class="font-semibold text-gray-800 truncate max-w-[220px]">${v}</span></span>`);
+            });
+            box.removeClass('hidden');
         }
 
         function validateStep() {
@@ -330,22 +602,106 @@ include __DIR__ . '/../../includes/topbar.php';
                 selection.p_nombre = $('#cli_nombre').val();
                 selection.p_email = $('#cli_email').val();
                 selection.p_telefono = $('#cli_telefono').val();
-                ok = (selection.p_nombre && selection.p_email && selection.p_telefono);
+                const wantsRegister = $('#cli_registrarme').is(':checked');
+                const pass = String($('#cli_password').val() || '');
+                const hasMasked = String(selection.p_nombre).includes('*') || String(selection.p_telefono).includes('*');
+                if (hasMasked && !clienteLookupToken) {
+                    ok = false;
+                } else {
+                    ok = (selection.p_nombre && selection.p_email && selection.p_telefono);
+                }
+                if (ok && wantsRegister) {
+                    ok = pass.length >= 6;
+                }
             }
             if (currentStep === 6) ok = true;
 
             $('#nextBtn').prop('disabled', !ok);
         }
 
-        $('#cli_nombre, #cli_email, #cli_telefono').on('input', validateStep);
+        $('#cli_nombre, #cli_email, #cli_telefono').on('input', function () {
+            if ($(this).attr('id') !== 'cli_email') {
+                clienteLookupToken = '';
+                clienteLookupData = null;
+                $('#clienteLookupHint').addClass('hidden').text('');
+            }
+            validateStep();
+            renderSelectedSummary();
+        });
+
+        $('#cli_registrarme').on('change', function () {
+            const on = $(this).is(':checked');
+            $('#registerPassWrap').toggleClass('hidden', !on);
+            if (!on) {
+                $('#cli_password').val('');
+            } else {
+                $('#cli_password').trigger('focus');
+            }
+            validateStep();
+        });
+        $('#cli_password').on('input', validateStep);
+
+        $('#btnSoyCliente').on('click', function () {
+            $('#soyClientePanel').toggleClass('hidden');
+            if (!$('#soyClientePanel').hasClass('hidden')) {
+                $('#clienteLookupEmail').val(String($('#cli_email').val() || ''));
+                $('#clienteLookupEmail').trigger('focus');
+            }
+        });
+
+        $('#btnBuscarCliente').on('click', async function () {
+            if (autoFillLock) return;
+            const email = String($('#clienteLookupEmail').val() || '').trim();
+            if (!email) {
+                showCustomAlert('Ingresa el correo para buscar tus datos.', 3000, 'warning');
+                return;
+            }
+            autoFillLock = true;
+            const btn = $(this);
+            const prev = btn.text();
+            btn.prop('disabled', true).text('Buscando...');
+            try {
+                const res = await $.get(API, { action: 'find_cliente_secure', id_e: slug, email });
+                if (res && res.success && res.data && res.data.exists) {
+                    clienteLookupToken = String(res.data.lookup_token || '');
+                    clienteLookupData = res.data;
+                    $('#cli_email').val(email);
+                    $('#cli_nombre').val(maskName(res.data.nombre_masked || ''));
+                    $('#cli_telefono').val(maskPhone(res.data.telefono_masked || ''));
+                    $('#clienteLookupHint')
+                        .removeClass('hidden')
+                        .html(`Cliente encontrado. Datos protegidos cargados para continuar.<br><span class="text-teal-700 font-semibold">Nombre: ${maskName(res.data.nombre_masked || '')} · Tel: ${maskPhone(res.data.telefono_masked || '')}</span>`);
+                    showCustomAlert('Datos recuperados de forma segura.', 2800, 'success');
+                } else {
+                    clienteLookupToken = '';
+                    clienteLookupData = null;
+                    $('#clienteLookupHint').removeClass('hidden').text('No encontramos un cliente registrado con ese correo en esta empresa.');
+                    showCustomAlert('No se encontró cliente con ese correo.', 3200, 'warning');
+                }
+            } catch (e) {
+                showCustomAlert('No se pudo validar el cliente en este momento.', 3200, 'error');
+            } finally {
+                autoFillLock = false;
+                btn.prop('disabled', false).text(prev);
+                validateStep();
+                renderSelectedSummary();
+            }
+        });
+
+        if (initialUser && (initialUser.nombre || initialUser.email || initialUser.telefono)) {
+            if (initialUser.nombre) $('#cli_nombre').val(initialUser.nombre);
+            if (initialUser.email) $('#cli_email').val(initialUser.email);
+            if (initialUser.telefono) $('#cli_telefono').val(initialUser.telefono);
+        }
 
         // Load Sedes
         $.get(API, { action: 'get_sucursales', id_e: slug }, function (res) {
             if (res.success && res.data) {
                 const grid = $('#sedesGrid').empty();
                 res.data.forEach(s => {
+                    sedesMap[String(s.id)] = s;
                     grid.append(`
-                    <div class="card-choice ${preselectedSedeId == s.id ? 'selected' : ''}" data-id="${s.id}" data-nombre="${s.nombre}" data-type="sede">
+                    <div class="card-choice ${preselectedSedeId == s.id ? 'selected' : ''}" data-id="${s.id}" data-nombre="${s.nombre}" data-direccion="${s.direccion || ''}" data-type="sede">
                         <div class="flex items-center gap-4">
                             <div class="w-12 h-12 bg-teal-50 rounded-xl flex items-center justify-center text-teal-600"><i data-lucide="building"></i></div>
                             <div>
@@ -357,7 +713,11 @@ include __DIR__ . '/../../includes/topbar.php';
                 `);
                 });
                 if (preselectedSedeId) {
-                    selection.sede = res.data.find(s => s.id == preselectedSedeId);
+                    selection.sede = res.data.find(s => s.id == preselectedSedeId) || null;
+                    if (selection.sede) {
+                        selection.sede.horarios_json = selection.sede.horarios_json || '{}';
+                        renderSedeHorarioResumen();
+                    }
                     validateStep();
                 }
             }
@@ -370,7 +730,7 @@ include __DIR__ . '/../../includes/topbar.php';
                 if (res.success && res.data) {
                     res.data.forEach(s => {
                         grid.append(`
-                        <div class="card-choice flex items-center justify-between" data-id="${s.id}" data-nombre="${s.nombre}" data-precio="${s.precio}" data-type="servicio">
+                        <div class="card-choice flex items-center justify-between" data-id="${s.id}" data-nombre="${s.nombre}" data-precio="${s.precio}" data-duracion="${s.duracion || 30}" data-type="servicio">
                             <div class="flex items-center gap-4">
                                 <div class="w-10 h-10 bg-teal-50 rounded-xl flex items-center justify-center text-teal-600"><i data-lucide="magic"></i></div>
                                 <div>
@@ -378,7 +738,7 @@ include __DIR__ . '/../../includes/topbar.php';
                                     <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">${s.duracion || 30} MIN</div>
                                 </div>
                             </div>
-                            <div class="font-black text-teal-600">$${s.precio || 0}</div>
+                            <div class="font-black text-teal-600">${CURRENCY.symbol}${s.precio || 0}</div>
                         </div>
                     `);
                     });
@@ -388,7 +748,7 @@ include __DIR__ . '/../../includes/topbar.php';
 
         function loadEmpleados() {
             $('#empleadosGrid').html('<div class="text-center py-10 col-span-full"><i data-lucide="sync" class="animate-spin"></i></div>');
-            $.get(API, { action: 'get_empleados', id_e: slug, sede_id: selection.sede.id }, function (res) {
+            $.get(API, { action: 'get_empleados', id_e: slug, sede_id: selection.sede.id, servicio_id: selection.servicio.id }, function (res) {
                 const grid = $('#empleadosGrid').empty();
                 if (res.success && res.data) {
                     res.data.forEach(e => {
@@ -417,6 +777,7 @@ include __DIR__ . '/../../includes/topbar.php';
             if (currentStep === 6) return finishBooking();
 
             currentStep++;
+            maxReachedStep = Math.max(maxReachedStep, currentStep);
             updateWizard();
         });
 
@@ -427,6 +788,16 @@ include __DIR__ . '/../../includes/topbar.php';
             }
         });
 
+        $('body').on('click', '.step-nav', function () {
+            const target = parseInt($(this).data('step'), 10);
+            if (!target || target >= currentStep || target > maxReachedStep || currentStep === 7) return;
+            currentStep = target;
+            if (currentStep === 2 && !$('#serviciosGrid').children().length) loadServicios();
+            if (currentStep === 3 && !$('#empleadosGrid').children().length && selection.sede && selection.servicio) loadEmpleados();
+            if (currentStep === 6) prepareResumen();
+            updateWizard();
+        });
+
         // Selection Handlers
         $('body').on('click', '.card-choice', function () {
             const view = $(this).closest('.step-view');
@@ -434,52 +805,141 @@ include __DIR__ . '/../../includes/topbar.php';
             $(this).addClass('selected');
 
             const type = $(this).data('type');
-            if (type === 'sede') selection.sede = { id: $(this).data('id'), nombre: $(this).data('nombre') };
-            if (type === 'servicio') selection.servicio = { id: $(this).data('id'), nombre: $(this).data('nombre'), precio: $(this).data('precio') };
-            if (type === 'empleado') selection.empleado = { id: $(this).data('id'), nombre: $(this).data('nombre') };
+            if (type === 'sede') {
+                const sid = String($(this).data('id'));
+                const row = sedesMap[sid] || {};
+                const prevSedeId = selection.sede?.id || null;
+                selection.sede = {
+                    id: $(this).data('id'),
+                    nombre: $(this).data('nombre'),
+                    direccion: $(this).data('direccion') || '',
+                    horarios_json: row.horarios_json || '{}'
+                };
+                if (!prevSedeId || String(prevSedeId) !== String(selection.sede.id)) {
+                    clearDownstream(1);
+                }
+                renderSedeHorarioResumen();
+                renderCalendar();
+            }
+            if (type === 'servicio') {
+                const prevServicioId = selection.servicio?.id || null;
+                selection.servicio = { id: $(this).data('id'), nombre: $(this).data('nombre'), precio: $(this).data('precio'), duracion: $(this).data('duracion') || 30 };
+                if (!prevServicioId || String(prevServicioId) !== String(selection.servicio.id)) {
+                    clearDownstream(2);
+                }
+            }
+            if (type === 'empleado') {
+                const prevEmp = selection.empleado?.id || null;
+                selection.empleado = { id: $(this).data('id'), nombre: $(this).data('nombre') };
+                if (!prevEmp || String(prevEmp) !== String(selection.empleado.id)) {
+                    clearDownstream(3);
+                }
+            }
 
             validateStep();
+            renderSelectedSummary();
         });
 
         // Simple Calendar and Slots
         function renderCalendar() {
-            const cal = $('#calendar').empty();
+            const cal = $('#calendar');
+            cal.find('.js-cal-grid').remove();
             const now = new Date();
-            cal.append(`<div class="grid grid-cols-7 gap-1 text-center font-black text-[10px] text-gray-300 uppercase mb-4">
+            const view = selection.monthCursor || new Date();
+            $('#calendarMonthLabel').text(new Intl.DateTimeFormat('es-MX', { month: 'long', year: 'numeric' }).format(view));
+            const wrap = $('<div class="js-cal-grid"></div>');
+            wrap.append(`<div class="grid grid-cols-7 gap-1 text-center font-black text-[10px] text-gray-300 uppercase mb-4">
             <div>D</div><div>L</div><div>M</div><div>M</div><div>J</div><div>V</div><div>S</div>
         </div>`);
             const grid = $('<div class="grid grid-cols-7 gap-2"></div>');
-            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
-            const days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+            const firstDay = new Date(view.getFullYear(), view.getMonth(), 1).getDay();
+            const days = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
 
             for (let i = 0; i < firstDay; i++) grid.append('<div></div>');
             for (let d = 1; d <= days; d++) {
-                const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                const isPast = new Date(date) < new Date(now.toDateString());
-                grid.append(`<div class="w-10 h-10 flex items-center justify-center rounded-xl font-bold cursor-pointer transition-all ${isPast ? 'text-gray-200 pointer-events-none' : 'hover:bg-teal-50 hover:text-teal-600'}" data-date="${date}">${d}</div>`);
+                const date = `${view.getFullYear()}-${String(view.getMonth() + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const dateObj = new Date(`${date}T00:00:00`);
+                const isPast = dateObj < new Date(now.toDateString());
+                const dayRange = getSedeDayRange(dateObj);
+                const isClosed = selection.sede ? !dayRange.active : false;
+                const disabled = isPast || isClosed;
+                const cls = disabled
+                    ? 'text-gray-200 pointer-events-none bg-gray-50'
+                    : 'hover:bg-teal-50 hover:text-teal-600';
+                grid.append(`<div class="w-10 h-10 flex items-center justify-center rounded-xl font-bold cursor-pointer transition-all ${cls}" data-date="${date}" title="${isClosed ? 'Sucursal cerrada' : ''}">${d}</div>`);
             }
-            cal.append(grid);
+            wrap.append(grid);
+            cal.append(wrap);
+            if (window.lucide) lucide.createIcons();
+        }
+        function changeMonth(delta) {
+            const c = selection.monthCursor || new Date();
+            selection.monthCursor = new Date(c.getFullYear(), c.getMonth() + delta, 1);
+            renderCalendar();
+            selection.fecha = null;
+            selection.hora = null;
+            $('#timesGrid').html('<div class="col-span-full text-center py-10 text-gray-400 italic">Selecciona una fecha...</div>');
+            validateStep();
+        }
+        function resetToTodayMonth() {
+            const n = new Date();
+            selection.monthCursor = new Date(n.getFullYear(), n.getMonth(), 1);
+            renderCalendar();
+            if (!selection.sede || !selection.servicio || !selection.empleado) return;
+            const todayStr = n.toLocaleDateString('en-CA');
+            const todayBtn = $(`[data-date="${todayStr}"]`);
+            if (!todayBtn.length || todayBtn.hasClass('pointer-events-none')) return;
+            $('[data-date]').removeClass('bg-teal-600 text-white').addClass('hover:bg-teal-50');
+            todayBtn.removeClass('hover:bg-teal-50').addClass('bg-teal-600 text-white');
+            selection.fecha = todayStr;
+            selection.hora = null;
+            loadSlots(todayStr);
+            renderSelectedSummary();
+            validateStep();
         }
         renderCalendar();
+        $('#btnPrevMonth').on('click', () => changeMonth(-1));
+        $('#btnNextMonth').on('click', () => changeMonth(1));
+        $('#btnTodayMonth').on('click', resetToTodayMonth);
 
         $('body').on('click', '[data-date]', function () {
             $('[data-date]').removeClass('bg-teal-600 text-white').addClass('hover:bg-teal-50');
             $(this).removeClass('hover:bg-teal-50').addClass('bg-teal-600 text-white');
             selection.fecha = $(this).data('date');
+            selection.hora = null;
             loadSlots(selection.fecha);
+            renderSelectedSummary();
         });
 
         function loadSlots(fecha) {
             const grid = $('#timesGrid').html('<div class="col-span-full text-center py-10"><i data-lucide="sync" class="animate-spin"></i></div>');
+            const selectedDay = new Date(`${fecha}T00:00:00`);
+            const dayRange = getSedeDayRange(selectedDay);
+            if (!dayRange.active) {
+                $('#diaHorarioInfo').text('La sucursal está cerrada en este día. Selecciona otra fecha.');
+                grid.html('<div class="col-span-full text-center py-10 text-gray-400 italic">Sucursal cerrada en esta fecha.</div>');
+                selection.hora = null;
+                validateStep();
+                return;
+            }
             $.get(API, {
                 action: 'get_horarios',
                 id_e: slug,
                 sede_id: selection.sede.id,
                 servicio_id: selection.servicio.id,
                 empleado_id: selection.empleado.id,
-                fecha: fecha
+                fecha: fecha,
+                client_today: new Date().toLocaleDateString('en-CA'),
+                client_time: new Date().toTimeString().slice(0, 5)
             }, function (res) {
                 grid.empty();
+                if (res && res.meta && res.meta.horario && res.meta.horario.inicio && res.meta.horario.fin) {
+                    $('#diaHorarioInfo').text(`Horario de atención para este día: ${res.meta.horario.inicio} - ${res.meta.horario.fin}`);
+                } else if (dayRange.inicio && dayRange.fin) {
+                    $('#diaHorarioInfo').text(`Horario de atención para este día: ${dayRange.inicio} - ${dayRange.fin}`);
+                } else {
+                    $('#diaHorarioInfo').text('Horario de atención no definido para este día.');
+                }
                 if (res.success && res.data && res.data.length > 0) {
                     res.data.forEach(s => {
                         grid.append(`<div class="time-pill ${s.disponible ? 'available' : 'occupied'}" data-time="${s.hora}">${s.hora}</div>`);
@@ -487,6 +947,7 @@ include __DIR__ . '/../../includes/topbar.php';
                 } else {
                     grid.html('<div class="col-span-full text-center py-10 text-gray-400 italic">No hay horarios disponibles para este día.</div>');
                 }
+                validateStep();
             });
         }
 
@@ -494,16 +955,95 @@ include __DIR__ . '/../../includes/topbar.php';
             $('.time-pill').removeClass('selected');
             $(this).addClass('selected');
             selection.hora = $(this).data('time');
+            renderSelectedSummary();
             validateStep();
         });
 
         function prepareResumen() {
             $('#resSede').text(selection.sede.nombre);
+            $('#resSedeDir').text(selection.sede.direccion || 'Dirección no disponible');
             $('#resServicio').text(selection.servicio.nombre);
+            $('#resDuracion').text(`Duración: ${selection.servicio.duracion || 30} min`);
             $('#resEmpleado').text(selection.empleado.nombre);
-            $('#resFecha').text(`${selection.fecha} a las ${selection.hora}`);
+            $('#resFecha').text(fmtFechaHora(selection.fecha, selection.hora));
             $('#resCliente').text(selection.p_nombre);
-            $('#resPrecio').text(`$${selection.servicio.precio || 0}`);
+            $('#resPrecio').text(`${CURRENCY.symbol}${selection.servicio.precio || 0}`);
+        }
+
+        function googleCalendarUrl(data) {
+            try {
+                const start = new Date(String(data.inicio || '').replace(' ', 'T'));
+                const end = new Date(String(data.fin || '').replace(' ', 'T'));
+                const fmt = (d) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+                const details = [
+                    `Servicio: ${data.servicio_nombre || ''}`,
+                    `Código: ${data.codigo_publico || ''}`,
+                    `Cliente: ${data.cliente_nombre || ''}`
+                ].join('\n');
+                const location = [data.sucursal_nombre || '', data.sucursal_direccion || ''].filter(Boolean).join(' - ');
+                const base = 'https://calendar.google.com/calendar/render?action=TEMPLATE';
+                const p = new URLSearchParams({
+                    text: `Cita: ${data.servicio_nombre || 'Servicio'}`,
+                    dates: `${fmt(start)}/${fmt(end)}`,
+                    details,
+                    location
+                });
+                return `${base}&${p.toString()}`;
+            } catch (e) {
+                return '#';
+            }
+        }
+
+        function renderConfirmation(data) {
+            const code = data.codigo_publico || reservationCode || '';
+            reservationCode = code;
+            maxReachedStep = 6;
+            currentStep = 7;
+            updateWizard();
+
+            const icsUrl = `${API}?action=calendar_file&id_e=${encodeURIComponent(slug)}&codigo=${encodeURIComponent(code)}`;
+            const gcalUrl = googleCalendarUrl(data);
+            const inicioTexto = data.inicio ? new Date(String(data.inicio).replace(' ', 'T')).toLocaleString('es-MX', { dateStyle: 'full', timeStyle: 'short' }) : `${selection.fecha} ${selection.hora}`;
+            $('#wizardContainer').html(`
+                <div class="text-center py-10 animate-fade-in">
+                    <div class="w-28 h-28 bg-teal-50 rounded-full flex items-center justify-center text-teal-500 text-6xl mx-auto shadow-inner mb-6">
+                        <i data-lucide="check"></i>
+                    </div>
+                    <h2 class="text-3xl md:text-4xl font-black text-gray-900 mb-3">¡Listo, tu cita fue agendada!</h2>
+                    <p class="text-gray-500 max-w-2xl mx-auto mb-6">Te enviamos los detalles al correo <span class="font-semibold text-gray-700">${data.cliente_email || selection.p_email || '-'}</span>.</p>
+                    <div class="max-w-2xl mx-auto bg-white rounded-2xl border p-5 text-left space-y-3">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                            <div><span class="text-gray-500">Código de reserva:</span> <span class="font-black text-teal-700">${code || '-'}</span></div>
+                            <div><span class="text-gray-500">Estado:</span> <span class="font-semibold capitalize">${data.estado || 'pendiente'}</span></div>
+                            <div><span class="text-gray-500">Fecha y hora:</span> <span class="font-semibold">${inicioTexto}</span></div>
+                            <div><span class="text-gray-500">Servicio:</span> <span class="font-semibold">${data.servicio_nombre || selection.servicio?.nombre || '-'}</span></div>
+                            <div><span class="text-gray-500">Sede:</span> <span class="font-semibold">${data.sucursal_nombre || selection.sede?.nombre || '-'}</span></div>
+                            <div><span class="text-gray-500">Especialista:</span> <span class="font-semibold">${data.empleado_nombre || selection.empleado?.nombre || '-'}</span></div>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+                        <a href="${icsUrl}" class="bg-teal-600 text-white px-8 py-3 rounded-2xl font-black shadow hover:bg-teal-700 transition">Guardar en mi calendario</a>
+                        <a href="${gcalUrl}" target="_blank" rel="noopener" class="px-8 py-3 rounded-2xl border font-bold text-gray-700 hover:bg-gray-50 transition">Abrir en Google Calendar</a>
+                    </div>
+                </div>
+            `);
+            if (window.lucide) lucide.createIcons();
+        }
+
+        async function loadReservaFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            const code = (params.get('reserva') || '').trim();
+            if (!code) return false;
+            try {
+                const res = await $.get(API, { action: 'get_reserva', id_e: slug, codigo: code });
+                if (res && res.success && res.data) {
+                    reservationCode = code;
+                    renderConfirmation(res.data);
+                    return true;
+                }
+            } catch (e) {
+            }
+            return false;
         }
 
         async function finishBooking() {
@@ -522,24 +1062,33 @@ include __DIR__ . '/../../includes/topbar.php';
                     nombre: selection.p_nombre,
                     email: selection.p_email,
                     telefono: selection.p_telefono,
-                    notas: $('#cli_notas').val()
+                    notas: $('#cli_notas').val(),
+                    register_cliente: $('#cli_registrarme').is(':checked') ? 1 : 0,
+                    password: String($('#cli_password').val() || ''),
+                    cliente_lookup_token: clienteLookupToken,
+                    client_today: new Date().toLocaleDateString('en-CA'),
+                    client_time: new Date().toTimeString().slice(0, 5)
                 });
 
                 if (res.success) {
-                    currentStep = 7;
-                    updateWizard();
-                    $('#wizardContainer').html(`
-                    <div class="text-center py-20 animate-fade-in">
-                        <div class="w-32 h-32 bg-teal-50 rounded-full flex items-center justify-center text-teal-500 text-6xl mx-auto shadow-inner mb-8">
-                            <i data-lucide="check"></i>
-                        </div>
-                        <h2 class="text-4xl font-black text-gray-900 mb-4">¡Listo, ${selection.p_nombre.split(' ')[0]}!</h2>
-                        <p class="text-gray-500 max-w-sm mx-auto mb-10 text-lg">Tu cita ha sido agendada con éxito para el <span class="font-bold text-gray-900">${selection.fecha} a las ${selection.hora}</span>. Te esperamos.</p>
-                        <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                            <a href="<?= view_url('vistas/public/inicio.php', $slug) ?>" class="bg-gray-900 text-white px-10 py-4 rounded-2xl font-black shadow-xl hover:bg-black transition-all">Volver al Inicio</a>
-                        </div>
-                    </div>
-                `);
+                    reservationCode = res.codigo || '';
+                    if (reservationCode) {
+                        updateUrlReserva(reservationCode);
+                        const byCode = await $.get(API, { action: 'get_reserva', id_e: slug, codigo: reservationCode });
+                        if (byCode && byCode.success && byCode.data) {
+                            renderConfirmation(byCode.data);
+                            return;
+                        }
+                    }
+                    renderConfirmation({
+                        codigo_publico: reservationCode || `RES-${res.id}`,
+                        cliente_email: selection.p_email,
+                        estado: 'pendiente',
+                        inicio: `${selection.fecha} ${selection.hora}:00`,
+                        servicio_nombre: selection.servicio?.nombre || '',
+                        sucursal_nombre: selection.sede?.nombre || '',
+                        empleado_nombre: selection.empleado?.nombre || ''
+                    });
                 } else {
                     throw new Error(res.message || 'Error al crear la cita');
                 }
@@ -549,6 +1098,15 @@ include __DIR__ . '/../../includes/topbar.php';
                 btn.prop('disabled', false).html('Confirmar Cita');
             }
         }
+
+        (async function init() {
+            const restored = await loadReservaFromUrl();
+            if (restored) return;
+            updateWizard();
+            renderSedeHorarioResumen();
+            renderSelectedSummary();
+            validateStep();
+        })();
     });
 </script>
 

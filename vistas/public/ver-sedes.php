@@ -19,7 +19,7 @@ $empresa_ref = $empresa['slug'] ?: (string) ((int) ($empresa['id'] ?? 0));
     <h1 class="text-2xl font-bold text-teal-700">Nuestras sedes</h1>
   </div>
 
-  <div id="sedesGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4"></div>
+  <div id="sedesGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 justify-items-center"></div>
 </div>
 
 <!-- modal reservar -->
@@ -57,68 +57,78 @@ $empresa_ref = $empresa['slug'] ?: (string) ((int) ($empresa['id'] ?? 0));
 
 <script>
 $(function(){
-  const csrf = $('meta[name="csrf-token"]').attr('content');
   const apiPublic = <?= json_encode(app_url('api/public/sucursales/agregar_cita.php')) ?>;
   const empresaRef = <?= json_encode($empresa_ref) ?>;
 
+  function toHorarioText(raw){
+    try {
+      const h = JSON.parse(raw || '{}');
+      if (h.texto) return h.texto;
+      const orderDays = ['lunes','martes','miercoles','jueves','viernes','sabado','domingo'];
+      const dayLabel = { lunes:'Lun', martes:'Mar', miercoles:'Mié', jueves:'Jue', viernes:'Vie', sabado:'Sáb', domingo:'Dom' };
+      const isOn = (v) => !(v === false || v === 0 || v === '0' || v === null || typeof v === 'undefined');
+      const active = orderDays
+        .filter(d => h[d] && isOn(h[d].activo) && h[d].inicio && h[d].fin)
+        .map(d => ({day:d, inicio:h[d].inicio, fin:h[d].fin}));
+      if (active.length) {
+        const allSame = active.length === 7 && active.every(v => v.inicio === active[0].inicio && v.fin === active[0].fin);
+        if (allSame) return `Todos los días: ${active[0].inicio}-${active[0].fin}`;
+        const groups = [];
+        let cur = null;
+        for (const d of orderDays) {
+          const row = h[d];
+          const on = row && isOn(row.activo) && row.inicio && row.fin;
+          if (!on) {
+            if (cur) { groups.push(cur); cur = null; }
+            continue;
+          }
+          const range = `${row.inicio}-${row.fin}`;
+          if (!cur) cur = {start:d, end:d, range};
+          else if (cur.range === range) cur.end = d;
+          else { groups.push(cur); cur = {start:d, end:d, range}; }
+        }
+        if (cur) groups.push(cur);
+        return groups.map(g => {
+          const d1 = dayLabel[g.start] || g.start;
+          const d2 = dayLabel[g.end] || g.end;
+          const ds = g.start === g.end ? d1 : `${d1}-${d2}`;
+          return `${ds}: ${g.range}`;
+        }).join(' · ');
+      }
+      const p = [];
+      if (h['lun-vie']?.inicio && h['lun-vie']?.fin) p.push(`Lun-Vie: ${h['lun-vie'].inicio}-${h['lun-vie'].fin}`);
+      if (h['sab']?.inicio && h['sab']?.fin) p.push(`Sáb: ${h['sab'].inicio}-${h['sab'].fin}`);
+      if (h['dom']?.inicio && h['dom']?.fin) p.push(`Dom: ${h['dom'].inicio}-${h['dom'].fin}`);
+      return p.join(' · ');
+    } catch(e){ return ''; }
+  }
+
   function cargarSedes(){
-    $.get(apiPublic, {action:'get_sucursales', empresa: empresaRef, csrf_token:csrf}, function(res){
-      if(res.success){
-        const c = $('#sedesGrid').empty();
-        res.data.forEach(s=>{
-          c.append(`<div class="bg-white p-4 rounded shadow">
-            <h3 class="font-semibold text-teal-700">${s.nombre}</h3>
-            <div class="text-sm text-gray-600">${s.direccion||''}</div>
-            <div class="mt-3 flex justify-between items-center">
-              <div class="text-xs text-gray-500">${s.horario||''}</div>
-              <button class="reservarBtn px-3 py-1 bg-teal-600 text-white rounded" data-id="${s.id}" data-nombre="${s.nombre}">Reservar cita</button>
-            </div>
-          </div>`);
-        });
-      } else $('#sedesGrid').html('<div>No hay sedes</div>');
-    });
+    $.get(apiPublic, {action:'get_sucursales', empresa: empresaRef}, function(res){
+      const c = $('#sedesGrid').empty();
+      if(!res || !res.success || !Array.isArray(res.data) || !res.data.length){
+        c.html('<div class="text-gray-500">No hay sedes disponibles.</div>');
+        return;
+      }
+      res.data.forEach(s=>{
+        const horario = toHorarioText(s.horarios_json || '');
+        const img = s.foto_path ? `/${String(s.foto_path).replace(/^\/+/, '')}` : 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=900';
+        c.append(`<div class="w-full max-w-md bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+          <div class="h-44 rounded-xl overflow-hidden bg-gray-100 mb-4">
+            <img src="${img}" class="w-full h-full object-cover" alt="${s.nombre || 'sucursal'}">
+          </div>
+          <h3 class="font-semibold text-teal-700 text-lg">${s.nombre || ''}</h3>
+          <div class="text-sm text-gray-600 mt-2">${s.direccion || 'Dirección no disponible'}</div>
+          <div class="text-xs text-gray-500 mt-1">${s.telefono || ''}</div>
+          <div class="text-xs text-gray-500 mt-1">${horario || ''}</div>
+          <div class="mt-3">
+            <a href="<?= htmlspecialchars(view_url('vistas/public/citas.php', $empresa_ref)) ?>&sede_id=${s.id}" class="inline-flex px-3 py-1 bg-teal-600 text-white rounded-lg text-sm">Reservar cita</a>
+          </div>
+        </div>`);
+      });
+    }, 'json');
   }
   cargarSedes();
-
-  $(document).on('click', '.reservarBtn', function(){
-    const id = $(this).data('id');
-    $('#sede_id').val(id);
-    $('#modalReservar').removeClass('hidden').addClass('flex');
-  });
-  $('#cancelReserva').on('click', function(){ $('#modalReservar').addClass('hidden').removeClass('flex'); });
-
-  $('#formReservar').on('submit', function(e){
-    e.preventDefault();
-    const data = $(this).serializeArray();
-
-    // Create patient first (public) -> then create appointment
-    const paciente = {
-      nombre: $('#pac_nombre').val(),
-      telefono: $('#pac_tel').val(),
-      email: $('#pac_email').val()
-    };
-    const payload = {
-        action: 'save_cita',
-        empresa: empresaRef,
-        nombre: paciente.nombre,
-        telefono: paciente.telefono,
-        email: paciente.email,
-        sede_id: $('#sede_id').val(),
-        fecha: ($('#fecha_hora').val() || '').split('T')[0],
-        hora: ($('#fecha_hora').val() || '').split('T')[1],
-        notas: 'Reservada vía web pública',
-        csrf_token: csrf
-      };
-      $.post(apiPublic, payload, function(r2){
-        if(r2.success){
-          alert('Cita reservada correctamente');
-          $('#modalReservar').addClass('hidden').removeClass('flex');
-        } else {
-          alert('Error: ' + (r2.error || ''));
-        }
-      }, 'json');
-    });
-  });
 });
 </script>
 <?php include __DIR__ . '/../../includes/footer.php'; ?>

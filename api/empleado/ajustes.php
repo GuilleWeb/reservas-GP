@@ -10,7 +10,7 @@ if (!$user || !in_array($user['rol'] ?? null, $roles_permitidos)) {
     json_response(['error' => 'unauthorized'], 403);
 }
 
-$empresa_id = (int) ($user['empresa_id'] ?? 0);
+$empresa_id = resolve_private_empresa_id($user);
 $empleado_id = (int) ($user['id'] ?? 0);
 
 switch ($action) {

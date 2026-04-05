@@ -7,6 +7,65 @@ header('Content-Type: application/json; charset=utf-8');
 
 $action = $_REQUEST['action'] ?? '';
 
+if ($action === 'request_password_reset' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $email = strtolower(trim((string) ($_POST['email'] ?? '')));
+    if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        json_response(['success' => true, 'message' => 'Si el correo existe, enviaremos un enlace de recuperación.']);
+    }
+    $stmt = $pdo->prepare("SELECT u.id, u.nombre, u.email, u.empresa_id, u.rol, e.slug AS empresa_slug, e.nombre AS empresa_nombre
+                           FROM usuarios u
+                           LEFT JOIN empresas e ON e.id = u.empresa_id
+                           WHERE LOWER(u.email) = LOWER(?) AND u.activo = 1
+                           LIMIT 1");
+    $stmt->execute([$email]);
+    $u = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    if (!$u) {
+        json_response(['success' => true, 'message' => 'Si el correo existe, enviaremos un enlace de recuperación.']);
+    }
+
+    $token = create_password_reset_token((int) $u['id'], 30);
+    if (!$token) {
+        json_response(['success' => false, 'message' => 'No se pudo generar el enlace de recuperación.'], 500);
+    }
+    $empresa_ref = trim((string) ($u['empresa_slug'] ?? '')) !== '' ? (string) $u['empresa_slug'] : (string) ((int) ($u['empresa_id'] ?? 0));
+    $reset_url = app_url_absolute(view_url('vistas/public/login.php', $empresa_ref))
+        . '&recover=1&token=' . rawurlencode($token);
+    send_password_reset_email($u, $reset_url);
+    json_response(['success' => true, 'message' => 'Si el correo existe, enviaremos un enlace de recuperación.']);
+}
+
+if ($action === 'reset_password' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $token = trim((string) ($_POST['token'] ?? ''));
+    $password = (string) ($_POST['password'] ?? '');
+    if ($token === '' || strlen($password) < 6) {
+        json_response(['success' => false, 'message' => 'Token o contraseña inválidos.'], 400);
+    }
+    $row = find_password_reset_token($token);
+    if (!$row) {
+        json_response(['success' => false, 'message' => 'Enlace inválido.'], 400);
+    }
+    if (!empty($row['used_at'])) {
+        json_response(['success' => false, 'message' => 'Este enlace ya fue utilizado.'], 400);
+    }
+    if (strtotime((string) ($row['expires_at'] ?? '')) < time()) {
+        json_response(['success' => false, 'message' => 'El enlace expiró.'], 400);
+    }
+
+    try {
+        $pdo->beginTransaction();
+        $newHash = password_hash($password, PASSWORD_BCRYPT);
+        $pdo->prepare("UPDATE usuarios SET password_hash = ?, session_token = NULL WHERE id = ?")->execute([$newHash, (int) $row['usuario_id']]);
+        $pdo->prepare("UPDATE password_reset_tokens SET used_at = NOW() WHERE id = ?")->execute([(int) $row['id']]);
+        $pdo->commit();
+        json_response(['success' => true, 'message' => 'Contraseña actualizada correctamente.']);
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        json_response(['success' => false, 'message' => 'No se pudo actualizar la contraseña.'], 500);
+    }
+}
+
 if ($action === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';

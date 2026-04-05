@@ -11,444 +11,210 @@ if (!$empresa) {
     exit;
 }
 
+$empresa_id = (int) ($empresa['id'] ?? 0);
 $empresa_slug = $empresa['slug'] ?? null;
+
+$stmt = $pdo->prepare("SELECT data_json FROM empresa_home_config WHERE empresa_id = ? LIMIT 1");
+$stmt->execute([$empresa_id]);
+$row = $stmt->fetch(PDO::FETCH_ASSOC);
+$cfg = json_decode($row['data_json'] ?? '{}', true);
+if (!is_array($cfg)) {
+    $cfg = [];
+}
+
+$hero_visible = (int) ($cfg['hero_visible'] ?? 1) === 1;
+$hero_tipo = max(1, min(3, (int) ($cfg['hero_tipo'] ?? 1)));
+$hero_titulo = $cfg['hero_titulo'] ?? 'Bienvenid@';
+$hero_subtitulo = $cfg['hero_subtitulo'] ?? $empresa_descripcion;
+$hero_btn_texto = $cfg['hero_btn_texto'] ?? 'Agendar cita';
+$hero_btn_link = $cfg['hero_btn_link'] ?? view_url('vistas/public/citas.php', $empresa_slug ?: $empresa_id);
+$hero_imagen = $cfg['hero_imagen'] ?? 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=1200';
+
 $module = 'inicio';
 include __DIR__ . '/../../includes/topbar.php';
-
-$stmt = $pdo->prepare("SELECT data_json FROM empresa_home_config WHERE id = ?");
-$stmt->execute([$empresa_id]);
-$empresa_home_config = $stmt->fetch(PDO::FETCH_ASSOC);
-
-$config = json_decode($empresa_home_config['data_json'] ?? '{}', true);
-//print_r($empresa);
-$response['data'] = [
-    'hero_visible' => $config['hero_visible'] ?? true,
-    'hero_titulo' => $config['hero_titulo'] ?? 'Bienvenid@',
-    'hero_subtitulo' => $config['hero_subtitulo'] ?? 'Agenda tu cita hoy mismo con los mejores profesionales.',
-    'hero_btn_texto' => $config['hero_btn_texto'] ?? 'Agendar cita',
-    'hero_btn_link' => ($config['hero_btn_link'] ?? 'citas.php') . '?empresa_id=' . $empresa_id,
-    'hero_imagen' => $config['hero_imagen'] ?? 'https://guillepalma.alwaysdata.net/placeholder/api.php?size=600x250&text=Banner%2BGP',
-    'nuestra_mision' => $config['nuestra_mision'] ?? 'Lorem ipsum dolor sit amet consectetur adipiscing elit. Nulla consectetur nec tellus finibus. Maecenas tempor ex a enim dictum lobortis. Phasellus congue sagittis sem, semper euismod risus egestas at',
-    'nuestra_vision' => $config['nuestra_vision'] ?? 'Lorem ipsum dolor sit amet consectetur adipiscing elit. Nulla consectetur nec tellus finibus. Maecenas tempor ex a enim dictum lobortis. Fusce odio est, condimentum ut lacus molestie'
-];
-$config = $response['data'];
 ?>
 
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-20">
-
-    <!-- Hero Section - Skeleton -->
-    <section id="hero-section"
-        class="relative bg-white rounded-3xl overflow-hidden shadow-2xl border border-gray-100 flex flex-col md:flex-row min-h-[500px]">
-        <div class="p-10 md:p-16 flex flex-col justify-center md:w-1/2 space-y-6">
-            <h1 class="text-5xl font-black text-gray-900 leading-tight">
-                <?= htmlspecialchars($config['hero_titulo']) ?>
-            </h1>
-            <p class="text-xl text-justify text-gray-600">
-                <?= htmlspecialchars($empresa_descripcion) ?>
-            </p>
-            <div class="pt-4 flex flex-wrap gap-4">
-                <a href="<?= htmlspecialchars($config['hero_btn_link']) ?>"
-                    class="bg-teal-600 hover:bg-teal-700 text-white px-8 py-4 rounded-full font-bold shadow-lg transition transform hover:scale-105">
-                    <?= htmlspecialchars($config['hero_btn_texto']) ?>
-                </a>
-            </div>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
+  <?php if ($hero_visible): ?>
+    <?php if ($hero_tipo === 2): ?>
+      <section class="relative rounded-3xl overflow-hidden shadow-2xl border border-gray-100 min-h-[420px]">
+        <img src="<?= htmlspecialchars((string) $hero_imagen) ?>" alt="Banner" class="absolute inset-0 w-full h-full object-cover">
+        <div class="absolute inset-0 bg-black/45"></div>
+        <div class="relative z-10 p-8 md:p-12 min-h-[420px] flex flex-col justify-center max-w-3xl">
+          <h1 class="text-4xl md:text-5xl font-black text-white leading-tight"><?= htmlspecialchars((string) $hero_titulo) ?></h1>
+          <p class="text-lg text-white/90 mt-3"><?= htmlspecialchars((string) $hero_subtitulo) ?></p>
+          <div class="mt-6">
+            <a href="<?= htmlspecialchars((string) $hero_btn_link) ?>" class="inline-flex items-center gap-2 bg-teal-500 hover:bg-teal-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg transition">
+              <i data-lucide="calendar-plus"></i><?= htmlspecialchars((string) $hero_btn_texto) ?>
+            </a>
+          </div>
+        </div>
+      </section>
+    <?php elseif ($hero_tipo === 3): ?>
+      <section class="relative rounded-3xl overflow-hidden shadow-2xl border border-gray-100 min-h-[320px] p-8 md:p-12 flex flex-col items-center justify-center text-center">
+        <img src="<?= htmlspecialchars((string) $hero_imagen) ?>" alt="Banner" class="absolute inset-0 w-full h-full object-cover">
+        <div class="absolute inset-0 bg-black/35"></div>
+        <h1 class="relative z-10 text-4xl md:text-5xl font-black text-white leading-tight"><?= htmlspecialchars((string) $hero_titulo) ?></h1>
+        <p class="relative z-10 text-lg text-white/90 mt-3 max-w-3xl"><?= htmlspecialchars((string) $hero_subtitulo) ?></p>
+        <div class="relative z-10 mt-6">
+          <a href="<?= htmlspecialchars((string) $hero_btn_link) ?>" class="inline-flex items-center gap-2 bg-teal-500 hover:bg-teal-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg transition">
+            <i data-lucide="calendar-plus"></i><?= htmlspecialchars((string) $hero_btn_texto) ?>
+          </a>
+        </div>
+      </section>
+    <?php else: ?>
+      <section class="relative bg-white rounded-3xl overflow-hidden shadow-2xl border border-gray-100 flex flex-col md:flex-row min-h-[420px]">
+        <div class="p-8 md:p-12 flex flex-col justify-center md:w-1/2 space-y-5">
+          <h1 class="text-4xl md:text-5xl font-black text-gray-900 leading-tight"><?= htmlspecialchars((string) $hero_titulo) ?></h1>
+          <p class="text-lg text-gray-600"><?= htmlspecialchars((string) $hero_subtitulo) ?></p>
+          <div>
+            <a href="<?= htmlspecialchars((string) $hero_btn_link) ?>"
+              class="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg transition">
+              <i data-lucide="calendar-plus"></i><?= htmlspecialchars((string) $hero_btn_texto) ?>
+            </a>
+          </div>
         </div>
         <div class="md:w-1/2 bg-gray-100 relative">
-            <img src="<?= htmlspecialchars($config['hero_imagen']) ?>" class="absolute inset-0 w-full h-full object-cover">
+          <img src="<?= htmlspecialchars((string) $hero_imagen) ?>" alt="Banner"
+            class="absolute inset-0 w-full h-full object-cover">
         </div>
-    </section>
+      </section>
+    <?php endif; ?>
+  <?php endif; ?>
 
-    <!-- About Section - Skeleton -->
-    <section id="about-section" class="grid grid-cols-1 md:grid-cols-2 gap-10">
-        <div class="bg-teal-50 p-10 rounded-3xl border border-teal-100">
-            <h3 class="text-2xl font-bold text-teal-900 mb-6"><i data-lucide="goal" class="inline"></i> Nuestra Misión</h3>
-            <p class="text-gray-600 text-justify leading-relaxed">
-                <?= htmlspecialchars($config['nuestra_mision']) ?>
-            </p>
-        </div>
-        <div class="bg-teal-50 p-10 rounded-3xl border border-teal-100">
-            <h3 class="text-2xl font-bold text-teal-900 mb-6"><i data-lucide="eye" class="inline"></i> Nuestra Visión</h3>
-            <p class="text-gray-600 text-justify leading-relaxed">
-                <?= htmlspecialchars($config['nuestra_vision']) ?>
-            </p>
-        </div>
-    </section>
-    
-
-    <!-- Servicios Section - Skeleton -->
-    <section id="servicios-section">
-        <div class="flex items-center justify-between mb-10">
-            <div class="skeleton h-10 w-64"></div>
-            <div class="skeleton h-6 w-24"></div>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <?php for ($i = 0; $i < 4; $i++): ?>
-                <div class="bg-white p-6 rounded-2xl border border-gray-200">
-                    <div class="skeleton h-12 w-12 rounded-xl mb-4"></div>
-                    <div class="skeleton h-6 w-32 mb-3"></div>
-                    <div class="skeleton h-4 w-full mb-2"></div>
-                    <div class="skeleton h-4 w-3/4"></div>
-                </div>
-            <?php endfor; ?>
-        </div>
-    </section>
-
-    <!-- Blog Section - Skeleton -->
-    <section class="my-16 reveal visible">
-        <h2 class="text-3xl font-bold text-teal-700 mb-8 text-center sm:text-left">
-            <i data-lucide="newspaper" class="mr-2"></i> Nuestro Blog
-        </h2>
-        <div id="postsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-
-        </div>
-        <div class="mt-10 text-center">
-            <a href="blog"
-                class="inline-flex items-center text-xl font-semibold text-teal-600 hover:text-teal-800 transition duration-300">
-                Ver todas las publicaciones <i data-lucide="arrow-right" class="ml-2"></i>
-            </a>
-        </div>
-    </section>
-
-    <!-- Equipo Section - Skeleton -->
-    <section class="my-16 reveal visible">
-        <h2 class="text-3xl font-bold text-teal-700 mb-8 text-center sm:text-left">
-            <i data-lucide="user" class="mr-2"></i> Nuestro Equipo
-        </h2>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-
-        </div>
-    </section>
-
-    <!-- Contacto Section - Skeleton -->
-    <section id="contacto-section">
-        <div class="skeleton h-10 w-48 mx-auto mb-10"></div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-            <div class="bg-white p-8 rounded-3xl border shadow-xl">
-                <div class="space-y-4">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="skeleton h-12 w-full rounded-xl"></div>
-                        <div class="skeleton h-12 w-full rounded-xl"></div>
-                    </div>
-                    <div class="skeleton h-12 w-full rounded-xl"></div>
-                    <div class="skeleton h-32 w-full rounded-xl"></div>
-                    <div class="skeleton h-14 w-full rounded-xl"></div>
-                </div>
-            </div>
-            <div class="p-8 space-y-6">
-                <div>
-                    <div class="skeleton h-4 w-32 mb-4"></div>
-                    <div class="space-y-4">
-                        <div class="flex items-center gap-4">
-                            <div class="skeleton h-10 w-10 rounded-full"></div>
-                            <div class="skeleton h-6 w-40"></div>
-                        </div>
-                        <div class="flex items-center gap-4">
-                            <div class="skeleton h-10 w-10 rounded-full"></div>
-                            <div class="skeleton h-6 w-40"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="pt-4 border-t">
-                    <div class="skeleton h-4 w-32 mb-4"></div>
-                    <div id="miniSedes-skeleton" class="grid grid-cols-1 gap-3">
-                        <?php for ($i = 0; $i < 3; $i++): ?>
-                            <div class="skeleton h-16 w-full rounded-xl"></div>
-                        <?php endfor; ?>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
+  <section id="homeSections" class="space-y-14">
+    <div id="homeLoading" class="bg-white rounded-2xl border p-6 text-gray-500">Cargando contenido...</div>
+  </section>
 </div>
 
-<style>
-    .skeleton {
-        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-        background-size: 200% 100%;
-        animation: shimmer 1.5s infinite;
-        border-radius: 4px;
-    }
-
-    .skeleton-image {
-        background: linear-gradient(90deg, #e0e0e0 25%, #d0d0d0 50%, #e0e0e0 75%);
-        background-size: 200% 100%;
-        animation: shimmer 1.5s infinite;
-    }
-
-    @keyframes shimmer {
-        0% {
-            background-position: 200% 0;
-        }
-
-        100% {
-            background-position: -200% 0;
-        }
-    }
-</style>
-
 <script>
-    // $(function () {
-    //     const empresa_slug = '<?= $empresa['slug'] ?>';
-    //     const slug = '<?= $empresa['slug'] ?>';
-    //     const apiUrl = '<?= app_url('api/public/inicio.php') ?>';
+  (function () {
+    const apiHome = <?= json_encode(app_url('api/public/home_page.php')) ?>;
+    const empresaRef = <?= json_encode($empresa_slug ?: (string) $empresa_id) ?>;
+    const wrap = document.getElementById('homeSections');
+    const loading = document.getElementById('homeLoading');
 
-    //     function loadSection(section, action, callback) {
-    //         $.ajax({
-    //             url: apiUrl,
-    //             method: 'GET',
-    //             data: {
-    //                 action: action,
-    //                 empresa_id: empresa_slug,
-    //                 slug: slug
-    //             },
-    //             success: function (response) {
-    //                 if (response.success) {
-    //                     callback(response.data);
-    //                 } else {
-    //                     console.error('Error cargando ' + section, response.error);
-    //                 }
-    //             },
-    //             error: function (xhr, status, error) {
-    //                 console.error('Error en petición de ' + section, error);
-    //             }
-    //         });
-    //     }
+    function esc(v) {
+      return $('<div>').text(v ?? '').html();
+    }
 
-    //     // Cargar Hero
-    //     // loadSection('hero', 'get_hero', function (data) {
-    //     //     if (!data.hero_visible) {
-    //     //         $('#hero-section').remove();
-    //     //         return;
-    //     //     }
+    function sectionTitle(icon, title) {
+      return `
+        <div class="flex items-center gap-2 mb-6">
+          <i data-lucide="${icon}" class="text-teal-600"></i>
+          <h2 class="text-3xl font-bold text-teal-700">${esc(title)}</h2>
+        </div>
+      `;
+    }
 
-    //     //     const heroHtml = `
-                
-    //     //     `;
-    //     //     $('#hero-section').html(heroHtml);
-    //     // });
+    function renderBlog(sec) {
+      if (!sec.items || !sec.items.length) return '';
+      const cards = sec.items.map(p => {
+        const image = p.imagen_path ? `/${p.imagen_path.replace(/^\/+/, '')}` : 'https://images.unsplash.com/photo-1550831107-1553da8c8464?auto=format&fit=crop&q=80&w=900';
+        const preview = (p.contenido || '').replace(/<[^>]+>/g, '').slice(0, 120);
+        const url = <?= json_encode(view_url('vistas/public/blog.php', $empresa_slug ?: $empresa_id)) ?> + '&id=' + encodeURIComponent(p.id);
+        return `
+          <article class="w-full max-w-md bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition">
+            <div class="h-48 bg-gray-100"><img src="../../${esc(image)}" class="w-full h-full object-cover" alt="${esc(p.titulo)}"></div>
+            <div class="p-5">
+              <h3 class="text-lg font-bold text-gray-800">${esc(p.titulo)}</h3>
+              <p class="text-sm text-gray-500 mt-2">${esc(preview)}...</p>
+              <a href="${esc(url)}" class="inline-flex items-center text-teal-600 font-semibold text-sm mt-4">Leer más</a>
+            </div>
+          </article>
+        `;
+      }).join('');
+      const blogUrl = <?= json_encode(view_url('vistas/public/blog.php', $empresa_slug ?: $empresa_id)) ?>;
+      return `<section>${sectionTitle('newspaper', sec.titulo)}<div class="flex flex-wrap justify-center gap-6">${cards}</div><div class="mt-6 text-center"><a href="${esc(blogUrl)}" class="inline-flex items-center px-5 py-2.5 rounded-xl bg-teal-600 text-white font-semibold hover:bg-teal-700">Ver blog completo</a></div></section>`;
+    }
 
-    //     // Cargar About
-    //     loadSection('about', 'get_about', function (data) {
-    //         if (!data.about_visible) {
-    //             $('#about-section').remove();
-    //             return;
-    //         }
+    function renderUsuarios(sec) {
+      if (!sec.items || !sec.items.length) return '';
+      const cards = sec.items.map(u => {
+        const img = u.foto_path ? `/${String(u.foto_path).replace(/^\/+/, '')}` : <?= json_encode(app_url('assets/logo.avif')) ?>;
+        return `
+          <div class="w-full max-w-sm bg-white rounded-2xl border border-gray-100 shadow-sm p-5 text-center">
+            <img src="${esc(img)}" class="w-24 h-24 rounded-full object-cover mx-auto border-4 border-teal-100" alt="${esc(u.nombre)}">
+            <div class="mt-4 font-bold text-gray-800">${esc(u.nombre)}</div>
+            <div class="text-sm text-teal-600 capitalize">${esc(u.rol || 'miembro')}</div>
+          </div>
+        `;
+      }).join('');
+      return `<section>${sectionTitle('users', sec.titulo)}<div class="flex flex-wrap justify-center gap-6">${cards}</div></section>`;
+    }
 
-    //         const aboutHtml = `
-    //             <div class="bg-white rounded-2xl shadow-xl p-8 border-t-4 border-teal-600 text-center">
-    //                 <i data-lucide="goal" class="text-teal-600 text-4xl mb-4"></i>
-    //                 <h3 class="text-2xl font-bold text-gray-800 mb-3">Nuestra Misión</h3>
-    //                 <p class="text-gray-600 leading-relaxed">${data.mision.replace(/\n/g, '<br>')}</p>
-    //             </div>
-    //             <div class="bg-white rounded-2xl shadow-xl p-8 border-t-4 border-teal-600 text-center">
-    //                 <i data-lucide="eye" class="text-teal-600 text-4xl mb-4"></i>
-    //                 <h3 class="text-2xl font-bold text-gray-800 mb-3">Nuestra Vision</h3>
-    //                 <p class="text-gray-600 leading-relaxed">${data.vision.replace(/\n/g, '<br>')}</p>
-    //             </div>
-    //         `;
-    //         $('#about-section').html(aboutHtml);
-    //     });
+    function renderResenas(sec) {
+      if (!sec.items || !sec.items.length) return '';
+      const cards = sec.items.map(r => {
+        const rating = Math.max(1, Math.min(5, parseInt(r.rating || 5, 10)));
+        const stars = Array.from({ length: 5 }, (_, i) => `<i data-lucide="star" class="${i < rating ? 'text-yellow-500' : 'text-yellow-200'} w-4 h-4"></i>`).join('');
+        return `
+          <div class="w-full max-w-md bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <div class="flex items-center gap-1">${stars}</div>
+            <p class="mt-3 text-sm text-gray-600">"${esc(String(r.comentario || '').slice(0, 100))}"</p>
+            <div class="mt-4 font-semibold text-gray-800">${esc(r.autor_nombre || 'Cliente')}</div>
+          </div>
+        `;
+      }).join('');
+      return `<section>${sectionTitle('message-square-heart', sec.titulo)}<div class="flex flex-wrap justify-center gap-6">${cards}</div></section>`;
+    }
 
-    //     // Cargar Servicios
-    //     loadSection('servicios', 'get_servicios', function (data) {
-    //         if (!data.visible || !data.items.length) {
-    //             $('#servicios-section').remove();
-    //             return;
-    //         }
+    function renderServicios(sec) {
+      if (!sec.items || !sec.items.length) return '';
+      const cards = sec.items.map(s => `
+        <div class="w-full max-w-md bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+          <div class="text-lg font-bold text-gray-900">${esc(s.nombre)}</div>
+          <p class="text-sm text-gray-500 mt-2">${esc(s.descripcion || '')}</p>
+          <div class="mt-4 text-sm text-teal-700 font-semibold">$${Number(s.precio_base || 0).toFixed(2)} · ${esc(s.duracion_minutos)} min</div>
+        </div>
+      `).join('');
+      const serviciosUrl = <?= json_encode(view_url('vistas/public/servicios.php', $empresa_slug ?: $empresa_id)) ?>;
+      return `<section>${sectionTitle('stethoscope', sec.titulo)}<div class="flex flex-wrap justify-center gap-6">${cards}</div><div class="mt-6 text-center"><a href="${esc(serviciosUrl)}" class="inline-flex items-center px-5 py-2.5 rounded-xl bg-teal-600 text-white font-semibold hover:bg-teal-700">Ver todos los servicios</a></div></section>`;
+    }
 
-    //         let serviciosHtml = `
-    //             <div class="flex items-center justify-between mb-10">
-    //                 <h2 class="text-3xl font-black text-gray-900">Nuestros Servicios Destacados</h2>
-    //                 <a href="<?= app_url('vistas/public/servicios.php') ?>?id_e=${empresa_slug}" class="text-teal-600 font-bold hover:underline">Ver todos &rarr;</a>
-    //             </div>
-    //             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-    //         `;
+    function renderSucursales(sec) {
+      if (!sec.items || !sec.items.length) return '';
+      const cards = sec.items.map(s => {
+        const img = s.foto_path ? `/${String(s.foto_path).replace(/^\/+/, '')}` : 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=900';
+        return `
+        <div class="w-full max-w-md bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+          <div class="h-44 rounded-xl overflow-hidden bg-gray-100 mb-4">
+            <img src="${esc(img)}" class="w-full h-full object-cover" alt="${esc(s.nombre || 'sucursal')}">
+          </div>
+          <div class="font-bold text-gray-900">${esc(s.nombre)}</div>
+          <div class="text-sm text-gray-500 mt-2">${esc(s.direccion || 'Dirección no disponible')}</div>
+          <div class="text-sm text-gray-500 mt-1">${esc(s.telefono || '')}</div>
+        </div>
+      `;
+      }).join('');
+      return `<section>${sectionTitle('map-pin', sec.titulo)}<div class="flex flex-wrap justify-center gap-6">${cards}</div></section>`;
+    }
 
-    //         data.items.forEach(s => {
-    //             serviciosHtml += `
-    //                 <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm transition hover:shadow-md">
-    //                     <div class="w-12 h-12 bg-teal-50 rounded-xl flex items-center justify-center text-teal-600 text-xl mb-4">
-    //                         <i data-lucide="${s.icono}" class="|| 'magic'}"></i>
-    //                     </div>
-    //                     <h3 class="font-bold text-gray-900 text-lg mb-2">${s.nombre}</h3>
-    //                     <p class="text-gray-500 text-sm line-clamp-2">${s.descripcion || ''}</p>
-    //                 </div>
-    //             `;
-    //         });
+    function renderSection(sec) {
+      switch ((sec.modulo || '').toLowerCase()) {
+        case 'blog': return renderBlog(sec);
+        case 'usuarios': return renderUsuarios(sec);
+        case 'resenas': return renderResenas(sec);
+        case 'servicios': return renderServicios(sec);
+        case 'sucursales': return renderSucursales(sec);
+        default: return '';
+      }
+    }
 
-    //         serviciosHtml += '</div>';
-    //         $('#servicios-section').html(serviciosHtml);
-    //     });
-
-    //     // Cargar Blog
-    //     loadSection('blog', 'get_blog', function (data) {
-    //         if (!data.visible || !data.items.length) {
-    //             $('#blog-section').remove();
-    //             return;
-    //         }
-
-    //         let blogHtml = `
-    //             <h2 class="text-3xl font-black text-gray-900 mb-10">Lo último en nuestro blog</h2>
-    //             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-    //         `;
-
-    //         data.items.forEach(p => {
-    //             const imagen = p.imagen_path || 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=500';
-    //             const contenidoCorto = p.contenido ? p.contenido.substring(0, 100) + '...' : '';
-
-    //             blogHtml += `
-    //                 <article class="bg-white rounded-lg shadow-lg post-card overflow-hidden">
-    //                     <div class="h-48 bg-gray-100 overflow-hidden">
-    //                         <img src="../../${imagen}"
-    //                             alt="El Impacto de la Contaminación en la Salud Respiratoria"
-    //                             class="w-full h-full object-cover">
-    //                     </div>
-    //                     <div class="p-5">
-    //                         <h3 class="text-xl font-bold text-gray-800 hover:text-teal-700 transition duration-150">${p.titulo}</h3>
-    //                         <p class="text-sm text-gray-600 mt-2">${contenidoCorto}...</p>
-    //                         <div class="mt-4">
-    //                             <a href="<?= view_url('vistas/public/blog.php', $empresa_slug) ?>&id=${p.id}"
-    //                                 class="inline-flex items-center text-teal-600 font-semibold text-sm hover:text-teal-800 transition duration-150">
-    //                                 Leer artículo completo <i data-lucide="chevron-right" class="ml-1 text-xs"></i>
-    //                             </a>
-    //                         </div>
-    //                     </div>
-    //                 </article>
-    //             `;
-    //         });
-
-    //         blogHtml += '</div>';
-    //         $('#blog-section').html(blogHtml);
-    //     });
-
-    //     // Cargar Equipo
-    //     loadSection('equipo', 'get_equipo', function (data) {
-    //         if (!data.visible || !data.items.length) {
-    //             $('#equipo-section').remove();
-    //             return;
-    //         }
-
-    //         let equipoHtml = `
-    //         `;
-
-    //         data.items.forEach(e => {
-    //             const imagen = e.imagen_path || 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=300';
-
-    //             equipoHtml += `
-    //                 <div class="bg-white shadow-md rounded-xl p-6 text-center hover:shadow-lg transition duration-300">
-    //                     <img src="${imagen}" alt="Dra. Ana López" class="w-32 h-32 mx-auto rounded-full object-cover mb-4 border-4 border-teal-500">
-    //                     <h3 class="text-lg font-semibold text-gray-800">${e.nombre}</h3>
-    //                     <p class="text-sm text-teal-600 font-medium">${e.especialidad || 'Profesional'}</p>
-    //                     <p class="mt-3 text-sm text-gray-500">${e.descripcion || 'Profesional'}</p>
-    //                 </div>
-    //             `;
-    //         });
-
-    //         equipoHtml += '</div>';
-    //         $('#equipo-section').html(equipoHtml);
-    //     });
-
-    //     // Cargar Información de Contacto
-    //     loadSection('contacto', 'get_contacto', function (data) {
-    //         if (!data.contacto_visible) {
-    //             $('#contacto-section').remove();
-    //             return;
-    //         }
-
-    //         const contactoHtml = `
-    //             <h2 class="text-3xl font-black text-gray-900 mb-10 text-center">Contáctanos</h2>
-    //             <div class="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
-    //                 <div class="bg-white p-8 rounded-3xl border shadow-xl">
-    //                     <form id="publicContactForm" class="space-y-4">
-    //                         <input type="hidden" name="empresa_id" value="${data.empresa_id}">
-    //                         <div class="grid grid-cols-2 gap-4">
-    //                             <input type="text" name="nombre" placeholder="Nombre" class="w-full p-3 bg-gray-50 border rounded-xl" required>
-    //                             <input type="email" name="email" placeholder="Email" class="w-full p-3 bg-gray-50 border rounded-xl" required>
-    //                         </div>
-    //                         <input type="text" name="asunto" placeholder="Asunto" class="w-full p-3 bg-gray-50 border rounded-xl" required>
-    //                         <textarea name="mensaje" placeholder="Tu mensaje..." class="w-full p-3 bg-gray-50 border rounded-xl" rows="4" required></textarea>
-    //                         <button type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white py-4 rounded-xl font-bold shadow-lg transition transform hover:scale-[1.02]">
-    //                             Enviar Mensaje
-    //                         </button>
-    //                         <div id="contactResult" class="hidden text-center font-bold text-sm"></div>
-    //                     </form>
-    //                 </div>
-    //                 <div class="p-8 space-y-6">
-    //                     <div>
-    //                         <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Canales de Atención</h3>
-    //                         <div class="space-y-4">
-    //                             <div class="flex items-center gap-4">
-    //                                 <div class="w-10 h-10 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center">
-    //                                     <i data-lucide="phone"></i>
-    //                                 </div>
-    //                                 <span class="font-bold text-gray-700">${data.telefono}</span>
-    //                             </div>
-    //                             <div class="flex items-center gap-4">
-    //                                 <div class="w-10 h-10 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center">
-    //                                     <i data-lucide="mail"></i>
-    //                                 </div>
-    //                                 <span class="font-bold text-gray-700">${data.email}</span>
-    //                             </div>
-    //                         </div>
-    //                     </div>
-    //                     <div class="pt-4 border-t">
-    //                         <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Nuestras Sedes</h3>
-    //                         <div id="miniSedes" class="grid grid-cols-1 gap-3">
-    //                             <!-- Se cargarán por separado -->
-    //                         </div>
-    //                         <a href="<?= view_url('vistas/public/ver-sedes.php', $empresa_slug) ?>" class="block text-center mt-6 text-sm font-bold text-gray-500 hover:text-teal-600 transition">
-    //                             Ver en el mapa &rarr;
-    //                         </a>
-    //                     </div>
-    //                 </div>
-    //             </div>
-    //         `;
-
-    //         $('#contacto-section').html(contactoHtml);
-
-    //         // Cargar mini sedes
-    //         $.ajax({
-    //             url: apiUrl,
-    //             method: 'GET',
-    //             data: {
-    //                 action: 'get_sucursales_mini',
-    //                 empresa_id: empresa_slug,
-    //                 slug: slug
-    //             },
-    //             success: function (res) {
-    //                 if (res.success && res.data) {
-    //                     const div = $('#miniSedes');
-    //                     div.empty();
-    //                     res.data.forEach(s => {
-    //                         div.append(`
-    //                             <div class="p-3 border rounded-xl flex items-center justify-between text-sm bg-gray-50">
-    //                                 <span class="font-bold text-gray-800">${s.nombre}</span>
-    //                                 <span class="text-gray-500 text-xs">${s.direccion || ''}</span>
-    //                             </div>
-    //                         `);
-    //                     });
-    //                 }
-    //             }
-    //         });
-    //     });
-
-    //     // Manejar envío del formulario de contacto (se delegará al formulario cuando exista)
-    //     $(document).on('submit', '#publicContactForm', function (e) {
-    //         e.preventDefault();
-    //         const btn = $(this).find('button');
-    //         const resDiv = $('#contactResult').removeClass('text-teal-600 text-red-600').addClass('hidden');
-    //         btn.prop('disabled', true).text('Enviando...');
-
-    //         // Aquí iría la llamada real a la API de contacto
-    //         setTimeout(() => {
-    //             btn.prop('disabled', false).text('Enviar Mensaje');
-    //             resDiv.removeClass('hidden').addClass('text-teal-600').text('¡Mensaje enviado correctamente! Nos pondremos en contacto pronto.');
-    //             $('#publicContactForm')[0].reset();
-    //         }, 1500);
-    //     });
-    // });
+    $.get(apiHome, { empresa: empresaRef }, function (res) {
+      loading?.remove();
+      if (!res || !res.success || !Array.isArray(res.sections)) {
+        wrap.insertAdjacentHTML('beforeend', '<div class="bg-white rounded-2xl border p-6 text-gray-500">No se pudo cargar el contenido del inicio.</div>');
+        return;
+      }
+      const html = res.sections.map(renderSection).join('');
+      wrap.insertAdjacentHTML('beforeend', html || '<div class="bg-white rounded-2xl border p-6 text-gray-500">No hay secciones activas configuradas.</div>');
+      if (window.lucide) lucide.createIcons();
+    }, 'json').fail(function () {
+      loading?.remove();
+      wrap.insertAdjacentHTML('beforeend', '<div class="bg-white rounded-2xl border p-6 text-red-500">Error al obtener secciones del inicio.</div>');
+    });
+  })();
 </script>
 
 <?php include __DIR__ . '/../../includes/footer.php'; ?>

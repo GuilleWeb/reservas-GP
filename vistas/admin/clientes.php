@@ -13,6 +13,7 @@ include __DIR__ . '/../../includes/topbar.php';
       <div class="bg-white rounded-2xl shadow p-5 border">
     <div class="text-xs text-gray-500 font-semibold tracking-wider uppercase mb-1">Empresa</div>
     <div class="text-xl font-extrabold text-gray-900 mb-6">Gestionar Cliente</div>
+    <div class="mb-3 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2">Los clientes se crean automáticamente por autogestión o registro de citas. Aquí solo puedes editar/inhabilitar existentes.</div>
 
     <form id="formCliente" class="space-y-4">
       <input type="hidden" id="cliente_id" name="id" value="0">
@@ -65,8 +66,8 @@ include __DIR__ . '/../../includes/topbar.php';
       <div id="formAlert" class="hidden rounded p-3 text-sm"></div>
 
       <div class="pt-4 flex items-center justify-between border-t border-gray-100">
-        <button type="button" onclick="resetForm()"
-          class="text-sm text-gray-500 hover:text-gray-800 border border-gray-300 rounded-lg px-2 py-2">Nuevo</button>
+        <button type="button" disabled
+          class="text-sm text-gray-400 border border-gray-200 rounded-lg px-2 py-2 cursor-not-allowed">Nuevo</button>
         <button type="submit"
           class="bg-teal-600 hover:bg-teal-700 text-white px-2 py-2 rounded-lg font-semibold transition"
           id="btnSave">Guardar Cliente</button>
@@ -177,6 +178,7 @@ include __DIR__ . '/../../includes/topbar.php';
         $('#pageInfo').text('Mostrando 0 resultados');
       }
       renderPagination(res.total_pages, currentPage);
+      if (window.lucide) lucide.createIcons();
     }, 'json');
   }
 
@@ -227,6 +229,10 @@ include __DIR__ . '/../../includes/topbar.php';
 
     $('#formCliente').on('submit', function (e) {
       e.preventDefault();
+      if (parseInt($('#cliente_id').val() || '0', 10) === 0) {
+        showCustomAlert('No se pueden crear clientes manualmente desde este módulo.', 5000, 'warning');
+        return;
+      }
       let data = $(this).serializeArray();
       if (!$("#activo").is(":checked")) data.push({ name: 'activo', value: '0' });
 

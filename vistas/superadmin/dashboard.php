@@ -64,6 +64,77 @@ if ($role === 'superadmin' && !$id_e) {
   } catch (Throwable $e) {
     $stats['movimientos'] = [];
   }
+
+  $stats['email'] = email_delivery_stats(30);
+  ensure_suscripciones_historial_table();
+  try {
+    $mStart = date('Y-m-01');
+    $mEnd = date('Y-m-t');
+    $pStart = date('Y-m-01', strtotime('-1 month'));
+    $pEnd = date('Y-m-t', strtotime('-1 month'));
+    $qCurrent = $pdo->prepare("SELECT COALESCE(SUM(monto),0) FROM (
+        SELECT s.ultimo_pago_monto AS monto FROM suscripciones s
+        WHERE s.ultimo_pago_fecha BETWEEN ? AND ?
+        UNION ALL
+        SELECT h.ultimo_pago_monto AS monto FROM suscripciones_historial h
+        WHERE h.ultimo_pago_fecha BETWEEN ? AND ?
+    ) z");
+    $qCurrent->execute([$mStart, $mEnd, $mStart, $mEnd]);
+    $stats['sus_ingreso_mes'] = (float) ($qCurrent->fetchColumn() ?: 0);
+    $qPrev = $pdo->prepare("SELECT COALESCE(SUM(monto),0) FROM (
+        SELECT s.ultimo_pago_monto AS monto FROM suscripciones s
+        WHERE s.ultimo_pago_fecha BETWEEN ? AND ?
+        UNION ALL
+        SELECT h.ultimo_pago_monto AS monto FROM suscripciones_historial h
+        WHERE h.ultimo_pago_fecha BETWEEN ? AND ?
+    ) z");
+    $qPrev->execute([$pStart, $pEnd, $pStart, $pEnd]);
+    $stats['sus_ingreso_mes_prev'] = (float) ($qPrev->fetchColumn() ?: 0);
+
+    $trend = [];
+    for ($i = 5; $i >= 0; $i--) {
+      $start = date('Y-m-01', strtotime("-{$i} month"));
+      $end = date('Y-m-t', strtotime("-{$i} month"));
+      $qT = $pdo->prepare("SELECT COALESCE(SUM(monto),0) FROM (
+          SELECT s.ultimo_pago_monto AS monto FROM suscripciones s
+          WHERE s.ultimo_pago_fecha BETWEEN ? AND ?
+          UNION ALL
+          SELECT h.ultimo_pago_monto AS monto FROM suscripciones_historial h
+          WHERE h.ultimo_pago_fecha BETWEEN ? AND ?
+      ) z");
+      $qT->execute([$start, $end, $start, $end]);
+      $trend[] = [
+        'label' => date('M y', strtotime($start)),
+        'monto' => (float) ($qT->fetchColumn() ?: 0),
+      ];
+    }
+    $stats['sus_trend'] = $trend;
+  } catch (Throwable $e) {
+    $stats['sus_ingreso_mes'] = 0;
+    $stats['sus_ingreso_mes_prev'] = 0;
+    $stats['sus_trend'] = [];
+  }
+  $basePath = project_path('');
+  $diskTotal = @disk_total_space($basePath);
+  $diskFree = @disk_free_space($basePath);
+  $stats['disk_total_gb'] = $diskTotal ? round($diskTotal / 1024 / 1024 / 1024, 2) : 0;
+  $stats['disk_free_gb'] = $diskFree ? round($diskFree / 1024 / 1024 / 1024, 2) : 0;
+  $stats['disk_used_gb'] = max(0, round($stats['disk_total_gb'] - $stats['disk_free_gb'], 2));
+  $stats['php_version'] = PHP_VERSION;
+  $stats['memory_limit'] = (string) ini_get('memory_limit');
+  $stats['upload_max'] = (string) ini_get('upload_max_filesize');
+  $stats['post_max'] = (string) ini_get('post_max_size');
+  $stats['max_execution_time'] = (string) ini_get('max_execution_time');
+  $stats['memory_usage_mb'] = round(memory_get_usage(true) / 1024 / 1024, 2);
+  $stats['memory_peak_mb'] = round(memory_get_peak_usage(true) / 1024 / 1024, 2);
+  try {
+    $stmtDb = $pdo->query("SELECT ROUND(SUM(data_length+index_length)/1024/1024,2) AS mb
+                           FROM information_schema.tables
+                           WHERE table_schema = DATABASE()");
+    $stats['db_size_mb'] = (float) ($stmtDb->fetchColumn() ?: 0);
+  } catch (Throwable $e) {
+    $stats['db_size_mb'] = 0;
+  }
 }
 ?>
 
@@ -85,19 +156,19 @@ if ($role === 'superadmin' && !$id_e) {
 
     <?php if ($role === 'superadmin' && !$id_e): ?>
       <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="rounded-2xl border bg-gradient-to-br from-white to-teal-50 p-4">
+        <div class="rounded-2xl border bg-white p-4">
           <div class="text-xs text-gray-500">Empresas activas</div>
           <div class="mt-1 text-2xl font-extrabold text-gray-900"><?= (int) ($stats['empresas_activas'] ?? 0) ?></div>
         </div>
-        <div class="rounded-2xl border bg-gradient-to-br from-white to-teal-50 p-4">
+        <div class="rounded-2xl border bg-white p-4">
           <div class="text-xs text-gray-500">Sucursales activas</div>
           <div class="mt-1 text-2xl font-extrabold text-gray-900"><?= (int) ($stats['sucursales_activas'] ?? 0) ?></div>
         </div>
-        <div class="rounded-2xl border bg-gradient-to-br from-white to-teal-50 p-4">
+        <div class="rounded-2xl border bg-white p-4">
           <div class="text-xs text-gray-500">Usuarios activos</div>
           <div class="mt-1 text-2xl font-extrabold text-gray-900"><?= (int) ($stats['usuarios_activos'] ?? 0) ?></div>
         </div>
-        <div class="rounded-2xl border bg-gradient-to-br from-white to-teal-50 p-4">
+        <div class="rounded-2xl border bg-white p-4">
           <div class="text-xs text-gray-500">Mensajes nuevos</div>
           <div class="mt-1 text-2xl font-extrabold text-gray-900"><?= (int) ($stats['mensajes_nuevos'] ?? 0) ?></div>
         </div>
@@ -119,6 +190,47 @@ if ($role === 'superadmin' && !$id_e) {
         <div class="rounded-2xl border bg-white p-4">
           <div class="text-xs text-gray-500">Empleados activos</div>
           <div class="mt-1 text-xl font-bold text-gray-900"><?= (int) ($stats['empleados_activos'] ?? 0) ?></div>
+        </div>
+      </div>
+
+      <?php
+        $ingMes = (float) ($stats['sus_ingreso_mes'] ?? 0);
+        $ingPrev = (float) ($stats['sus_ingreso_mes_prev'] ?? 0);
+        $deltaAbs = $ingMes - $ingPrev;
+        $deltaPct = $ingPrev > 0 ? (($deltaAbs / $ingPrev) * 100) : ($ingMes > 0 ? 100 : 0);
+      ?>
+      <div class="mt-4 rounded-2xl border bg-white p-4">
+        <div class="font-semibold text-gray-900">Ingresos por Suscripciones</div>
+        <div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="rounded-xl border p-3">
+            <div class="text-xs text-gray-500">Mes actual</div>
+            <div class="font-extrabold text-gray-900 text-2xl">$<?= number_format($ingMes, 2) ?></div>
+          </div>
+          <div class="rounded-xl border p-3">
+            <div class="text-xs text-gray-500">Mes anterior</div>
+            <div class="font-extrabold text-gray-900 text-2xl">$<?= number_format($ingPrev, 2) ?></div>
+          </div>
+          <div class="rounded-xl border p-3">
+            <div class="text-xs text-gray-500">Variación</div>
+            <div class="font-extrabold <?= $deltaAbs >= 0 ? 'text-teal-700' : 'text-red-700' ?> text-2xl"><?= $deltaAbs >= 0 ? '+' : '' ?>$<?= number_format($deltaAbs, 2) ?></div>
+            <div class="text-xs <?= $deltaAbs >= 0 ? 'text-teal-700' : 'text-red-700' ?>"><?= $deltaAbs >= 0 ? '+' : '' ?><?= number_format($deltaPct, 1) ?>%</div>
+          </div>
+        </div>
+        <div class="mt-4 grid grid-cols-6 gap-2 items-end">
+          <?php
+            $trend = $stats['sus_trend'] ?? [];
+            $maxT = 0;
+            foreach ($trend as $t) { $maxT = max($maxT, (float) ($t['monto'] ?? 0)); }
+            $maxT = $maxT > 0 ? $maxT : 1;
+          ?>
+          <?php foreach ($trend as $t): ?>
+            <?php $h = max(8, (int) round(((float) ($t['monto'] ?? 0) / $maxT) * 120)); ?>
+            <div class="text-center">
+              <div class="mx-auto w-8 rounded-t-md bg-teal-500" style="height: <?= $h ?>px"></div>
+              <div class="text-[10px] text-gray-500 mt-1"><?= htmlspecialchars((string) ($t['label'] ?? '')) ?></div>
+              <div class="text-[10px] font-semibold text-gray-700">$<?= number_format((float) ($t['monto'] ?? 0), 0) ?></div>
+            </div>
+          <?php endforeach; ?>
         </div>
       </div>
 
@@ -156,6 +268,68 @@ if ($role === 'superadmin' && !$id_e) {
               <?php endif; ?>
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <div class="mt-4 rounded-2xl border bg-white p-4">
+        <div class="font-semibold text-gray-900">Estado del Hosting / Runtime</div>
+        <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+          <div class="rounded-xl border p-3">
+            <div class="text-xs text-gray-500">PHP</div>
+            <div class="font-bold text-gray-900"><?= htmlspecialchars((string) ($stats['php_version'] ?? '-')) ?></div>
+          </div>
+          <div class="rounded-xl border p-3">
+            <div class="text-xs text-gray-500">Memoria proceso</div>
+            <div class="font-bold text-gray-900"><?= number_format((float) ($stats['memory_usage_mb'] ?? 0), 2) ?> MB</div>
+            <div class="text-xs text-gray-500">Pico: <?= number_format((float) ($stats['memory_peak_mb'] ?? 0), 2) ?> MB</div>
+          </div>
+          <div class="rounded-xl border p-3">
+            <div class="text-xs text-gray-500">Límite memoria PHP</div>
+            <div class="font-bold text-gray-900"><?= htmlspecialchars((string) ($stats['memory_limit'] ?? '-')) ?></div>
+            <div class="text-xs text-gray-500">Max exec: <?= htmlspecialchars((string) ($stats['max_execution_time'] ?? '-')) ?>s</div>
+          </div>
+          <div class="rounded-xl border p-3">
+            <div class="text-xs text-gray-500">DB size</div>
+            <div class="font-bold text-gray-900"><?= number_format((float) ($stats['db_size_mb'] ?? 0), 2) ?> MB</div>
+          </div>
+          <div class="rounded-xl border p-3">
+            <div class="text-xs text-gray-500">Disco usado</div>
+            <div class="font-bold text-gray-900"><?= number_format((float) ($stats['disk_used_gb'] ?? 0), 2) ?> GB</div>
+          </div>
+          <div class="rounded-xl border p-3">
+            <div class="text-xs text-gray-500">Disco libre</div>
+            <div class="font-bold text-gray-900"><?= number_format((float) ($stats['disk_free_gb'] ?? 0), 2) ?> GB</div>
+          </div>
+          <div class="rounded-xl border p-3">
+            <div class="text-xs text-gray-500">Upload/Post max</div>
+            <div class="font-bold text-gray-900"><?= htmlspecialchars((string) ($stats['upload_max'] ?? '-')) ?> / <?= htmlspecialchars((string) ($stats['post_max'] ?? '-')) ?></div>
+          </div>
+          <div class="rounded-xl border p-3">
+            <div class="text-xs text-gray-500">Estado App</div>
+            <div class="font-bold text-teal-700">Operando</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 rounded-2xl border bg-white p-4">
+        <div class="font-semibold text-gray-900">Métricas de Correo (30 días)</div>
+        <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+          <div class="rounded-xl border p-3">
+            <div class="text-xs text-gray-500">Enviados</div>
+            <div class="font-bold text-teal-700"><?= (int) (($stats['email']['sent'] ?? 0)) ?></div>
+          </div>
+          <div class="rounded-xl border p-3">
+            <div class="text-xs text-gray-500">Fallidos</div>
+            <div class="font-bold text-red-600"><?= (int) (($stats['email']['failed'] ?? 0)) ?></div>
+          </div>
+          <div class="rounded-xl border p-3">
+            <div class="text-xs text-gray-500">Confirmaciones cita</div>
+            <div class="font-bold text-gray-900"><?= (int) (($stats['email']['booking_sent'] ?? 0)) ?></div>
+          </div>
+          <div class="rounded-xl border p-3">
+            <div class="text-xs text-gray-500">Invitaciones reseña</div>
+            <div class="font-bold text-gray-900"><?= (int) (($stats['email']['review_sent'] ?? 0)) ?></div>
+          </div>
         </div>
       </div>
     <?php else: ?>

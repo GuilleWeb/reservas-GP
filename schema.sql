@@ -399,6 +399,28 @@ CREATE TABLE IF NOT EXISTS empresa_home_config (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------
+-- Home dinámico por módulos
+-- -----------------------------
+
+CREATE TABLE IF NOT EXISTS home_page (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  empresa_id BIGINT UNSIGNED NOT NULL,
+  modulo VARCHAR(60) NOT NULL,
+  titulo VARCHAR(190) NOT NULL,
+  valores_json JSON NULL,
+  tipo TINYINT UNSIGNED NOT NULL DEFAULT 1, -- 1=custom,2=recientes,3=aleatorio
+  estado TINYINT(1) NOT NULL DEFAULT 1,
+  orden INT NOT NULL DEFAULT 0,
+  limite INT UNSIGNED NOT NULL DEFAULT 3,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_home_page_empresa_modulo (empresa_id, modulo),
+  KEY idx_home_page_empresa_orden (empresa_id, orden),
+  CONSTRAINT fk_home_page_empresa FOREIGN KEY (empresa_id) REFERENCES empresas(id)
+    ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------
 -- Mensajes (contacto + internos)
 -- -----------------------------
 
@@ -445,4 +467,20 @@ CREATE TABLE IF NOT EXISTS mensajes_internos (
     ON UPDATE CASCADE ON DELETE SET NULL,
   CONSTRAINT fk_mensajes_internos_de_usuario FOREIGN KEY (de_usuario_id) REFERENCES usuarios(id)
     ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------
+-- Anuncios del sistema
+-- -----------------------------
+
+CREATE TABLE IF NOT EXISTS anuncios (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  slot VARCHAR(30) NOT NULL,
+  imagen_path VARCHAR(255) NULL,
+  link_url VARCHAR(255) NULL,
+  activo TINYINT(1) NOT NULL DEFAULT 1,
+  orden INT NOT NULL DEFAULT 0,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_anuncios_slot (slot)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

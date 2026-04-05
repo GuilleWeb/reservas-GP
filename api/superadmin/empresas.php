@@ -6,6 +6,66 @@ $action = $_REQUEST['action'] ?? '';
 $user = current_user();
 if (!$user || (($user['rol'] ?? null) !== 'superadmin'))
     json_response(['error' => 'unauthorized'], 403);
+ensure_suscripciones_table();
+ensure_suscripciones_historial_table();
+
+function sync_empresa_subscription($empresa_id, $plan_id)
+{
+    global $pdo;
+    $empresa_id = (int) $empresa_id;
+    $plan_id = (int) $plan_id;
+    if ($empresa_id <= 0 || $plan_id <= 0) {
+        return;
+    }
+    $stmt = $pdo->prepare("SELECT id FROM suscripciones WHERE empresa_id = ? ORDER BY id DESC LIMIT 1");
+    $stmt->execute([$empresa_id]);
+    $sid = (int) ($stmt->fetchColumn() ?: 0);
+    if ($sid > 0) {
+        $prevQ = $pdo->prepare("SELECT * FROM suscripciones WHERE id = ? LIMIT 1");
+        $prevQ->execute([$sid]);
+        $prev = $prevQ->fetch(PDO::FETCH_ASSOC) ?: null;
+        if ($prev) {
+            suscripcion_history_append($prev, 'sync_empresa_plan', (int) ($GLOBALS['user']['id'] ?? 0));
+        }
+        $u = $pdo->prepare("UPDATE suscripciones
+                            SET plan_id = ?, estado = 'activa',
+                                fecha_inicio = COALESCE(fecha_inicio, CURDATE()),
+                                plazo = COALESCE(plazo, 'mensual'),
+                                fecha_fin = COALESCE(fecha_fin, DATE_ADD(COALESCE(fecha_inicio, CURDATE()), INTERVAL 1 MONTH))
+                            WHERE id = ?");
+        $u->execute([$plan_id, $sid]);
+        $curQ = $pdo->prepare("SELECT * FROM suscripciones WHERE id = ? LIMIT 1");
+        $curQ->execute([$sid]);
+        $cur = $curQ->fetch(PDO::FETCH_ASSOC) ?: null;
+        if ($cur) {
+            suscripcion_history_append($cur, 'sync_empresa_plan_after', (int) ($GLOBALS['user']['id'] ?? 0));
+        }
+        return;
+    }
+    $i = $pdo->prepare("INSERT INTO suscripciones (empresa_id, plan_id, estado, fecha_inicio, fecha_fin, plazo)
+                        VALUES (?,?, 'activa', CURDATE(), DATE_ADD(CURDATE(), INTERVAL 1 MONTH), 'mensual')");
+    $i->execute([$empresa_id, $plan_id]);
+    $newId = (int) $pdo->lastInsertId();
+    $curQ = $pdo->prepare("SELECT * FROM suscripciones WHERE id = ? LIMIT 1");
+    $curQ->execute([$newId]);
+    $cur = $curQ->fetch(PDO::FETCH_ASSOC) ?: null;
+    if ($cur) {
+        suscripcion_history_append($cur, 'sync_empresa_create', (int) ($GLOBALS['user']['id'] ?? 0));
+    }
+}
+
+function parse_json_or_keep($incoming, $current)
+{
+    $incoming = trim((string) $incoming);
+    if ($incoming === '') {
+        return $current;
+    }
+    json_decode($incoming, true);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        return $current;
+    }
+    return $incoming;
+}
 
 switch ($action) {
     case 'list':
@@ -147,17 +207,58 @@ switch ($action) {
             json_response(['success' => false, 'message' => 'Slug inválido. Use minúsculas, números y guiones.'], 200);
         }
 
-        $colores_json = $colores_json === '' ? null : $colores_json;
-        $redes_json = $redes_json === '' ? null : $redes_json;
+        $current = null;
+        if ($id > 0) {
+            $stmt = $pdo->prepare('SELECT slug, slogan, descripcion, logo_path, portada_path, colores_json, redes_json FROM empresas WHERE id=? LIMIT 1');
+            $stmt->execute([$id]);
+            $current = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+            if (!$current) {
+                json_response(['success' => false, 'message' => 'Empresa no encontrada.'], 200);
+            }
+        }
+
+        if ($id > 0) {
+            if ($slogan === '' && !array_key_exists('slogan', $_POST))
+                $slogan = (string) ($current['slogan'] ?? '');
+            if ($descripcion === '' && !array_key_exists('descripcion', $_POST))
+                $descripcion = (string) ($current['descripcion'] ?? '');
+            if ($logo_path === '' && !array_key_exists('logo_path', $_POST))
+                $logo_path = (string) ($current['logo_path'] ?? '');
+            if ($portada_path === '' && !array_key_exists('portada_path', $_POST))
+                $portada_path = (string) ($current['portada_path'] ?? '');
+            $colores_json = parse_json_or_keep(array_key_exists('colores_json', $_POST) ? (string) $_POST['colores_json'] : '', $current['colores_json'] ?? null);
+            $redes_json = parse_json_or_keep(array_key_exists('redes_json', $_POST) ? (string) $_POST['redes_json'] : '', $current['redes_json'] ?? null);
+        } else {
+            $colores_json = $colores_json === '' ? null : $colores_json;
+            $redes_json = $redes_json === '' ? null : $redes_json;
+        }
 
         try {
             if ($id > 0) {
                 $stmt = $pdo->prepare('UPDATE empresas SET plan_id=?, slug=?, nombre=?, slogan=?, descripcion=?, logo_path=?, portada_path=?, colores_json=?, redes_json=?, activo=? WHERE id=?');
-                $stmt->execute([$plan_id, $slug, $nombre, $slogan ?: null, $descripcion ?: null, $logo_path ?: null, $portada_path ?: null, $colores_json, $redes_json, $activo ? 1 : 0, $id]);
+                $stmt->execute([
+                    $plan_id,
+                    $slug,
+                    $nombre,
+                    $slogan !== '' ? $slogan : null,
+                    $descripcion !== '' ? $descripcion : null,
+                    $logo_path !== '' ? $logo_path : null,
+                    $portada_path !== '' ? $portada_path : null,
+                    $colores_json,
+                    $redes_json,
+                    $activo ? 1 : 0,
+                    $id
+                ]);
+                if ($plan_id !== null && $plan_id > 0) {
+                    sync_empresa_subscription($id, (int) $plan_id);
+                }
             } else {
                 $stmt = $pdo->prepare('INSERT INTO empresas (plan_id, slug, nombre, slogan, descripcion, logo_path, portada_path, colores_json, redes_json, activo) VALUES (?,?,?,?,?,?,?,?,?,?)');
                 $stmt->execute([$plan_id, $slug, $nombre, $slogan ?: null, $descripcion ?: null, $logo_path ?: null, $portada_path ?: null, $colores_json, $redes_json, $activo ? 1 : 0]);
                 $id = (int) $pdo->lastInsertId();
+                if ($plan_id !== null && $plan_id > 0) {
+                    sync_empresa_subscription($id, (int) $plan_id);
+                }
             }
         } catch (Throwable $e) {
             json_response(['success' => false, 'message' => $e->getMessage()], 200);
@@ -238,6 +339,9 @@ switch ($action) {
             $stmt = $pdo->prepare('INSERT INTO empresas (plan_id, slug, nombre, activo) VALUES (?,?,?,?)');
             $stmt->execute([$plan_id, $slug, $nombre, $activo]);
             $empresa_id = (int) $pdo->lastInsertId();
+            if ($plan_id !== null && $plan_id > 0) {
+                sync_empresa_subscription($empresa_id, (int) $plan_id);
+            }
 
             // Generar contraseña temporal
             $temp_password = bin2hex(random_bytes(4)); // 8 caracteres

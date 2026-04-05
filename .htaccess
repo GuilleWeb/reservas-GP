@@ -1,0 +1,26 @@
+RewriteEngine On
+
+# No reescribir archivos o directorios existentes
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Evitar colisiones con rutas del sistema
+RewriteCond %{REQUEST_URI} !^/(vistas|api|assets|includes|uploads|vendor)/ [NC]
+RewriteCond %{REQUEST_URI} !^/(robots\.txt|sitemap\.php|sitemap\.xml|index\.php) [NC]
+
+# Sitemap por empresa
+RewriteRule ^([^/]+)/sitemap\.xml$ sitemap.php?empresa=$1 [L,QSA]
+RewriteRule ^sitemap\.xml$ sitemap.php [L,QSA]
+
+# Vistas públicas con slug
+RewriteRule ^([^/]+)/inicio/?$ vistas/public/inicio.php?empresa=$1 [L,QSA]
+RewriteRule ^([^/]+)/sedes/?$ vistas/public/ver-sedes.php?empresa=$1 [L,QSA]
+RewriteRule ^([^/]+)/servicios/?$ vistas/public/servicios.php?empresa=$1 [L,QSA]
+RewriteRule ^([^/]+)/citas/?$ vistas/public/citas.php?empresa=$1 [L,QSA]
+RewriteRule ^([^/]+)/blog/?$ vistas/public/blog.php?empresa=$1 [L,QSA]
+RewriteRule ^([^/]+)/login/?$ vistas/public/login.php?empresa=$1 [L,QSA]
+RewriteRule ^([^/]+)/resena/?$ vistas/public/resena.php?empresa=$1 [L,QSA]
+
+# Acceso directo por slug (fallback a inicio)
+RewriteRule ^([^/]+)/?$ vistas/public/inicio.php?empresa=$1 [L,QSA]

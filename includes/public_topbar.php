@@ -52,6 +52,18 @@ if (!isset($horaios)) {
 if (!isset($direccion)) {
   $direccion = 'Negocio en línea';
 }
+if (!isset($gsc_meta_tag)) {
+  $gsc_meta_tag = '';
+}
+if (!isset($currency_symbol)) {
+  $currency_symbol = get_currency_meta($GLOBALS['empresa_info'] ?? null)['symbol'];
+}
+if (!isset($moneda_code)) {
+  $moneda_code = get_currency_meta($GLOBALS['empresa_info'] ?? null)['code'];
+}
+$meta_title = trim((string) ($empresa_nombre . $module));
+$meta_desc = trim((string) ($empresa_descripcion ?: 'Agenda en línea y gestiona tu negocio desde un solo lugar.'));
+$meta_img = trim((string) ($logo_path ?: app_url('assets/logo.avif')));
 ?>
 <!doctype html>
 <html lang="es">
@@ -64,15 +76,19 @@ if (!isset($direccion)) {
   <link rel="apple-touch-icon" sizes="180x180" href="<?= htmlspecialchars(app_url('assets/logo.avif')) ?>">
   <link rel="manifest" href="<?= htmlspecialchars(app_url('manifest.json')) ?>">
   <meta name="theme-color" content="#0d9488">
-  <meta property="og:title" content="Sistema">
-  <meta property="og:description" content="Agenda en línea y gestiona tu negocio desde un solo lugar.">
-  <meta property="og:image" content="<?= htmlspecialchars(app_url('assets/logo.avif')) ?>">
+  <meta name="description" content="<?= htmlspecialchars($meta_desc) ?>">
+  <meta property="og:title" content="<?= htmlspecialchars($meta_title) ?>">
+  <meta property="og:description" content="<?= htmlspecialchars($meta_desc) ?>">
+  <meta property="og:image" content="<?= htmlspecialchars($meta_img) ?>">
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="Sistema">
+  <meta property="og:site_name" content="<?= htmlspecialchars((string) $empresa_nombre) ?>">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Sistema">
-  <meta name="twitter:description" content="Agenda en línea y gestiona tu negocio.">
-  <meta name="twitter:image" content="<?= htmlspecialchars(app_url('assets/logo.avif')) ?>">
+  <meta name="twitter:title" content="<?= htmlspecialchars($meta_title) ?>">
+  <meta name="twitter:description" content="<?= htmlspecialchars($meta_desc) ?>">
+  <meta name="twitter:image" content="<?= htmlspecialchars($meta_img) ?>">
+  <?php if (!empty($gsc_meta_tag)): ?>
+    <?= $gsc_meta_tag . PHP_EOL ?>
+  <?php endif; ?>
   <script src="https://cdn.tailwindcss.com"></script>
   <?php if ($color_p): ?>
     <script>
@@ -101,6 +117,12 @@ if (!isset($direccion)) {
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <meta name="csrf-token" content="<?= htmlspecialchars($csrf) ?>">
+  <script>
+    window.APP_CURRENCY = {
+      code: <?= json_encode((string) ($moneda_code ?? 'GTQ')) ?>,
+      symbol: <?= json_encode((string) ($currency_symbol ?? 'Q')) ?>
+    };
+  </script>
 </head>
 
 <body class="bg-gray-50 min-h-screen font-sans">
@@ -126,6 +148,12 @@ if (!isset($direccion)) {
         <nav class="hidden md:flex flex-1 justify-center space-x-6">
           <a href="<?= htmlspecialchars(view_url('vistas/public/inicio.php')) ?>"
             class="text-gray-700 hover:text-teal-600 font-medium font-semibold nav-link">Inicio</a>
+          <a href="<?= htmlspecialchars(view_url('vistas/public/ver-sedes.php', $id_e)) ?>"
+            class="text-gray-700 hover:text-teal-600 font-medium font-semibold nav-link">Sedes</a>
+          <a href="<?= htmlspecialchars(view_url('vistas/public/servicios.php', $id_e)) ?>"
+            class="text-gray-700 hover:text-teal-600 font-medium font-semibold nav-link">Servicios</a>
+          <a href="<?= htmlspecialchars(view_url('vistas/public/citas.php', $id_e)) ?>"
+            class="text-gray-700 hover:text-teal-600 font-medium font-semibold nav-link">Agendar Cita</a>
         </nav>
 
       </div>
@@ -140,6 +168,18 @@ if (!isset($direccion)) {
           <a href="<?= htmlspecialchars(view_url('vistas/public/inicio.php')) ?>"
             class="nav-link flex items-center p-2 rounded hover:bg-gray-50 text-gray-700">
             <i data-lucide="home" class="w-5"></i><span class="ml-2 sidebar-label">Inicio</span>
+          </a>
+          <a href="<?= htmlspecialchars(view_url('vistas/public/ver-sedes.php', $id_e)) ?>"
+            class="nav-link flex items-center p-2 rounded hover:bg-gray-50 text-gray-700">
+            <i data-lucide="hospital" class="w-5"></i><span class="ml-2 sidebar-label">Sedes</span>
+          </a>
+          <a href="<?= htmlspecialchars(view_url('vistas/public/servicios.php', $id_e)) ?>"
+            class="nav-link flex items-center p-2 rounded hover:bg-gray-50 text-gray-700">
+            <i data-lucide="stethoscope" class="w-5"></i><span class="ml-2 sidebar-label">Servicios</span>
+          </a>
+          <a href="<?= htmlspecialchars(view_url('vistas/public/citas.php', $id_e)) ?>"
+            class="nav-link flex items-center p-2 rounded hover:bg-gray-50 text-gray-700">
+            <i data-lucide="calendar-plus" class="w-5"></i><span class="ml-2 sidebar-label">Citas</span>
           </a>
         </nav>
       </div>

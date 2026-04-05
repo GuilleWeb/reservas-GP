@@ -36,7 +36,7 @@ if ($action === 'list_public') {
 
 // Auth tenant
 $role = $user['rol'] ?? null;
-$empresa_id = (int) ($user['empresa_id'] ?? 0);
+$empresa_id = resolve_private_empresa_id($user);
 
 
 
@@ -48,18 +48,38 @@ switch ($action) {
     case 'list':
         $page = max(1, (int) ($_GET['page'] ?? 1));
         $per = max(1, (int) ($_GET['per'] ?? 10));
+        $search = trim((string) ($_GET['search'] ?? ''));
+        $status = trim((string) ($_GET['status'] ?? ''));
+        $order = trim((string) ($_GET['order'] ?? 'new'));
 
-        $whereSql = 'empresa_id = ?';
+        $where = ['empresa_id = ?'];
+        $params = [$empresa_id];
+        if ($search !== '') {
+            $where[] = '(autor_nombre LIKE ? OR comentario LIKE ?)';
+            $params[] = "%$search%";
+            $params[] = "%$search%";
+        }
+        if ($status !== '') {
+            $where[] = 'activo = ?';
+            $params[] = (int) $status;
+        }
+        $whereSql = implode(' AND ', $where);
         $stmt = $pdo->prepare("SELECT COUNT(*) FROM resenas WHERE $whereSql");
-        $stmt->execute([$empresa_id]);
+        $stmt->execute($params);
         $total = (int) $stmt->fetchColumn();
         $total_pages = (int) ceil($total / $per);
 
         $offset = ($page - 1) * $per;
-        $sql = "SELECT * FROM resenas WHERE $whereSql ORDER BY id DESC LIMIT $per OFFSET $offset";
+        $orderSql = $order === 'old' ? 'id ASC' : ($order === 'rating_desc' ? 'rating DESC, id DESC' : ($order === 'rating_asc' ? 'rating ASC, id DESC' : 'id DESC'));
+        $sql = "SELECT * FROM resenas WHERE $whereSql ORDER BY $orderSql LIMIT $per OFFSET $offset";
         $stmt = $pdo->prepare($sql);
-        $stmt->execute([$empresa_id]);
+        $stmt->execute($params);
         $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $selected = array_flip(home_page_selected_ids($empresa_id, 'resenas'));
+        foreach ($data as &$row) {
+            $row['show_in_home'] = isset($selected[(int) ($row['id'] ?? 0)]) ? 1 : 0;
+        }
+        unset($row);
 
         json_response(['success' => true, 'data' => $data, 'total' => $total, 'total_pages' => $total_pages]);
         break;
@@ -68,7 +88,11 @@ switch ($action) {
         $id = (int) ($_GET['id'] ?? 0);
         $stmt = $pdo->prepare('SELECT * FROM resenas WHERE id = ? AND empresa_id = ?');
         $stmt->execute([$id, $empresa_id]);
-        json_response(['success' => true, 'data' => $stmt->fetch(PDO::FETCH_ASSOC) ?: []]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+        if ($row) {
+            $row['show_in_home'] = home_page_is_item_selected($empresa_id, 'resenas', (int) $id) ? 1 : 0;
+        }
+        json_response(['success' => true, 'data' => $row]);
         break;
 
     case 'save':
@@ -76,29 +100,27 @@ switch ($action) {
             json_response(['error' => 'invalid_method'], 405);
 
         $id = (int) ($_POST['id'] ?? 0);
-        $autor_nombre = trim($_POST['autor_nombre'] ?? '');
-        $comentario = trim($_POST['comentario'] ?? '');
-        $rating = (int) ($_POST['rating'] ?? 5);
-        if ($rating < 1)
-            $rating = 1;
-        if ($rating > 5)
-            $rating = 5;
-
-        $visible_en_home = isset($_POST['visible_en_home']) ? (int) ($_POST['visible_en_home']) : 0;
+        if ($id <= 0) {
+            json_response(['success' => false, 'message' => 'Las reseñas no se crean manualmente desde admin.'], 200);
+        }
+        $show_in_home = isset($_POST['show_in_home']) ? (int) ($_POST['show_in_home']) : (isset($_POST['visible_en_home']) ? (int) ($_POST['visible_en_home']) : 0);
+        $visible_en_home = $show_in_home === 1 ? 1 : 0;
         $activo = isset($_POST['activo']) ? (int) ($_POST['activo']) : 1;
-
-        if ($autor_nombre === '' || $comentario === '')
-            json_response(['success' => false, 'message' => 'Nombre y comentario requeridos.']);
+        $stmt = $pdo->prepare('SELECT activo FROM resenas WHERE id=? AND empresa_id=? LIMIT 1');
+        $stmt->execute([$id, $empresa_id]);
+        $cur = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        if (!$cur) {
+            json_response(['success' => false, 'message' => 'Reseña no encontrada.']);
+        }
+        $is_superadmin = (($role ?? null) === 'superadmin');
+        if (!$is_superadmin && (int) ($cur['activo'] ?? 0) === 1 && $activo !== 1) {
+            json_response(['success' => false, 'message' => 'Solo superadmin puede cambiar el estado de una reseña aprobada.']);
+        }
 
         try {
-            if ($id > 0) {
-                $stmt = $pdo->prepare('UPDATE resenas SET autor_nombre=?, comentario=?, rating=?, visible_en_home=?, activo=? WHERE id=? AND empresa_id=?');
-                $stmt->execute([$autor_nombre, $comentario, $rating, $visible_en_home, $activo, $id, $empresa_id]);
-            } else {
-                $stmt = $pdo->prepare('INSERT INTO resenas (empresa_id, autor_nombre, comentario, rating, visible_en_home, activo) VALUES (?, ?, ?, ?, ?, ?)');
-                $stmt->execute([$empresa_id, $autor_nombre, $comentario, $rating, $visible_en_home, $activo]);
-                $id = (int) $pdo->lastInsertId();
-            }
+            $stmt = $pdo->prepare('UPDATE resenas SET visible_en_home=?, activo=? WHERE id=? AND empresa_id=?');
+            $stmt->execute([$visible_en_home, $activo, $id, $empresa_id]);
+            home_page_sync_item($empresa_id, 'resenas', (int) $id, $show_in_home === 1 && $activo === 1);
         } catch (Throwable $e) {
             json_response(['success' => false, 'message' => 'Error al guardar.']);
         }
@@ -116,6 +138,7 @@ switch ($action) {
         // Borrado lógico (NO eliminar fila)
         $stmt = $pdo->prepare('UPDATE resenas SET activo = 0 WHERE id = ? AND empresa_id = ?');
         $stmt->execute([$id, $empresa_id]);
+        home_page_sync_item($empresa_id, 'resenas', (int) $id, false);
         json_response(['success' => true]);
         break;
 
