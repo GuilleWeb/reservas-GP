@@ -387,8 +387,8 @@ $faq_schema = [
         <div class="mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <article class="reveal rounded-2xl border border-slate-100 bg-white p-5 shadow-sm hover:shadow-md transition">
             <i data-lucide="building-2" class="w-6 h-6 text-teal-600"></i>
-            <h3 class="mt-4 font-extrabold">Multiempresa real</h3>
-            <p class="mt-2 text-sm text-slate-600">Cada empresa tiene branding, configuración y datos independientes.</p>
+            <h3 class="mt-4 font-extrabold">Multisucursal real</h3>
+            <p class="mt-2 text-sm text-slate-600">Cada Empresa/sucursal tiene branding, configuración y datos independientes.</p>
           </article>
           <article class="reveal rounded-2xl border border-slate-100 bg-white p-5 shadow-sm hover:shadow-md transition">
             <i data-lucide="calendar-check-2" class="w-6 h-6 text-teal-600"></i>
