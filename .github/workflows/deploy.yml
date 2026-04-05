@@ -19,16 +19,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           password: ${{ secrets.SSH_PASS }}
           port: ${{ secrets.SSH_PORT }}
-          source: "."
+          source: "./*"
           target: ${{ secrets.SSH_DIR }}
-          rm: true
-          strip_components: 0
           overwrite: true
           timeout: 120s
-          exclude: |
-            .git/**
-            .github/**
-            node_modules/**
-            vendor/**
-            .env
-            .env.*
