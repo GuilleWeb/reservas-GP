@@ -101,7 +101,7 @@ include __DIR__ . '/../../includes/topbar.php';
                                     <h3 class="text-2xl font-black text-gray-900 mb-3 leading-tight">${p.titulo}</h3>
                                     <p class="text-gray-500 text-sm mb-6">${getExcerpt(p.contenido)}</p>
                                 </div>
-                                <a href="<?= view_url('vistas/public/blog.php', $slug) ?>&id=${p.id}" class="inline-flex items-center text-teal-600 font-black text-sm uppercase tracking-wider group">
+                                <a href="<?= view_url('vistas/public/blog.php', $slug) ?>?id=${p.id}" class="inline-flex items-center text-teal-600 font-black text-sm uppercase tracking-wider group">
                                     Seguir leyendo
                                     <i data-lucide="arrow-right" class="ml-2 transition group-hover:translate-x-1"></i>
                                 </a>
