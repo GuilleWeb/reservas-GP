@@ -123,6 +123,20 @@ include __DIR__ . '/../../includes/topbar.php';
                 </div>
             </form>
 
+            <!-- Formulario para establecer contraseña inicial (después de verificar correo) -->
+            <form id="setPasswordForm" class="hidden p-8 pt-0 space-y-4">
+                <div class="bg-teal-50 border border-teal-100 rounded-2xl p-4">
+                    <div class="text-sm font-black text-teal-800">Establecer tu contraseña</div>
+                    <div class="text-xs text-teal-700 mt-1">Define tu contraseña personalizada para iniciar sesión.</div>
+                </div>
+                <input type="password" id="set_password" class="w-full p-4 bg-white border border-gray-100 rounded-2xl focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition-all" placeholder="Contraseña (mínimo 6 caracteres)" required minlength="6">
+                <input type="password" id="set_password2" class="w-full p-4 bg-white border border-gray-100 rounded-2xl focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition-all" placeholder="Confirmar contraseña" required minlength="6">
+                <input type="hidden" id="set_token" value="">
+                <div class="flex items-center gap-2">
+                    <button type="submit" class="px-4 py-3 rounded-xl bg-teal-600 text-white font-bold hover:bg-teal-700">Establecer contraseña</button>
+                </div>
+            </form>
+
             <!-- Formulario de Registro -->
             <form id="registerForm" class="hidden p-8 space-y-5">
                 <div id="registerAlert" class="hidden p-4 rounded-xl text-sm font-bold text-center"></div>
@@ -130,6 +144,7 @@ include __DIR__ . '/../../includes/topbar.php';
                 <div class="bg-teal-50 border border-teal-100 rounded-2xl p-4 mb-2">
                     <div class="text-sm font-black text-teal-800">Crear cuenta gratis</div>
                     <div class="text-xs text-teal-700 mt-1">Registra tu empresa y comienza a gestionar citas.</div>
+                    <div class="text-xs text-teal-600 mt-2 font-medium">Nota: Al verificar tu correo, podrás establecer tu contraseña personalizada.</div>
                 </div>
 
                 <div class="space-y-4">
@@ -150,16 +165,6 @@ include __DIR__ . '/../../includes/topbar.php';
                             <input type="email" id="reg_email" name="email" required
                                 class="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition-all placeholder:text-gray-300"
                                 placeholder="tu@email.com">
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Contraseña</label>
-                        <div class="relative group">
-                            <i data-lucide="lock" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 transition-colors group-focus-within:text-teal-500"></i>
-                            <input type="password" id="reg_password" name="password" required minlength="6"
-                                class="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition-all placeholder:text-gray-300"
-                                placeholder="Mínimo 6 caracteres">
                         </div>
                     </div>
 
@@ -225,11 +230,19 @@ include __DIR__ . '/../../includes/topbar.php';
         if (verifyMode && verifyToken) {
             $.post(API_AUTH, { action: 'verify_email', token: verifyToken }, function (res) {
                 if (res && res.success) {
-                    showCustomAlert(res.message || 'Correo verificado correctamente.', 4500, 'success');
+                    const isFirstVerification = res?.data?.is_first_verification ?? false;
                     urlParams.delete('verify');
                     urlParams.delete('token');
                     const clean = window.location.pathname + (urlParams.toString() ? ('?' + urlParams.toString()) : '');
                     window.history.replaceState({}, '', clean);
+
+                    if (isFirstVerification) {
+                        // Primera verificación: mostrar formulario para establecer contraseña
+                        showSetPasswordForm(verifyToken, res?.data?.empresa_slug || '');
+                        showCustomAlert('Correo verificado correctamente. Establece tu contraseña para continuar.', 6000, 'success');
+                    } else {
+                        showCustomAlert(res.message || 'Correo verificado correctamente.', 4500, 'success');
+                    }
                 } else {
                     showCustomAlert((res && res.message) || 'No se pudo verificar el correo.', 4500, 'error');
                 }
@@ -383,6 +396,50 @@ include __DIR__ . '/../../includes/topbar.php';
             });
         });
 
+        // ── ESTABLECER CONTRASEÑA INICIAL (después de verificar correo) ───────
+        function showSetPasswordForm(token, empresaSlug) {
+            $('#publicLoginForm').addClass('hidden');
+            $('#loginFooter').addClass('hidden');
+            $('#recoverRequestForm').addClass('hidden');
+            $('#recoverResetForm').addClass('hidden');
+            $('#registerForm').addClass('hidden');
+            $('#setPasswordForm').removeClass('hidden');
+            $('#set_token').val(token);
+        }
+
+        $('#setPasswordForm').on('submit', function (e) {
+            e.preventDefault();
+            const token = String($('#set_token').val() || '').trim();
+            const p1 = String($('#set_password').val() || '');
+            const p2 = String($('#set_password2').val() || '');
+            if (!token) {
+                showCustomAlert('Token inválido. Solicita un nuevo enlace de verificación.', 4000, 'error');
+                return;
+            }
+            if (p1.length < 6) {
+                showCustomAlert('La contraseña debe tener mínimo 6 caracteres.', 3500, 'warning');
+                return;
+            }
+            if (p1 !== p2) {
+                showCustomAlert('Las contraseñas no coinciden.', 3500, 'warning');
+                return;
+            }
+            $.post(API_AUTH, { action: 'reset_password', token, password: p1 }, function (res) {
+                if (res && res.success) {
+                    showCustomAlert('Contraseña establecida correctamente. Verificación completada. Ahora inicia sesión.', 4000, 'success');
+                    setTimeout(() => {
+                        $('#setPasswordForm').addClass('hidden');
+                        $('#publicLoginForm').removeClass('hidden');
+                        $('#loginFooter').removeClass('hidden');
+                    }, 2500);
+                } else {
+                    showCustomAlert((res && res.message) || 'No se pudo establecer la contraseña.', 4500, 'error');
+                }
+            }, 'json').fail(function () {
+                showCustomAlert('No se pudo establecer la contraseña.', 4500, 'error');
+            });
+        });
+
         // ── REGISTRO DE USUARIOS ─────────────────────────────────────────────
         const API_REGISTER = '<?= app_url('api/public/register.php') ?>';
 
@@ -414,15 +471,8 @@ include __DIR__ . '/../../includes/topbar.php';
             const data = {
                 nombre_completo: $('#reg_nombre').val(),
                 email: $('#reg_email').val(),
-                password: $('#reg_password').val(),
                 nombre_empresa: $('#reg_empresa').val()
             };
-
-            // Validación básica en cliente
-            if (data.password.length < 6) {
-                alert.removeClass('hidden bg-teal-50 text-teal-600').addClass('bg-red-50 text-red-600').text('La contraseña debe tener al menos 6 caracteres.');
-                return;
-            }
 
             btn.prop('disabled', true).html('<i data-lucide="loader-2" class="mr-2 animate-spin"></i> Creando cuenta...');
             lucide.createIcons();

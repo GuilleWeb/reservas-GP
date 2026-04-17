@@ -13,6 +13,18 @@ if (!$empresa) {
 
 $slug = $empresa['slug'] ?? null;
 $postId = isset($_GET['id']) ? intval($_GET['id']) : null;
+$postSlug = isset($_GET['post_slug']) ? trim((string) $_GET['post_slug']) : null;
+
+// Si se proporciona slug, buscar el post por slug
+if (!$postId && $postSlug) {
+    $stmtPost = $pdo->prepare("SELECT id FROM blog_posts WHERE empresa_id = ? AND slug = ? AND publicado = 1 LIMIT 1");
+    $stmtPost->execute([(int) $empresa['id'], $postSlug]);
+    $foundPost = $stmtPost->fetch(PDO::FETCH_ASSOC);
+    if ($foundPost) {
+        $postId = (int) $foundPost['id'];
+    }
+}
+
 $module = 'blog';
 include __DIR__ . '/../../includes/topbar.php';
 ?>

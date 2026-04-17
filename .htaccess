@@ -20,6 +20,7 @@ RewriteRule ^([^/]+)/sedes/?$ vistas/public/ver-sedes.php?empresa=$1 [L,QSA]
 RewriteRule ^([^/]+)/servicios/?$ vistas/public/servicios.php?empresa=$1 [L,QSA]
 RewriteRule ^([^/]+)/citas/?$ vistas/public/citas.php?empresa=$1 [L,QSA]
 RewriteRule ^([^/]+)/blog/?$ vistas/public/blog.php?empresa=$1 [L,QSA]
+RewriteRule ^([^/]+)/blog/([^/]+)/?$ vistas/public/blog.php?empresa=$1&post_slug=$2 [L,QSA]
 RewriteRule ^([^/]+)/login/?$ vistas/public/login.php?empresa=$1 [L,QSA]
 RewriteRule ^([^/]+)/resena/?$ vistas/public/resena.php?empresa=$1 [L,QSA]
 

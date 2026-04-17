@@ -46,7 +46,7 @@ $planes = $pdo->query("SELECT id, nombre FROM planes ORDER BY nombre ASC")->fetc
             <div class="mt-1 text-xs text-gray-500">Se usa en la URL: /{slug}/</div>
           </div> -->
           <div class="grid grid-cols-2 gap-3">
-            <div>
+            <!--<div>
               <label class="block text-sm font-medium text-gray-700">Plan</label>
               <select class="border rounded-lg p-2 w-full" id="plan_id" name="plan_id">
                 <option value="">Sin plan</option>
@@ -54,7 +54,7 @@ $planes = $pdo->query("SELECT id, nombre FROM planes ORDER BY nombre ASC")->fetc
                   <option value="<?= (int) $p['id'] ?>"><?= htmlspecialchars($p['nombre']) ?></option>
                 <?php endforeach; ?>
               </select>
-            </div>
+            </div>-->
             <div>
               <label class="block text-sm font-medium text-gray-700">Estado</label>
               <div class="flex items-center gap-3 mt-1">

@@ -27,13 +27,15 @@ if ((string) $allow_register === '0' || (int) $allow_register === 0) {
 // Obtener y validar datos
 $nombre_completo = trim($_POST['nombre_completo'] ?? '');
 $email_input = trim($_POST['email'] ?? '');
-$password = $_POST['password'] ?? '';
 $nombre_empresa = trim($_POST['nombre_empresa'] ?? '');
 
 // Validaciones básicas
-if ($nombre_completo === '' || $email_input === '' || $password === '' || $nombre_empresa === '') {
+if ($nombre_completo === '' || $email_input === '' || $nombre_empresa === '') {
     json_response(['success' => false, 'message' => 'Todos los campos son obligatorios.'], 200);
 }
+
+// Generar contraseña temporal aleatoria (12 caracteres)
+$temp_password = bin2hex(random_bytes(6)); // 12 caracteres hexadecimales
 
 $email = normalize_email_identity($email_input);
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -47,10 +49,6 @@ if (!is_trusted_email_domain($email)) {
 $register_guard_id = $email . '|' . (client_ip() ?: 'no-ip');
 if (request_guard_is_limited('public_register', $register_guard_id, 300, 1, true)) {
     json_response(['success' => false, 'message' => 'Ya recibimos un intento reciente. Espera 5 minutos antes de reenviar.'], 200);
-}
-
-if (strlen($password) < 6) {
-    json_response(['success' => false, 'message' => 'La contraseña debe tener al menos 6 caracteres.'], 200);
 }
 
 // Validar nombre de empresa: solo letras, números y espacios (mínimo 2 caracteres)
@@ -138,8 +136,8 @@ try {
         }
     }
 
-    // Insertar usuario admin
-    $hash = password_hash($password, PASSWORD_BCRYPT);
+    // Insertar usuario admin con contraseña temporal
+    $hash = password_hash($temp_password, PASSWORD_BCRYPT);
     $stmt = $pdo->prepare("INSERT INTO usuarios (empresa_id, sucursal_id, rol, nombre, email, password_hash, activo, email_verified_at, created_at, updated_at) VALUES (?, NULL, 'admin', ?, ?, ?, 0, NULL, NOW(), NOW())");
     $stmt->execute([$empresa_id, $nombre_completo, $email, $hash]);
     $usuario_id = (int) $pdo->lastInsertId();
@@ -175,7 +173,7 @@ try {
     }
 
     // Respuesta exitosa
-    $successMessage = 'Registro completado exitosamente. Hemos enviado un correo de verificación a tu email. Tu cuenta y empresa permanecerán inactivas hasta que verifiques el correo. Tienes hasta 72 horas para verificarlo, de lo contrario el registro se eliminará automáticamente.';
+    $successMessage = 'Registro completado exitosamente. Hemos enviado un correo de verificación a tu email. Tu cuenta y empresa permanecerán inactivas hasta que verifiques el correo. Tienes hasta 72 horas para verificarlo, de lo contrario el registro se eliminará automáticamente. Al verificar tu correo, se te pedirá establecer tu contraseña personalizada para poder iniciar sesión.';
     json_response([
         'success' => true,
         'message' => $successMessage,

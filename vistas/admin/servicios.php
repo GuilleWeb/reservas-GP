@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../../includes/bootstrap.php';
-$module = 'servicios';
+$module = 'admin-servicios';
 include __DIR__ . '/../../includes/topbar.php';
 ?>
 <?php

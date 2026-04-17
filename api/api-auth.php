@@ -53,11 +53,70 @@ if ($action === 'verify_email') {
     if ($token === '') {
         json_response(['success' => false, 'message' => 'Token de verificación inválido.'], 400);
     }
+
+    // Buscar token antes de consumir para determinar si es primera verificación
+    $tokenRow = find_email_verification_token($token);
+    $usuario_id = $tokenRow ? (int) ($tokenRow['usuario_id'] ?? 0) : 0;
+    $wasAlreadyVerified = false;
+    $empresa_ref_for_slug = '';
+
+    if ($usuario_id > 0) {
+        $uCheck = $pdo->prepare("SELECT email_verified_at, empresa_id FROM usuarios WHERE id = ? LIMIT 1");
+        $uCheck->execute([$usuario_id]);
+        $uData = $uCheck->fetch(PDO::FETCH_ASSOC);
+        $wasAlreadyVerified = !empty($uData['email_verified_at']);
+        $empresa_id = (int) ($uData['empresa_id'] ?? 0);
+        if ($empresa_id > 0) {
+            $eCheck = $pdo->prepare("SELECT slug FROM empresas WHERE id = ? LIMIT 1");
+            $eCheck->execute([$empresa_id]);
+            $empresa_ref_for_slug = $eCheck->fetchColumn() ?: '';
+        }
+    }
+
     $row = consume_email_verification_token($token);
     if (!$row) {
         json_response(['success' => false, 'message' => 'El enlace de verificación no es válido o ya expiró.'], 400);
     }
-    json_response(['success' => true, 'message' => 'Correo verificado correctamente. Ya puedes iniciar sesión.']);
+
+    // Obtener información del usuario para enviar mensaje de bienvenida
+    $empresa_id = (int) ($row['empresa_id'] ?? 0);
+    $isFirstVerification = !$wasAlreadyVerified;
+
+    if ($usuario_id > 0 && $empresa_id > 0) {
+        // Enviar mensaje de bienvenida a la mensajería interna
+        $mensajeBienvenida = "¡Bienvenido al sistema!\n\n";
+        $mensajeBienvenida .= "Estamos emocionados de tenerte con nosotros. Aquí te dejamos una guía de primeros pasos para que aproveches al máximo nuestra plataforma:\n\n";
+        $mensajeBienvenida .= "1. **Crear usuarios**: Configura gerentes (para administrar sucursales) y empleados.\n";
+        $mensajeBienvenida .= "2. **Crear sucursales**: Agrega tus sedes y asigna un gerente y empleados a cada una.\n";
+        $mensajeBienvenida .= "3. **Crear servicios**: Define los servicios que ofreces y asígnalos a los empleados que los pueden realizar.\n";
+        $mensajeBienvenida .= "4. **Configurar horarios**: Establece los horarios de atención de tu empresa y sucursales.\n\n";
+        $mensajeBienvenida .= "Recuerda que también puedes personalizar ajustes de empresa, gestionar citas, clientes y mucho más.\n\n";
+        $mensajeBienvenida .= "Esperamos que disfrutes tu estadía y consideres las ventajas de cambiarte a un plan Premium para acceder a funciones adicionales.\n\n";
+        $mensajeBienvenida .= "¡Éxito en tu negocio!";
+
+        create_notification([
+            'empresa_id' => $empresa_id,
+            'usuario_id' => $usuario_id,
+            'tipo' => 'mensaje_interno',
+            'titulo' => '¡Bienvenido! Guía de primeros pasos',
+            'descripcion' => $mensajeBienvenida,
+            'referencia_tipo' => 'bienvenida',
+            'referencia_id' => $usuario_id,
+        ]);
+    }
+
+    $response = [
+        'success' => true,
+        'message' => 'Correo verificado correctamente. Ya puedes iniciar sesión.',
+        'data' => [
+            'is_first_verification' => $isFirstVerification,
+            'usuario_id' => $usuario_id,
+            'empresa_id' => $empresa_id,
+            'empresa_slug' => $empresa_ref_for_slug,
+        ]
+    ];
+
+    json_response($response);
 }
 
 if ($action === 'resend_verification' && $_SERVER['REQUEST_METHOD'] === 'POST') {
