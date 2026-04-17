@@ -59,6 +59,8 @@ $empresa_ref = $empresa['slug'] ?: (string) ((int) ($empresa['id'] ?? 0));
 $(function(){
   const apiPublic = <?= json_encode(app_url('api/public/sucursales/agregar_cita.php')) ?>;
   const empresaRef = <?= json_encode($empresa_ref) ?>;
+  const citaBase = <?= json_encode(view_url('vistas/public/citas.php', $empresa_ref)) ?>;
+  const appendParam = (url, key, val) => `${url}${String(url).includes('?') ? '&' : '?'}${encodeURIComponent(key)}=${encodeURIComponent(val)}`;
 
   function toHorarioText(raw){
     try {
@@ -122,7 +124,7 @@ $(function(){
           <div class="text-xs text-gray-500 mt-1">${s.telefono || ''}</div>
           <div class="text-xs text-gray-500 mt-1">${horario || ''}</div>
           <div class="mt-3">
-            <a href="<?= htmlspecialchars(view_url('vistas/public/citas.php', $empresa_ref)) ?>&sede_id=${s.id}" class="inline-flex px-3 py-1 bg-teal-600 text-white rounded-lg text-sm">Reservar cita</a>
+            <a href="${appendParam(citaBase, 'sede_id', s.id)}" class="inline-flex px-3 py-1 bg-teal-600 text-white rounded-lg text-sm">Reservar cita</a>
           </div>
         </div>`);
       });

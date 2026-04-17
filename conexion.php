@@ -4,6 +4,7 @@ $DB_HOST = getenv('DB_HOST') ?: 'mysql-104e8dee-guille-3162.b.aivencloud.com';
 $DB_NAME = getenv('DB_NAME') ?: 'defaultdb';
 $DB_USER = getenv('DB_USER') ?: 'avnadmin';
 $DB_PASS = getenv('DB_PASS') ?: '';
+//AVNS_3Bpb30UgOgzFjYKs8yK
 $DB_PORT = (int) (getenv('DB_PORT') ?: 25474);
 $DB_SSL_CA = getenv('DB_SSL_CA') ?: (__DIR__ . '/ca.pem');
 

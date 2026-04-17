@@ -388,8 +388,6 @@ switch ($action) {
         $fecha = $_POST['fecha'] ?? '';
         $hora = $_POST['hora'] ?? '';
         $notas = trim($_POST['notas'] ?? '');
-        $register_cliente = ((int) ($_POST['register_cliente'] ?? 0) === 1);
-        $register_password = (string) ($_POST['password'] ?? '');
         $cliente_lookup_token = trim((string) ($_POST['cliente_lookup_token'] ?? ''));
         $client_today = trim((string) ($_POST['client_today'] ?? ''));
         $client_time = trim((string) ($_POST['client_time'] ?? ''));
@@ -399,9 +397,6 @@ switch ($action) {
         }
         if ($cliente_lookup_token === '' && (strpos($nombre, '*') !== false || strpos($telefono, '*') !== false)) {
             json_out(['success' => false, 'message' => 'Debes validar tus datos de cliente nuevamente.'], 400);
-        }
-        if ($register_cliente && strlen($register_password) < 6) {
-            json_out(['success' => false, 'message' => 'La contraseña para registro debe tener mínimo 6 caracteres.'], 400);
         }
 
         $inicio = "$fecha $hora:00";
@@ -531,40 +526,6 @@ switch ($action) {
                                       VALUES (?,?,NULL,NOW())
                                       ON DUPLICATE KEY UPDATE empresa_id=VALUES(empresa_id)");
                 $lnk->execute([(int) $cliente_id, $empresa_id]);
-            }
-
-            if ($register_cliente) {
-                if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                    json_out(['success' => false, 'message' => 'Para registrarte debes ingresar un correo válido.'], 400);
-                }
-                $stmtUser = $pdo->prepare("SELECT id, rol, empresa_id FROM usuarios WHERE LOWER(email)=LOWER(?) LIMIT 1");
-                $stmtUser->execute([$email]);
-                $usr = $stmtUser->fetch(PDO::FETCH_ASSOC) ?: null;
-                if ($usr) {
-                    if ((string) ($usr['rol'] ?? '') !== 'cliente') {
-                        json_out(['success' => false, 'message' => 'Este correo ya existe con otro tipo de usuario. Usa otro correo.'], 400);
-                    }
-                    if ((int) ($usr['empresa_id'] ?? 0) !== (int) $empresa_id) {
-                        json_out(['success' => false, 'message' => 'Este correo ya está registrado en otra empresa.'], 400);
-                    }
-                    $upUser = $pdo->prepare("UPDATE usuarios SET nombre=?, telefono=?, password_hash=?, activo=1 WHERE id=?");
-                    $upUser->execute([
-                        (string) $nombre,
-                        $telefono !== '' ? (string) $telefono : null,
-                        password_hash($register_password, PASSWORD_BCRYPT),
-                        (int) $usr['id'],
-                    ]);
-                } else {
-                    $insUser = $pdo->prepare("INSERT INTO usuarios (empresa_id, sucursal_id, rol, nombre, email, telefono, password_hash, activo, created_at, updated_at)
-                                              VALUES (?,NULL,'cliente',?,?,?,?,1,NOW(),NOW())");
-                    $insUser->execute([
-                        $empresa_id,
-                        (string) $nombre,
-                        (string) $email,
-                        $telefono !== '' ? (string) $telefono : null,
-                        password_hash($register_password, PASSWORD_BCRYPT),
-                    ]);
-                }
             }
 
             $codigo_publico = make_public_booking_code($empresa_id);

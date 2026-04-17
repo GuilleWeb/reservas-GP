@@ -60,6 +60,18 @@ if (!is_public_view() && !$user) {
     exit;
 }
 
+// Seguridad multi-tenant global para vistas privadas:
+// cualquier rol distinto de superadmin queda atado a su empresa de sesión.
+if (!is_public_view() && $user && (($user['rol'] ?? null) !== 'superadmin')) {
+    $resolved_empresa_id = (int) resolve_private_empresa_id($user);
+    $requested_empresa_id = request_id_e();
+    if ($resolved_empresa_id <= 0 || ($requested_empresa_id !== null && (int) $requested_empresa_id !== $resolved_empresa_id)) {
+        http_response_code(403);
+        include __DIR__ . '/errors/403.php';
+        exit;
+    }
+}
+
 // Ejecutar tareas tipo cron cuando el superadmin inicia sesión (1 vez por día).
 if ($user && ($user['rol'] ?? null) === 'superadmin' && !request_id_e()) {
     cron_jobs_auto_run_if_needed((int) ($user['id'] ?? 0));

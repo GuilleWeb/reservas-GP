@@ -79,8 +79,14 @@ include __DIR__ . '/../../includes/topbar.php';
           <div class="md:col-span-2">
             <label class="text-sm font-medium text-gray-700">URL de Sitemap</label>
             <input id="company_sitemap_url" class="border rounded-lg px-3 py-2 w-full bg-gray-100" readonly disabled
-              value="<?= htmlspecialchars(app_url_absolute('sitemap.php?empresa=' . ($empresa_slug ?? ''))) ?>">
-            <p class="text-xs text-gray-500 mt-1">Usa esta URL en Google Search Console para tu empresa.</p>
+              value="<?= htmlspecialchars(app_url_absolute((string) ($empresa_slug ?? '') . '/sitemap.xml')) ?>">
+            <p class="text-xs text-gray-500 mt-1">Usa esta URL en Google Search Console para tu empresa (prefijo URL).</p>
+            <div class="mt-3 p-3 rounded-lg border bg-slate-50 text-xs text-slate-600">
+              <div class="font-semibold text-slate-700 mb-1">Guía rápida GSC (prefijo URL)</div>
+              <div>1. Verifica el prefijo exacto de tu empresa: <code><?= htmlspecialchars(app_url_absolute((string) ($empresa_slug ?? '') . '/')) ?></code></div>
+              <div>2. Pega el meta tag de verificación en el campo superior "Meta tag Google Search Console".</div>
+              <div>3. Envía este sitemap: <code><?= htmlspecialchars(app_url_absolute((string) ($empresa_slug ?? '') . '/sitemap.xml')) ?></code></div>
+            </div>
           </div>
           <!-- Color primario con preview -->
           <div>

@@ -1,5 +1,6 @@
 <?php
 // Landing desacoplada (sin bootstrap/topbar/footer compartidos).
+require_once __DIR__ . '/conexion.php';
 $script_name = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? '/index.php'));
 $base_path = trim(dirname($script_name), '/');
 $base_path = ($base_path === '.' || $base_path === '') ? '' : '/' . $base_path;
@@ -27,36 +28,25 @@ $logo_rel = $join_url($base, 'assets/logo.avif');
 $logo_abs = rtrim($base, '/') . '/assets/logo.avif';
 
 $login_url   = $join_url($base, 'vistas/public/login.php');
-$demo_url    = $join_url($base, 'vistas/public/inicio.php') . '?empresa=prueba';
+$demo_url    = $join_url($base, 'prueba/inicio');
 $robots_url  = $join_url($base, 'robots.txt');
 $sitemap_url = $join_url($base, 'sitemap.php');
-$citas_url   = $join_url($base, 'vistas/public/citas.php') . '?empresa=prueba';
+$citas_url   = $join_url($base, 'prueba/citas');
 
 // ── Planes desde DB ──────────────────────────────────────────────────────────
 $plans = [];
 try {
-  $dsn = sprintf(
-    'mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4',
-    getenv('DB_HOST') ?: '127.0.0.1',
-    (int) (getenv('DB_PORT') ?: 3306),
-    getenv('DB_NAME') ?: 'citas_gp'
-  );
-  $pdo_lp = new PDO($dsn, getenv('DB_USER') ?: 'root', getenv('DB_PASS') ?: '', [
-    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-  ]);
-  $stmt  = $pdo_lp->query('SELECT id, nombre, descripcion, max_sucursales, max_empleados, max_servicios, max_clientes, precio, precio_anual, modulos_json FROM planes WHERE activo = 1 ORDER BY precio ASC LIMIT 6');
+  $pdo_lp = $pdo;
+  $stmt  = $pdo_lp->query('SELECT id, nombre, descripcion, max_sucursales, max_empleados, max_servicios, max_clientes, COALESCE(precio_mensual, precio, 0) AS precio, COALESCE(precio_anual, 0) AS precio_anual, modulos_json FROM planes WHERE activo = 1 ORDER BY COALESCE(precio_mensual, precio, 0) ASC LIMIT 6');
   $plans = $stmt->fetchAll() ?: [];
 } catch (Throwable $e) {
-  $plans = [];
-}
-
-if (!$plans) {
-  $plans = [
-    ['nombre' => 'Starter',  'descripcion' => 'Ideal para emprendedores.', 'max_sucursales' => 1,  'max_empleados' => 5,  'max_servicios' => 30,  'max_clientes' => 3000,  'precio' => 0,   'precio_anual' => 0,    'modulos_json' => '[]'],
-    ['nombre' => 'Pro',      'descripcion' => 'Para negocios en crecimiento.', 'max_sucursales' => 3, 'max_empleados' => 20, 'max_servicios' => 80,  'max_clientes' => 15000, 'precio' => 100, 'precio_anual' => 1020, 'modulos_json' => '[]'],
-    ['nombre' => 'Scale',    'descripcion' => 'Empresas de alto volumen.', 'max_sucursales' => 10,'max_empleados' => 60, 'max_servicios' => 200, 'max_clientes' => 50000, 'precio' => 190, 'precio_anual' => 1938, 'modulos_json' => '[]'],
-  ];
+  try {
+    // Fallback para esquemas antiguos sin precio_mensual.
+    $stmt  = $pdo->query('SELECT id, nombre, descripcion, max_sucursales, max_empleados, max_servicios, max_clientes, COALESCE(precio, 0) AS precio, COALESCE(precio_anual, 0) AS precio_anual, modulos_json FROM planes WHERE activo = 1 ORDER BY COALESCE(precio, 0) ASC LIMIT 6');
+    $plans = $stmt->fetchAll() ?: [];
+  } catch (Throwable $e2) {
+    $plans = [];
+  }
 }
 
 // Calcular precio anual si la columna no existe (fallback: -15 %)
@@ -406,6 +396,8 @@ $faq_schema = [
     .marquee-track { display:flex; gap:2.5rem; width:max-content; animation:marquee 28s linear infinite; }
     @keyframes marquee { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
     .marquee-item { display:inline-flex; align-items:center; gap:.65rem; font-size:.8rem; font-weight:700; color:var(--muted); white-space:nowrap; padding:.5rem 1.2rem; border-radius:9999px; border:1px solid var(--border); background:#fff; }
+    .marquee-logo-item { display:inline-flex; align-items:center; justify-content:center; padding:.5rem 1.5rem; border-radius:1rem; background:#fff; border:1px solid var(--border); filter:grayscale(100%); opacity:.7; transition:all .3s ease; }
+    .marquee-logo-item:hover { filter:grayscale(0%); opacity:1; transform:scale(1.05); box-shadow:0 4px 20px rgba(13,148,136,.12); }
   </style>
 </head>
 
@@ -462,22 +454,12 @@ $faq_schema = [
             <i data-lucide="play" class="w-4 h-4"></i> Demo en vivo
           </a>
         </div>
-
-        <!-- Social proof micro -->
-        <div class="reveal delay-4 mt-10 flex items-center gap-4 text-sm text-slate-400">
-          <div class="flex -space-x-2">
-            <?php foreach(['#5eead4','#0d9488','#06b6d4','#0e7490'] as $c): ?>
-            <div class="w-7 h-7 rounded-full border-2 border-white" style="background:<?= $c ?>"></div>
-            <?php endforeach; ?>
-          </div>
-          <span><strong class="text-slate-700">+200</strong> negocios ya usan Reservas GP</span>
-        </div>
       </div>
 
       <!-- Right: Interactive mini-calendar -->
       <div class="reveal-right delay-2 flex justify-center lg:justify-end">
         <div class="relative">
-          <div class="float-anim absolute -top-10 -right-8 w-56 h-56 bg-teal-300/20 blur-[80px] rounded-full pointer-events-none"></div>
+          <div class="float-anim absolute -top-10 -right-8 w-56 h-56 bg-teal-300 rounded-full pointer-events-none"></div>
 
           <div id="hero-calendar" class="relative z-10">
             <!-- Calendar header -->
@@ -521,35 +503,58 @@ $faq_schema = [
 
             <!-- CTA inside calendar -->
             <div class="px-5 pb-5 pt-3">
-              <a href="<?= htmlspecialchars($citas_url) ?>" class="plan-cta-primary text-sm">Agendar ahora →</a>
+              <a href="vistas/public/login.php" class="plan-cta-primary text-sm">Quiero Unirme ahora →</a>
             </div>
           </div>
 
-          <!-- Floating notification card -->
-          <div class="float-anim absolute -bottom-4 -left-8 bg-white rounded-2xl shadow-xl border border-slate-100 px-4 py-3 flex items-center gap-3 max-w-[200px]" style="animation-delay:2s">
-            <div class="w-9 h-9 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 flex-shrink-0">
-              <i data-lucide="check-circle" class="w-5 h-5"></i>
-            </div>
-            <div>
-              <div class="text-xs font-black text-slate-900">Cita confirmada</div>
-              <div class="text-[10px] text-slate-400">Hace 2 minutos</div>
-            </div>
-          </div>
+          
         </div>
       </div>
     </section>
 
-    <!-- ── MARQUEE LOGOS / FEATURES ───────────────────────────────────────── -->
+    <!-- ── MARQUEE LOGOS / EMPRESAS ───────────────────────────────────────── -->
+    <?php
+    // Obtener empresas con logos para el marquee
+    $empresas_logos = [];
+    try {
+      if (isset($pdo_lp)) {
+        $stmt = $pdo_lp->query("SELECT id, nombre, logo_path FROM empresas WHERE activo = 1 AND logo_path IS NOT NULL AND logo_path <> '' ORDER BY RAND() LIMIT 25");
+        $empresas_logos = $stmt->fetchAll() ?: [];
+      }
+    } catch (Throwable $e) {
+      $empresas_logos = [];
+    }
+    ?>
     <div class="marquee-wrap py-6 border-y border-slate-100 bg-slate-50/60">
       <div class="marquee-track">
-        <?php
-        $items = ['Multisucursal','Reservas 24/7','Confirmación por email','Panel de métricas','Gestión de reseñas','Blog integrado','Personalización de marca','Control por roles','Página web propia','Catálogo de servicios'];
-        $icons = ['building-2','clock','mail','bar-chart-2','star','file-text','palette','shield-check','globe','list'];
-        foreach(array_merge($items,$items) as $k=>$it):
-          $ic = $icons[$k % count($icons)];
-        ?>
-        <span class="marquee-item"><i data-lucide="<?= $ic ?>" class="w-3.5 h-3.5 text-teal-600"></i><?= $it ?></span>
-        <?php endforeach; ?>
+        <?php if (!empty($empresas_logos)): ?>
+          <?php
+          // Duplicar para efecto infinito
+          $logos_marquee = array_merge($empresas_logos, $empresas_logos);
+          foreach ($logos_marquee as $emp):
+            $logo_path = trim((string) ($emp['logo_path'] ?? ''));
+            if ($logo_path === '') {
+              continue;
+            }
+            $logo_url = preg_match('/^https?:\/\//i', $logo_path)
+              ? $logo_path
+              : $join_url($base, ltrim($logo_path, '/'));
+          ?>
+          <div class="marquee-logo-item grayscale hover:grayscale-0 transition-all duration-300" title="<?= htmlspecialchars($emp['nombre']) ?>">
+            <img src="<?= htmlspecialchars($logo_url) ?>" alt="<?= htmlspecialchars($emp['nombre']) ?>" class="h-10 w-auto object-contain">
+          </div>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <?php
+          // Fallback a features si no hay logos
+          $items = ['Multisucursal','Reservas 24/7','Confirmación por email','Panel de métricas','Gestión de reseñas','Blog integrado','Personalización de marca','Control por roles','Página web propia','Catálogo de servicios'];
+          $icons = ['building-2','clock','mail','bar-chart-2','star','file-text','palette','shield-check','globe','list'];
+          foreach(array_merge($items,$items) as $k=>$it):
+            $ic = $icons[$k % count($icons)];
+          ?>
+          <span class="marquee-item"><i data-lucide="<?= $ic ?>" class="w-3.5 h-3.5 text-teal-600"></i><?= $it ?></span>
+          <?php endforeach; ?>
+        <?php endif; ?>
       </div>
     </div>
 
@@ -558,9 +563,9 @@ $faq_schema = [
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-10">
         <?php
         $stats = [
-          ['n'=>200,'s'=>'+','l'=>'Negocios activos'],
-          ['n'=>15000,'s'=>'+','l'=>'Citas gestionadas'],
-          ['n'=>98,'s'=>'%','l'=>'Satisfacción de clientes'],
+          ['n'=>20,'s'=>'+','l'=>'Negocios activos'],
+          ['n'=>900,'s'=>'+','l'=>'Citas gestionadas'],
+          ['n'=>95,'s'=>'%','l'=>'Satisfacción de clientes'],
           ['n'=>24,'s'=>'/7','l'=>'Disponibilidad del sistema'],
         ];
         foreach($stats as $i=>$st):
@@ -758,6 +763,11 @@ $faq_schema = [
         </div>
 
         <div class="mt-10 grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <?php if (empty($plans)): ?>
+          <div class="md:col-span-3 bg-white border rounded-2xl p-6 text-center text-slate-500">
+            No pudimos cargar los planes en este momento. Intenta recargar en unos segundos.
+          </div>
+          <?php endif; ?>
           <?php foreach($plans as $idx=>$p):
             $pm = (float)$p['precio'];
             $pa = (float)($p['precio_anual'] ?? 0);
@@ -865,7 +875,6 @@ $faq_schema = [
         </div>
       </div>
     </section>
-
   </main>
 
   <!-- ── FOOTER ─────────────────────────────────────────────────────────── -->
@@ -904,8 +913,8 @@ $faq_schema = [
 
   <!-- ── FLOATING CTA ────────────────────────────────────────────────────── -->
   <div id="float-cta">
-    <a href="#planes" class="btn-primary shadow-2xl shadow-teal-500/30 text-sm py-3 px-5">
-      <i data-lucide="calendar-plus" class="w-4 h-4"></i> Ver planes
+    <a href="https://wa.me/50251036244" target="_blank" class="btn-primary shadow-2xl shadow-teal-500/30 text-sm py-3 px-5">
+      <i data-lucide="message-circle-check" class="w-4 h-4"></i> Contactanos
     </a>
   </div>
 

@@ -41,14 +41,10 @@ $stats = [];
 
 if ($role === 'superadmin' && !$id_e) {
   $stats['empresas_activas'] = (int) $pdo->query("SELECT COUNT(*) FROM empresas WHERE activo=1")->fetchColumn();
-  $stats['empresas_inactivas'] = (int) $pdo->query("SELECT COUNT(*) FROM empresas WHERE activo=0")->fetchColumn();
   $stats['planes_activos'] = (int) $pdo->query("SELECT COUNT(*) FROM planes WHERE activo=1")->fetchColumn();
-  $stats['sucursales_activas'] = (int) $pdo->query("SELECT COUNT(*) FROM sucursales WHERE activo=1")->fetchColumn();
-  $stats['usuarios_activos'] = (int) $pdo->query("SELECT COUNT(*) FROM usuarios WHERE activo=1")->fetchColumn();
-  $stats['admins_activos'] = (int) $pdo->query("SELECT COUNT(*) FROM usuarios WHERE activo=1 AND rol='admin'")->fetchColumn();
-  $stats['gerentes_activos'] = (int) $pdo->query("SELECT COUNT(*) FROM usuarios WHERE activo=1 AND rol='gerente'")->fetchColumn();
-  $stats['empleados_activos'] = (int) $pdo->query("SELECT COUNT(*) FROM usuarios WHERE activo=1 AND rol='empleado'")->fetchColumn();
-  $stats['clientes_activos'] = (int) $pdo->query("SELECT COUNT(*) FROM usuarios WHERE activo=1 AND rol='cliente'")->fetchColumn();
+  $stats['suscripciones_activas'] = (int) $pdo->query("SELECT COUNT(*) FROM suscripciones WHERE estado='activa'")->fetchColumn();
+  $stats['suscripciones_por_vencer'] = (int) $pdo->query("SELECT COUNT(*) FROM suscripciones WHERE estado='activa' AND fecha_fin IS NOT NULL AND fecha_fin BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)")->fetchColumn();
+  $stats['suscripciones_vencidas'] = (int) $pdo->query("SELECT COUNT(*) FROM suscripciones WHERE estado='vencida'")->fetchColumn();
 
   $stmt = $pdo->prepare("SELECT COUNT(*) FROM mensajes_contacto WHERE estado='nuevo'");
   $stmt->execute();
@@ -161,35 +157,16 @@ if ($role === 'superadmin' && !$id_e) {
           <div class="mt-1 text-2xl font-extrabold text-gray-900"><?= (int) ($stats['empresas_activas'] ?? 0) ?></div>
         </div>
         <div class="rounded-2xl border bg-white p-4">
-          <div class="text-xs text-gray-500">Sucursales activas</div>
-          <div class="mt-1 text-2xl font-extrabold text-gray-900"><?= (int) ($stats['sucursales_activas'] ?? 0) ?></div>
+          <div class="text-xs text-gray-500">Suscripciones activas</div>
+          <div class="mt-1 text-2xl font-extrabold text-gray-900"><?= (int) ($stats['suscripciones_activas'] ?? 0) ?></div>
         </div>
         <div class="rounded-2xl border bg-white p-4">
-          <div class="text-xs text-gray-500">Usuarios activos</div>
-          <div class="mt-1 text-2xl font-extrabold text-gray-900"><?= (int) ($stats['usuarios_activos'] ?? 0) ?></div>
+          <div class="text-xs text-gray-500">Próximas a vencer (7 días)</div>
+          <div class="mt-1 text-2xl font-extrabold text-gray-900"><?= (int) ($stats['suscripciones_por_vencer'] ?? 0) ?></div>
         </div>
         <div class="rounded-2xl border bg-white p-4">
-          <div class="text-xs text-gray-500">Mensajes nuevos</div>
-          <div class="mt-1 text-2xl font-extrabold text-gray-900"><?= (int) ($stats['mensajes_nuevos'] ?? 0) ?></div>
-        </div>
-      </div>
-
-      <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="rounded-2xl border bg-white p-4">
-          <div class="text-xs text-gray-500">Planes activos</div>
-          <div class="mt-1 text-xl font-bold text-gray-900"><?= (int) ($stats['planes_activos'] ?? 0) ?></div>
-        </div>
-        <div class="rounded-2xl border bg-white p-4">
-          <div class="text-xs text-gray-500">Empresas inactivas</div>
-          <div class="mt-1 text-xl font-bold text-gray-900"><?= (int) ($stats['empresas_inactivas'] ?? 0) ?></div>
-        </div>
-        <div class="rounded-2xl border bg-white p-4">
-          <div class="text-xs text-gray-500">Admins activos</div>
-          <div class="mt-1 text-xl font-bold text-gray-900"><?= (int) ($stats['admins_activos'] ?? 0) ?></div>
-        </div>
-        <div class="rounded-2xl border bg-white p-4">
-          <div class="text-xs text-gray-500">Empleados activos</div>
-          <div class="mt-1 text-xl font-bold text-gray-900"><?= (int) ($stats['empleados_activos'] ?? 0) ?></div>
+          <div class="text-xs text-gray-500">Vencidas</div>
+          <div class="mt-1 text-2xl font-extrabold text-gray-900"><?= (int) ($stats['suscripciones_vencidas'] ?? 0) ?></div>
         </div>
       </div>
 
@@ -313,7 +290,7 @@ if ($role === 'superadmin' && !$id_e) {
 
       <div class="mt-4 rounded-2xl border bg-white p-4">
         <div class="font-semibold text-gray-900">Métricas de Correo (30 días)</div>
-        <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+        <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 text-sm">
           <div class="rounded-xl border p-3">
             <div class="text-xs text-gray-500">Enviados</div>
             <div class="font-bold text-teal-700"><?= (int) (($stats['email']['sent'] ?? 0)) ?></div>
@@ -329,6 +306,14 @@ if ($role === 'superadmin' && !$id_e) {
           <div class="rounded-xl border p-3">
             <div class="text-xs text-gray-500">Invitaciones reseña</div>
             <div class="font-bold text-gray-900"><?= (int) (($stats['email']['review_sent'] ?? 0)) ?></div>
+          </div>
+          <div class="rounded-xl border p-3">
+            <div class="text-xs text-gray-500">Recuperación de contraseña</div>
+            <div class="font-bold text-gray-900"><?= (int) (($stats['email']['password_reset_sent'] ?? 0)) ?></div>
+          </div>
+          <div class="rounded-xl border p-3">
+            <div class="text-xs text-gray-500">Verificación de correo</div>
+            <div class="font-bold text-gray-900"><?= (int) (($stats['email']['email_verification_sent'] ?? 0)) ?></div>
           </div>
         </div>
       </div>

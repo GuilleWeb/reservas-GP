@@ -264,19 +264,6 @@ include __DIR__ . '/../../includes/topbar.php';
                         class="w-full p-4 bg-white border border-gray-100 rounded-2xl focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition-all"
                         rows="3" placeholder="¿Algo que debamos saber?"></textarea>
                 </div>
-                <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4 space-y-3">
-                    <label class="flex items-start gap-3 cursor-pointer">
-                        <input id="cli_registrarme" type="checkbox" class="mt-1 w-4 h-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
-                        <span>
-                            <span class="block text-sm font-black text-gray-800">Crear cuenta con estos datos</span>
-                            <span class="block text-xs text-gray-500">Opcional. Así podrás ver tu historial y gestionar tus citas después.</span>
-                        </span>
-                    </label>
-                    <div id="registerPassWrap" class="hidden">
-                        <label class="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Contraseña para tu cuenta</label>
-                        <input id="cli_password" type="password" class="w-full p-4 bg-white border border-gray-100 rounded-2xl focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition-all" placeholder="Mínimo 6 caracteres">
-                    </div>
-                </div>
             </form>
         </div>
 
@@ -390,6 +377,7 @@ include __DIR__ . '/../../includes/topbar.php';
         let autoFillLock = false;
         let clienteLookupToken = '';
         let clienteLookupData = null;
+        const localProfileKey = `rgp_cliente_profile_${slug}`;
         const selection = {
             sede: null,
             servicio: null,
@@ -602,16 +590,11 @@ include __DIR__ . '/../../includes/topbar.php';
                 selection.p_nombre = $('#cli_nombre').val();
                 selection.p_email = $('#cli_email').val();
                 selection.p_telefono = $('#cli_telefono').val();
-                const wantsRegister = $('#cli_registrarme').is(':checked');
-                const pass = String($('#cli_password').val() || '');
                 const hasMasked = String(selection.p_nombre).includes('*') || String(selection.p_telefono).includes('*');
                 if (hasMasked && !clienteLookupToken) {
                     ok = false;
                 } else {
                     ok = (selection.p_nombre && selection.p_email && selection.p_telefono);
-                }
-                if (ok && wantsRegister) {
-                    ok = pass.length >= 6;
                 }
             }
             if (currentStep === 6) ok = true;
@@ -629,24 +612,19 @@ include __DIR__ . '/../../includes/topbar.php';
             renderSelectedSummary();
         });
 
-        $('#cli_registrarme').on('change', function () {
-            const on = $(this).is(':checked');
-            $('#registerPassWrap').toggleClass('hidden', !on);
-            if (!on) {
-                $('#cli_password').val('');
-            } else {
-                $('#cli_password').trigger('focus');
-            }
-            validateStep();
-        });
-        $('#cli_password').on('input', validateStep);
-
         $('#btnSoyCliente').on('click', function () {
             $('#soyClientePanel').toggleClass('hidden');
             if (!$('#soyClientePanel').hasClass('hidden')) {
                 $('#clienteLookupEmail').val(String($('#cli_email').val() || ''));
                 $('#clienteLookupEmail').trigger('focus');
             }
+        });
+
+        $('#cli_email').on('blur', function () {
+            const email = String($(this).val() || '').trim();
+            if (!email || clienteLookupToken || autoFillLock) return;
+            $('#clienteLookupEmail').val(email);
+            $('#btnBuscarCliente').trigger('click');
         });
 
         $('#btnBuscarCliente').on('click', async function () {
@@ -692,6 +670,15 @@ include __DIR__ . '/../../includes/topbar.php';
             if (initialUser.nombre) $('#cli_nombre').val(initialUser.nombre);
             if (initialUser.email) $('#cli_email').val(initialUser.email);
             if (initialUser.telefono) $('#cli_telefono').val(initialUser.telefono);
+        }
+        try {
+            const cached = JSON.parse(localStorage.getItem(localProfileKey) || 'null');
+            if (cached && typeof cached === 'object') {
+                if (!$('#cli_nombre').val() && cached.nombre) $('#cli_nombre').val(String(cached.nombre));
+                if (!$('#cli_email').val() && cached.email) $('#cli_email').val(String(cached.email));
+                if (!$('#cli_telefono').val() && cached.telefono) $('#cli_telefono').val(String(cached.telefono));
+            }
+        } catch (e) {
         }
 
         // Load Sedes
@@ -1063,14 +1050,20 @@ include __DIR__ . '/../../includes/topbar.php';
                     email: selection.p_email,
                     telefono: selection.p_telefono,
                     notas: $('#cli_notas').val(),
-                    register_cliente: $('#cli_registrarme').is(':checked') ? 1 : 0,
-                    password: String($('#cli_password').val() || ''),
                     cliente_lookup_token: clienteLookupToken,
                     client_today: new Date().toLocaleDateString('en-CA'),
                     client_time: new Date().toTimeString().slice(0, 5)
                 });
 
                 if (res.success) {
+                    try {
+                        localStorage.setItem(localProfileKey, JSON.stringify({
+                            nombre: selection.p_nombre || '',
+                            email: selection.p_email || '',
+                            telefono: selection.p_telefono || '',
+                        }));
+                    } catch (e) {
+                    }
                     reservationCode = res.codigo || '';
                     if (reservationCode) {
                         updateUrlReserva(reservationCode);

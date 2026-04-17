@@ -66,6 +66,11 @@ include __DIR__ . '/../../includes/topbar.php';
     $(function () {
         const slug = '<?= $slug ?>';
         const API_BLOG = '<?= app_url('api/public/blog.php') ?>';
+        const BLOG_BASE_URL = '<?= view_url('vistas/public/blog.php', $slug) ?>';
+        function withQuery(url, key, value) {
+            const sep = String(url).includes('?') ? '&' : '?';
+            return `${url}${sep}${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
+        }
         let currentPage = 1;
 
         function getExcerpt(html, length = 150) {
@@ -101,7 +106,7 @@ include __DIR__ . '/../../includes/topbar.php';
                                     <h3 class="text-2xl font-black text-gray-900 mb-3 leading-tight">${p.titulo}</h3>
                                     <p class="text-gray-500 text-sm mb-6">${getExcerpt(p.contenido)}</p>
                                 </div>
-                                <a href="<?= view_url('vistas/public/blog.php', $slug) ?>?id=${p.id}" class="inline-flex items-center text-teal-600 font-black text-sm uppercase tracking-wider group">
+                                <a href="${withQuery(BLOG_BASE_URL, 'id', p.id)}" class="inline-flex items-center text-teal-600 font-black text-sm uppercase tracking-wider group">
                                     Seguir leyendo
                                     <i data-lucide="arrow-right" class="ml-2 transition group-hover:translate-x-1"></i>
                                 </a>
@@ -140,7 +145,7 @@ include __DIR__ . '/../../includes/topbar.php';
                         <div class="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-white to-transparent"></div>
                     </div>
                     <div class="px-8 md:px-16 pb-16 -mt-10 relative">
-                        <a href="<?= view_url('vistas/public/blog.php', $slug) ?>" class="inline-flex items-center text-xs font-black uppercase text-teal-600 tracking-widest mb-8 border-b-2 border-teal-600 pb-1">
+                        <a href="${BLOG_BASE_URL}" class="inline-flex items-center text-xs font-black uppercase text-teal-600 tracking-widest mb-8 border-b-2 border-teal-600 pb-1">
                             &larr; Volver al blog
                         </a>
                         <h1 class="text-5xl font-black text-gray-900 mb-6 leading-tight">${p.titulo}</h1>
@@ -175,7 +180,7 @@ include __DIR__ . '/../../includes/topbar.php';
                     return;
                 }
                 related.forEach(p => {
-                    box.append(`<a href="<?= view_url('vistas/public/blog.php', $slug) ?>&id=${p.id}" class="block p-3 rounded-lg border hover:bg-gray-50"><div class="font-semibold text-gray-800 line-clamp-2">${p.titulo}</div></a>`);
+                    box.append(`<a href="${withQuery(BLOG_BASE_URL, 'id', p.id)}" class="block p-3 rounded-lg border hover:bg-gray-50"><div class="font-semibold text-gray-800 line-clamp-2">${p.titulo}</div></a>`);
                 });
             });
         }

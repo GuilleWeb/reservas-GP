@@ -11,6 +11,7 @@ RewriteCond %{REQUEST_URI} !^/(robots\.txt|sitemap\.php|sitemap\.xml|index\.php)
 
 # Sitemap por empresa
 RewriteRule ^([^/]+)/sitemap\.xml$ sitemap.php?empresa=$1 [L,QSA]
+RewriteRule ^([^/]+)/sitemap\.php$ sitemap.php?empresa=$1 [L,QSA]
 RewriteRule ^sitemap\.xml$ sitemap.php [L,QSA]
 
 # Vistas públicas con slug

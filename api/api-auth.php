@@ -2,24 +2,36 @@
 // api/auth.php
 require_once __DIR__ . '/../helpers.php';
 header('Content-Type: application/json; charset=utf-8');
+ensure_users_email_verified_column();
 
 //session_start();
 
 $action = $_REQUEST['action'] ?? '';
 
 if ($action === 'request_password_reset' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = strtolower(trim((string) ($_POST['email'] ?? '')));
+    $email = normalize_email_identity((string) ($_POST['email'] ?? ''));
     if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         json_response(['success' => true, 'message' => 'Si el correo existe, enviaremos un enlace de recuperación.']);
     }
-    $stmt = $pdo->prepare("SELECT u.id, u.nombre, u.email, u.empresa_id, u.rol, e.slug AS empresa_slug, e.nombre AS empresa_nombre
-                           FROM usuarios u
-                           LEFT JOIN empresas e ON e.id = u.empresa_id
-                           WHERE LOWER(u.email) = LOWER(?) AND u.activo = 1
-                           LIMIT 1");
-    $stmt->execute([$email]);
-    $u = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
-    if (!$u) {
+    $guard = $email . '|' . (client_ip() ?: 'no-ip');
+    if (request_guard_is_limited('password_reset_request', $guard, 120, 1, true)) {
+        json_response(['success' => true, 'message' => 'Si el correo existe, enviaremos un enlace de recuperación.']);
+    }
+
+    $u = find_user_by_login_email($email);
+    if (!$u || (int) ($u['activo'] ?? 0) !== 1) {
+        json_response(['success' => true, 'message' => 'Si el correo existe, enviaremos un enlace de recuperación.']);
+    }
+    $u['empresa_slug'] = null;
+    $u['empresa_nombre'] = null;
+    if ((int) ($u['empresa_id'] ?? 0) > 0) {
+        $stEmp = $pdo->prepare("SELECT slug, nombre FROM empresas WHERE id = ? LIMIT 1");
+        $stEmp->execute([(int) $u['empresa_id']]);
+        $empRow = $stEmp->fetch(PDO::FETCH_ASSOC) ?: [];
+        $u['empresa_slug'] = $empRow['slug'] ?? null;
+        $u['empresa_nombre'] = $empRow['nombre'] ?? null;
+    }
+    if (empty($u['email_verified_at'])) {
         json_response(['success' => true, 'message' => 'Si el correo existe, enviaremos un enlace de recuperación.']);
     }
 
@@ -28,10 +40,61 @@ if ($action === 'request_password_reset' && $_SERVER['REQUEST_METHOD'] === 'POST
         json_response(['success' => false, 'message' => 'No se pudo generar el enlace de recuperación.'], 500);
     }
     $empresa_ref = trim((string) ($u['empresa_slug'] ?? '')) !== '' ? (string) $u['empresa_slug'] : (string) ((int) ($u['empresa_id'] ?? 0));
-    $reset_url = app_url_absolute(view_url('vistas/public/login.php', $empresa_ref))
-        . '&recover=1&token=' . rawurlencode($token);
+    $reset_url = url_add_query(
+        app_url_absolute(view_url('vistas/public/login.php', $empresa_ref)),
+        ['recover' => '1', 'token' => $token]
+    );
     send_password_reset_email($u, $reset_url);
     json_response(['success' => true, 'message' => 'Si el correo existe, enviaremos un enlace de recuperación.']);
+}
+
+if ($action === 'verify_email') {
+    $token = trim((string) ($_REQUEST['token'] ?? ''));
+    if ($token === '') {
+        json_response(['success' => false, 'message' => 'Token de verificación inválido.'], 400);
+    }
+    $row = consume_email_verification_token($token);
+    if (!$row) {
+        json_response(['success' => false, 'message' => 'El enlace de verificación no es válido o ya expiró.'], 400);
+    }
+    json_response(['success' => true, 'message' => 'Correo verificado correctamente. Ya puedes iniciar sesión.']);
+}
+
+if ($action === 'resend_verification' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $email = normalize_email_identity((string) ($_POST['email'] ?? ''));
+    if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        json_response(['success' => true, 'message' => 'Si la cuenta existe, enviaremos el correo de verificación.']);
+    }
+    $guard = $email . '|' . (client_ip() ?: 'no-ip');
+    if (request_guard_is_limited('resend_verification', $guard, 120, 1, true)) {
+        json_response(['success' => true, 'message' => 'Si la cuenta existe, enviaremos el correo de verificación.']);
+    }
+    $u = find_user_by_login_email($email);
+    if (!$u || empty($u['id']) || !empty($u['email_verified_at'])) {
+        json_response(['success' => true, 'message' => 'Si la cuenta existe, enviaremos el correo de verificación.']);
+    }
+    $empresa_nombre = 'Reservas GP';
+    $empresa_slug = '';
+    if ((int) ($u['empresa_id'] ?? 0) > 0) {
+        $stEmp = $pdo->prepare("SELECT nombre, slug FROM empresas WHERE id = ? LIMIT 1");
+        $stEmp->execute([(int) $u['empresa_id']]);
+        $emp = $stEmp->fetch(PDO::FETCH_ASSOC) ?: [];
+        $empresa_nombre = (string) ($emp['nombre'] ?? $empresa_nombre);
+        $empresa_slug = (string) ($emp['slug'] ?? '');
+    }
+    $token = create_email_verification_token((int) $u['id'], 1440);
+    if ($token) {
+        $empresa_ref = $empresa_slug !== '' ? $empresa_slug : (string) ((int) ($u['empresa_id'] ?? 0));
+        $verify_url = url_add_query(app_url_absolute(view_url('vistas/public/login.php', $empresa_ref)), ['verify' => '1', 'token' => $token]);
+        send_email_verification_email([
+            'id' => (int) $u['id'],
+            'nombre' => (string) ($u['nombre'] ?? ''),
+            'email' => (string) ($u['email'] ?? ''),
+            'empresa_id' => (int) ($u['empresa_id'] ?? 0),
+            'empresa_nombre' => $empresa_nombre,
+        ], $verify_url);
+    }
+    json_response(['success' => true, 'message' => 'Si la cuenta existe, enviaremos el correo de verificación.']);
 }
 
 if ($action === 'reset_password' && $_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -67,17 +130,15 @@ if ($action === 'reset_password' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 if ($action === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = trim($_POST['email'] ?? '');
+    $email = normalize_email_identity((string) ($_POST['email'] ?? ''));
     $password = $_POST['password'] ?? '';
 
     if (!$email || !$password) {
         json_response(['error' => 'missing_fields'], 400);
     }
 
-    // Buscar usuario por email
-    $stmt = $pdo->prepare("SELECT * FROM usuarios WHERE email = ? LIMIT 1");
-    $stmt->execute([$email]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    // Buscar usuario por email (normaliza alias de Gmail).
+    $user = find_user_by_login_email($email);
 
     // Verificar usuario y contraseña
     if (!$user || !password_verify($password, $user['password_hash'])) {
@@ -86,6 +147,9 @@ if ($action === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Verificar si usuario está activo
     if (!$user['activo']) {
+        if (($user['rol'] ?? '') !== 'superadmin' && empty($user['email_verified_at'])) {
+            json_response(['error' => 'email_not_verified', 'message' => 'Debes verificar tu correo antes de ingresar.'], 403);
+        }
         json_response(['error' => 'inactive'], 403);
     }
 
@@ -165,9 +229,12 @@ if ($action === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             $redirect_url = $base_path . '/vistas/admin/dashboard.php' . $tenant_query;
         } elseif ($user['rol'] === 'gerente') {
             $redirect_url = $base_path . '/vistas/sucursal/dashboard.php' . $tenant_query;
-        } elseif ($user['rol'] === 'empleado' || $user['rol'] === 'cliente') {
-            $target = ($user['rol'] === 'empleado') ? 'empleado' : 'cliente';
-            $redirect_url = $base_path . '/vistas/' . $target . '/dashboard.php' . $tenant_query;
+        } elseif ($user['rol'] === 'empleado') {
+            $redirect_url = $base_path . '/vistas/empleado/dashboard.php' . $tenant_query;
+        } elseif ($user['rol'] === 'cliente') {
+            // Panel de cliente desactivado: el cliente agenda/consulta desde flujo público.
+            $empresa_slug = (string) ($id_e ?: (string) $empresa_id);
+            $redirect_url = view_url('vistas/public/citas.php', $empresa_slug);
         } else {
             $redirect_url = $base_path . '/vistas/admin/dashboard.php' . $tenant_query;
         }

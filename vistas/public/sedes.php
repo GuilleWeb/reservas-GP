@@ -35,6 +35,8 @@ include __DIR__ . '/../../includes/topbar.php';
 
 <script>
     $(function () {
+        const citaBase = '<?= view_url('vistas/public/citas.php', $slug) ?>';
+        const withQuery = (url, key, value) => `${url}${String(url).includes('?') ? '&' : '?'}${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
         $.get('<?= app_url('api/sucursal/sucursales.php') ?>', {
             action: 'list',
             id_e: '<?= $slug ?>'
@@ -68,7 +70,7 @@ include __DIR__ . '/../../includes/topbar.php';
                             </div>
 
                             <div class="p-6 border-t bg-gray-50 flex gap-3">
-                                <a href="<?= view_url('vistas/public/citas.php', $slug) ?>&sede_id=${s.id}" 
+                                <a href="${withQuery(citaBase, 'sede_id', s.id)}" 
                                    class="flex-1 bg-teal-600 text-white font-bold py-3 rounded-xl text-center text-sm shadow-md hover:bg-teal-700 transition">
                                     Agendar Aquí
                                 </a>

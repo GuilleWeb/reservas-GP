@@ -884,6 +884,251 @@ function get_global_setting($clave, $default = null)
     }
 }
 
+function normalize_email_identity(string $email): string
+{
+    $email = strtolower(trim($email));
+    if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        return '';
+    }
+    [$local, $domain] = explode('@', $email, 2);
+    $domain = trim($domain);
+    if ($domain === 'googlemail.com') {
+        $domain = 'gmail.com';
+    }
+    if ($domain === 'gmail.com') {
+        $local = preg_replace('/\+.*$/', '', $local);
+        $local = str_replace('.', '', (string) $local);
+    }
+    return trim($local) . '@' . $domain;
+}
+
+function trusted_email_domains_default(): array
+{
+    return [
+        'gmail.com',
+        'googlemail.com',
+        'yahoo.com',
+        'yahoo.es',
+        'outlook.com',
+        'hotmail.com',
+        'live.com',
+        'icloud.com',
+        'me.com',
+        'msn.com',
+        'aol.com',
+        'proton.me',
+        'protonmail.com',
+        'gmx.com',
+        'mail.com',
+        'zoho.com',
+        'fastmail.com',
+    ];
+}
+
+function is_trusted_email_domain(string $email): bool
+{
+    $normalized = normalize_email_identity($email);
+    if ($normalized === '' || strpos($normalized, '@') === false) {
+        return false;
+    }
+    [, $domain] = explode('@', $normalized, 2);
+    $trusted = get_global_setting('trusted_email_domains', []);
+    if (!is_array($trusted) || empty($trusted)) {
+        $trusted = trusted_email_domains_default();
+    }
+    $trusted = array_values(array_unique(array_map(static fn($d) => strtolower(trim((string) $d)), $trusted)));
+    return in_array(strtolower($domain), $trusted, true);
+}
+
+function ensure_request_guard_table()
+{
+    global $pdo;
+    static $ensured = false;
+    if ($ensured) {
+        return;
+    }
+    $sql = "CREATE TABLE IF NOT EXISTS request_guard (
+      id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+      scope VARCHAR(80) NOT NULL,
+      identity_hash CHAR(64) NOT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (id),
+      KEY idx_request_guard_scope_identity_date (scope, identity_hash, created_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+    $pdo->exec($sql);
+    $ensured = true;
+}
+
+function request_guard_is_limited(string $scope, string $identity, int $seconds = 300, int $max = 1, bool $touch = true): bool
+{
+    global $pdo;
+    $scope = trim($scope);
+    $identity = trim($identity);
+    $seconds = max(1, min(86400, $seconds));
+    $max = max(1, min(1000, $max));
+    if ($scope === '' || $identity === '') {
+        return false;
+    }
+    ensure_request_guard_table();
+    $hash = hash('sha256', $identity);
+    $from = date('Y-m-d H:i:s', time() - $seconds);
+    try {
+        $q = $pdo->prepare("SELECT COUNT(*) FROM request_guard WHERE scope = ? AND identity_hash = ? AND created_at >= ?");
+        $q->execute([$scope, $hash, $from]);
+        $count = (int) ($q->fetchColumn() ?: 0);
+        $limited = ($count >= $max);
+        if ($touch) {
+            $ins = $pdo->prepare("INSERT INTO request_guard (scope, identity_hash) VALUES (?,?)");
+            $ins->execute([$scope, $hash]);
+        }
+        return $limited;
+    } catch (Throwable $e) {
+        return false;
+    }
+}
+
+function ensure_users_email_verified_column()
+{
+    global $pdo;
+    static $done = false;
+    if ($done) {
+        return;
+    }
+    try {
+        $pdo->exec("ALTER TABLE usuarios ADD COLUMN email_verified_at DATETIME NULL");
+    } catch (Throwable $e) {
+    }
+    // Compatibilidad: cuentas históricas activas quedan verificadas automáticamente.
+    try {
+        $pdo->exec("UPDATE usuarios SET email_verified_at = NOW() WHERE activo = 1 AND email_verified_at IS NULL");
+    } catch (Throwable $e) {
+    }
+    $done = true;
+}
+
+function ensure_email_verification_tokens_table()
+{
+    global $pdo;
+    static $ensured = false;
+    if ($ensured) {
+        return;
+    }
+    ensure_users_email_verified_column();
+    $sql = "CREATE TABLE IF NOT EXISTS email_verification_tokens (
+      id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+      usuario_id BIGINT UNSIGNED NOT NULL,
+      token_hash CHAR(64) NOT NULL,
+      expires_at DATETIME NOT NULL,
+      used_at DATETIME NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (id),
+      UNIQUE KEY uq_email_verify_token (token_hash),
+      KEY idx_email_verify_user (usuario_id, created_at),
+      CONSTRAINT fk_email_verify_user FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+        ON UPDATE CASCADE ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+    $pdo->exec($sql);
+    $ensured = true;
+}
+
+function create_email_verification_token(int $usuario_id, int $minutes = 1440): ?string
+{
+    global $pdo;
+    if ($usuario_id <= 0) {
+        return null;
+    }
+    ensure_email_verification_tokens_table();
+    $token = strtoupper(bin2hex(random_bytes(24)));
+    $hash = hash('sha256', $token);
+    $expiresAt = date('Y-m-d H:i:s', strtotime('+' . max(10, min(10080, $minutes)) . ' minutes'));
+    try {
+        $pdo->prepare("UPDATE email_verification_tokens SET used_at = NOW() WHERE usuario_id = ? AND used_at IS NULL")->execute([$usuario_id]);
+        $stmt = $pdo->prepare("INSERT INTO email_verification_tokens (usuario_id, token_hash, expires_at) VALUES (?,?,?)");
+        $stmt->execute([$usuario_id, $hash, $expiresAt]);
+        return $token;
+    } catch (Throwable $e) {
+        return null;
+    }
+}
+
+function find_email_verification_token(string $token): ?array
+{
+    global $pdo;
+    ensure_email_verification_tokens_table();
+    $hash = hash('sha256', trim($token));
+    try {
+        $stmt = $pdo->prepare("SELECT evt.*, u.id AS usuario_id_real, u.email, u.nombre, u.empresa_id, u.rol, u.email_verified_at,
+                                      e.slug AS empresa_slug, e.nombre AS empresa_nombre
+                               FROM email_verification_tokens evt
+                               INNER JOIN usuarios u ON u.id = evt.usuario_id
+                               LEFT JOIN empresas e ON e.id = u.empresa_id
+                               WHERE evt.token_hash = ?
+                               LIMIT 1");
+        $stmt->execute([$hash]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    } catch (Throwable $e) {
+        return null;
+    }
+}
+
+function consume_email_verification_token(string $token): ?array
+{
+    global $pdo;
+    $row = find_email_verification_token($token);
+    if (!$row) {
+        return null;
+    }
+    if (!empty($row['used_at'])) {
+        return null;
+    }
+    if (strtotime((string) ($row['expires_at'] ?? '')) < time()) {
+        return null;
+    }
+    try {
+        $pdo->beginTransaction();
+        $pdo->prepare("UPDATE usuarios SET email_verified_at = COALESCE(email_verified_at, NOW()), activo = 1 WHERE id = ?")
+            ->execute([(int) $row['usuario_id']]);
+        $pdo->prepare("UPDATE email_verification_tokens SET used_at = NOW() WHERE id = ?")
+            ->execute([(int) $row['id']]);
+        $pdo->commit();
+        $row['email_verified_at'] = date('Y-m-d H:i:s');
+        return $row;
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        return null;
+    }
+}
+
+function find_user_by_login_email(string $email): ?array
+{
+    global $pdo;
+    $normalized = normalize_email_identity($email);
+    if ($normalized === '') {
+        return null;
+    }
+    [, $domain] = explode('@', $normalized, 2);
+    try {
+        if ($domain === 'gmail.com') {
+            $stmt = $pdo->prepare("SELECT * FROM usuarios WHERE LOWER(email) LIKE '%@gmail.com' OR LOWER(email) LIKE '%@googlemail.com' LIMIT 200");
+            $stmt->execute();
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            foreach ($rows as $r) {
+                if (normalize_email_identity((string) ($r['email'] ?? '')) === $normalized) {
+                    return $r;
+                }
+            }
+            return null;
+        }
+        $stmt = $pdo->prepare("SELECT * FROM usuarios WHERE LOWER(email) = LOWER(?) LIMIT 1");
+        $stmt->execute([$normalized]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    } catch (Throwable $e) {
+        return null;
+    }
+}
+
 function get_empresa_config_value($empresa_info, $key, $default = null)
 {
     $cfg = [];
@@ -1368,7 +1613,9 @@ function email_delivery_stats($days = 30)
             SUM(CASE WHEN estado='sent' THEN 1 ELSE 0 END) AS sent,
             SUM(CASE WHEN estado='failed' THEN 1 ELSE 0 END) AS failed,
             SUM(CASE WHEN tipo='booking_confirmation' THEN 1 ELSE 0 END) AS booking_sent,
-            SUM(CASE WHEN tipo='review_invitation' THEN 1 ELSE 0 END) AS review_sent
+            SUM(CASE WHEN tipo='review_invitation' THEN 1 ELSE 0 END) AS review_sent,
+            SUM(CASE WHEN tipo='password_reset' THEN 1 ELSE 0 END) AS password_reset_sent,
+            SUM(CASE WHEN tipo='email_verification' THEN 1 ELSE 0 END) AS email_verification_sent
           FROM email_envios
           WHERE created_at >= ?");
         $stmt->execute([$from]);
@@ -1380,9 +1627,11 @@ function email_delivery_stats($days = 30)
             'failed' => (int) ($row['failed'] ?? 0),
             'booking_sent' => (int) ($row['booking_sent'] ?? 0),
             'review_sent' => (int) ($row['review_sent'] ?? 0),
+            'password_reset_sent' => (int) ($row['password_reset_sent'] ?? 0),
+            'email_verification_sent' => (int) ($row['email_verification_sent'] ?? 0),
         ];
     } catch (Throwable $e) {
-        return ['days' => $days, 'total' => 0, 'sent' => 0, 'failed' => 0, 'booking_sent' => 0, 'review_sent' => 0];
+        return ['days' => $days, 'total' => 0, 'sent' => 0, 'failed' => 0, 'booking_sent' => 0, 'review_sent' => 0, 'password_reset_sent' => 0, 'email_verification_sent' => 0];
     }
 }
 
@@ -1724,6 +1973,27 @@ function send_password_reset_email(array $usuario, string $reset_url): bool
         . '<p style="margin:0 0 8px;font-size:13px;color:#475569">Si no solicitaste este cambio, puedes ignorar este correo.</p>';
     $html = render_email_layout($empresa_info, $subject, $headline, $lead, $content);
     return send_email_message($empresa_info, 'password_reset', $to, $subject, $html);
+}
+
+function send_email_verification_email(array $usuario, string $verify_url): bool
+{
+    $to = trim((string) ($usuario['email'] ?? ''));
+    if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
+        return false;
+    }
+    $empresa_info = [
+        'id' => (int) ($usuario['empresa_id'] ?? 0),
+        'nombre' => (string) (($usuario['empresa_nombre'] ?? '') ?: 'Reservas GP'),
+    ];
+    $subject = 'Verifica tu correo electrónico';
+    $headline = 'Confirma tu correo para activar tu acceso';
+    $lead = 'Tu cuenta fue creada correctamente. Antes de iniciar sesión, confirma que este correo te pertenece.';
+    $content = '<p style="margin:0 0 14px">Hola <strong>' . htmlspecialchars((string) ($usuario['nombre'] ?? '')) . '</strong>,</p>'
+        . '<p style="margin:0 0 16px">Haz clic en el siguiente botón para verificar tu correo:</p>'
+        . '<p style="margin:0 0 16px"><a href="' . htmlspecialchars($verify_url) . '" style="display:inline-block;padding:11px 18px;border-radius:999px;background:#0d9488;color:#fff;text-decoration:none;font-weight:700">Verificar correo</a></p>'
+        . '<p style="margin:0 0 8px;font-size:13px;color:#475569">Este enlace es de un solo uso y vence en 24 horas.</p>';
+    $html = render_email_layout($empresa_info, $subject, $headline, $lead, $content);
+    return send_email_message($empresa_info, 'email_verification', $to, $subject, $html);
 }
 
 function build_google_calendar_url($title, $startSql, $endSql, $details, $location)
