@@ -180,13 +180,18 @@ $faq_schema = [
       transform: translateY(36px);
       transition: opacity .75s cubic-bezier(.16,1,.3,1), transform .75s cubic-bezier(.16,1,.3,1);
     }
-    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal.visible, .no-js .reveal { opacity: 1; transform: translateY(0); }
     .reveal-left  { opacity: 0; transform: translateX(-40px); transition: opacity .75s cubic-bezier(.16,1,.3,1), transform .75s cubic-bezier(.16,1,.3,1); }
     .reveal-right { opacity: 0; transform: translateX(40px);  transition: opacity .75s cubic-bezier(.16,1,.3,1), transform .75s cubic-bezier(.16,1,.3,1); }
-    .reveal-left.visible, .reveal-right.visible { opacity: 1; transform: translateX(0); }
+    .reveal-left.visible, .reveal-right.visible, .no-js .reveal-left, .no-js .reveal-right { opacity: 1; transform: translateX(0); }
     .delay-1 { transition-delay: .08s; }
     .delay-2 { transition-delay: .16s; }
     .delay-3 { transition-delay: .24s; }
+    /* Fallback: si JS tarda o falla, mostrar después de 2s */
+    @media (prefers-reduced-motion: no-preference) {
+      .reveal, .reveal-left, .reveal-right { animation: forceReveal 0s 2s forwards; }
+      @keyframes forceReveal { to { opacity: 1; transform: none; } }
+    }
     .delay-4 { transition-delay: .32s; }
     .delay-5 { transition-delay: .40s; }
 

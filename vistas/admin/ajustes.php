@@ -132,7 +132,7 @@ include __DIR__ . '/../../includes/topbar.php';
                   <button type="button" id="btnDesactivarTelegram" class="flex-1 py-2 px-4 bg-red-100 hover:bg-red-200 text-red-700 font-medium rounded-lg transition-colors">
                     Desactivar
                   </button>
-                  <a href="https://t.me/ReservasGPBot" target="_blank" class="flex-1 py-2 px-4 bg-blue-100 hover:bg-blue-200 text-blue-700 font-medium rounded-lg transition-colors text-center">
+                  <a href="https://t.me/ReservasGP_bot" target="_blank" class="flex-1 py-2 px-4 bg-blue-100 hover:bg-blue-200 text-blue-700 font-medium rounded-lg transition-colors text-center">
                     Abrir Bot
                   </a>
                 </div>
@@ -143,7 +143,7 @@ include __DIR__ . '/../../includes/topbar.php';
                 <p class="font-medium text-gray-700">Cómo vincular:</p>
                 <ol class="list-decimal list-inside space-y-1 ml-1">
                   <li>Genera tu API Key con el botón superior</li>
-                  <li>Abre nuestro bot: <a href="https://t.me/ReservasGPBot" target="_blank" class="text-blue-600 hover:underline">@ReservasGPBot</a></li>
+                  <li>Abre nuestro bot: <a href="https://t.me/ReservasGP_bot" target="_blank" class="text-blue-600 hover:underline">@ReservasGP_bot</a></li>
                   <li>Escribe <code>/start</code> y selecciona tu rol</li>
                   <li>Pega tu API Key cuando te la pidan</li>
                 </ol>

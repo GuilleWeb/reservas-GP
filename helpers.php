@@ -371,6 +371,7 @@ function public_pretty_url($path, $slug): ?string
         'blog' => 'blog',
         'login' => 'login',
         'resena' => 'resena',
+        'contacto' => 'contacto',
     ];
     if (!isset($map[$name])) {
         return null;
