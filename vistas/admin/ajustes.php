@@ -70,6 +70,21 @@ include __DIR__ . '/../../includes/topbar.php';
               <option value="MXN">Peso MXN ($)</option>
             </select>
           </div>
+          <!-- Switch Encuestas al completar cita -->
+          <div>
+            <label class="text-sm font-medium text-gray-700 flex items-center gap-2">
+              <i data-lucide="mail-check" class="w-4 h-4 text-teal-600"></i>
+              Encuestas por email
+            </label>
+            <div class="mt-2 flex items-center">
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="company_encuestas_activas" name="encuestas_activas" value="1" class="sr-only peer">
+                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                <span class="ml-3 text-sm font-medium text-gray-700" id="encuestas_label">Activadas</span>
+              </label>
+            </div>
+            <p class="text-xs text-gray-500 mt-1">Envía correo de encuesta al marcar cita como completada</p>
+          </div>
           <div class="md:col-span-2">
             <label class="text-sm font-medium text-gray-700">Meta tag Google Search Console</label>
             <input id="company_gsc_meta_tag" name="gsc_meta_tag" class="border rounded-lg px-3 py-2 w-full"
@@ -340,6 +355,8 @@ include __DIR__ . '/../../includes/topbar.php';
         setVal('company_direccion_general', d.direccion_general);
         setVal('company_horario_general', d.horario_general);
         setVal('company_moneda', d.moneda);
+        $('#company_encuestas_activas').prop('checked', d.encuestas_activas === '1' || d.encuestas_activas === true || d.encuestas_activas === undefined);
+        $('#encuestas_label').text($('#company_encuestas_activas').is(':checked') ? 'Activadas' : 'Desactivadas');
         setVal('company_gsc_meta_tag', d.gsc_meta_tag);
         setVal('company_primary_color', d.primary_color);
         $('#company_primary_color_picker').val(d.primary_color || '#0d9488');

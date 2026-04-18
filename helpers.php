@@ -2179,6 +2179,10 @@ function maybe_send_review_invitation_for_cita($empresa_id, $cita_id): bool
     if ($empresa_id <= 0 || $cita_id <= 0) {
         return false;
     }
+    // Verificar si las encuestas están activas para esta empresa
+    if (!empresa_get_encuestas_activas($empresa_id)) {
+        return false;
+    }
     ensure_resena_invitaciones_table();
     try {
         $stmt = $pdo->prepare("SELECT c.id, c.empresa_id, c.sucursal_id, c.servicio_id, c.cliente_nombre, c.cliente_email, c.inicio,
@@ -2549,4 +2553,306 @@ function telegram_notify_alerta_sistema(string $tipo, array $detalles = []): boo
     $message .= "🖥️ <b>Servidor:</b> " . htmlspecialchars($_SERVER['SERVER_NAME'] ?? 'localhost') . "\n";
 
     return telegram_notify($message, 'superadmin');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NOTIFICACIONES TELEGRAM PARA EMPRESAS (PLANES DE PAGO)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Verifica si la empresa tiene plan de pago (para habilitar Telegram)
+ */
+function empresa_tiene_plan_pago(int $empresa_id): bool
+{
+    global $pdo;
+    try {
+        $stmt = $pdo->prepare("SELECT p.nombre FROM empresas e LEFT JOIN planes p ON e.plan_id = p.id WHERE e.id = ? LIMIT 1");
+        $stmt->execute([$empresa_id]);
+        $plan = $stmt->fetchColumn();
+        // Considerar "basico" o "básico" como plan gratuito, todo lo demás es de pago
+        $plan = strtolower((string) $plan);
+        return !in_array($plan, ['basico', 'básico', 'gratuito', 'free', ''], true);
+    } catch (Throwable $e) {
+        return false;
+    }
+}
+
+/**
+ * Genera una API key única para notificaciones Telegram
+ */
+function generar_api_key_telegram(): string
+{
+    return bin2hex(random_bytes(32)); // 64 caracteres hexadecimales
+}
+
+/**
+ * Activa notificaciones Telegram para un usuario
+ */
+function telegram_activar_usuario(int $usuario_id, string $chat_id, ?string $telegram_username = null): ?array
+{
+    global $pdo;
+
+    // Verificar plan de pago
+    $stmt = $pdo->prepare("SELECT empresa_id FROM usuarios WHERE id = ? LIMIT 1");
+    $stmt->execute([$usuario_id]);
+    $empresa_id = (int) $stmt->fetchColumn();
+
+    if (!$empresa_id || !empresa_tiene_plan_pago($empresa_id)) {
+        return null; // Solo planes de pago
+    }
+
+    $api_key = generar_api_key_telegram();
+
+    // Alertas por defecto según rol
+    $alertas_default = [
+        'cita_nueva' => true,
+        'cita_cancelada' => true,
+        'cita_completada' => true,
+        'cita_auto_completada' => true,
+        'mensaje_interno' => true,
+    ];
+
+    try {
+        $stmt = $pdo->prepare("INSERT INTO notificaciones_telegram
+            (usuario_id, api_key, chat_id, telegram_username, alertas_config)
+            VALUES (?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+                chat_id = VALUES(chat_id),
+                telegram_username = VALUES(telegram_username),
+                activo = 1,
+                alertas_config = COALESCE(alertas_config, VALUES(alertas_config)),
+                updated_at = NOW()");
+        $stmt->execute([$usuario_id, $api_key, $chat_id, $telegram_username, json_encode($alertas_default)]);
+
+        return [
+            'api_key' => $api_key,
+            'chat_id' => $chat_id,
+        ];
+    } catch (Throwable $e) {
+        error_log('Error activando Telegram: ' . $e->getMessage());
+        return null;
+    }
+}
+
+/**
+ * Obtiene configuración de Telegram de un usuario
+ */
+function telegram_get_config_usuario(int $usuario_id): ?array
+{
+    global $pdo;
+    try {
+        $stmt = $pdo->prepare("SELECT * FROM notificaciones_telegram WHERE usuario_id = ? AND activo = 1 LIMIT 1");
+        $stmt->execute([$usuario_id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row) {
+            $row['alertas_config'] = json_decode($row['alertas_config'] ?? '{}', true);
+            return $row;
+        }
+        return null;
+    } catch (Throwable $e) {
+        return null;
+    }
+}
+
+/**
+ * Verifica si un tipo de alerta está activo para el usuario
+ */
+function telegram_alerta_activa(int $usuario_id, string $tipo_alerta): bool
+{
+    $config = telegram_get_config_usuario($usuario_id);
+    if (!$config) return false;
+    return (bool) ($config['alertas_config'][$tipo_alerta] ?? false);
+}
+
+/**
+ * Actualiza las alertas activas para un usuario
+ */
+function telegram_set_alertas(int $usuario_id, array $alertas): bool
+{
+    global $pdo;
+    try {
+        $stmt = $pdo->prepare("UPDATE notificaciones_telegram SET alertas_config = ? WHERE usuario_id = ? AND activo = 1");
+        $stmt->execute([json_encode($alertas), $usuario_id]);
+        return $stmt->rowCount() > 0;
+    } catch (Throwable $e) {
+        return false;
+    }
+}
+
+/**
+ * Desactiva notificaciones Telegram para un usuario
+ */
+function telegram_desactivar_usuario(int $usuario_id): bool
+{
+    global $pdo;
+    try {
+        $stmt = $pdo->prepare("UPDATE notificaciones_telegram SET activo = 0 WHERE usuario_id = ?");
+        $stmt->execute([$usuario_id]);
+        return $stmt->rowCount() > 0;
+    } catch (Throwable $e) {
+        return false;
+    }
+}
+
+/**
+ * Envía notificación a un usuario específico (si tiene Telegram activo)
+ */
+function telegram_notify_usuario(int $usuario_id, string $message, string $tipo_alerta): bool
+{
+    $config = telegram_get_config_usuario($usuario_id);
+    if (!$config) return false;
+
+    // Verificar si esta alerta está activa para el usuario
+    if (!($config['alertas_config'][$tipo_alerta] ?? false)) {
+        return false; // Usuario no quiere este tipo de alerta
+    }
+
+    return telegram_send_message($config['api_key'], $config['chat_id'], $message);
+}
+
+/**
+ * Notificación de nueva cita (para empleado asignado o gerente según rol)
+ */
+function telegram_notify_cita_nueva(int $cita_id, int $usuario_id_destino, string $rol): bool
+{
+    global $pdo;
+
+    // Obtener datos de la cita
+    $stmt = $pdo->prepare("SELECT c.*, s.nombre as sucursal, cl.nombre as cliente
+                           FROM citas c
+                           LEFT JOIN sucursales s ON c.sucursal_id = s.id
+                           LEFT JOIN clientes cl ON c.cliente_id = cl.id
+                           WHERE c.id = ? LIMIT 1");
+    $stmt->execute([$cita_id]);
+    $cita = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$cita) return false;
+
+    $cliente = htmlspecialchars($cita['cliente_nombre'] ?: ($cita['cliente'] ?? 'Cliente'));
+    $servicio = htmlspecialchars($cita['servicio_nombre'] ?? 'Servicio');
+    $sucursal = htmlspecialchars($cita['sucursal'] ?? 'Sucursal');
+    $fecha = date('d/m/Y H:i', strtotime($cita['inicio']));
+
+    $message = "📅 <b>Nueva cita asignada</b>\n\n";
+    $message .= "👤 <b>Cliente:</b> {$cliente}\n";
+    $message .= "💇 <b>Servicio:</b> {$servicio}\n";
+    $message .= "🏢 <b>Sucursal:</b> {$sucursal}\n";
+    $message .= "📆 <b>Fecha:</b> {$fecha}\n";
+
+    return telegram_notify_usuario($usuario_id_destino, $message, 'cita_nueva');
+}
+
+/**
+ * Notificación de cita cancelada
+ */
+function telegram_notify_cita_cancelada(int $cita_id, int $usuario_id_destino, string $cancelado_por): bool
+{
+    global $pdo;
+
+    $stmt = $pdo->prepare("SELECT c.*, cl.nombre as cliente FROM citas c LEFT JOIN clientes cl ON c.cliente_id = cl.id WHERE c.id = ? LIMIT 1");
+    $stmt->execute([$cita_id]);
+    $cita = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$cita) return false;
+
+    $cliente = htmlspecialchars($cita['cliente_nombre'] ?: ($cita['cliente'] ?? 'Cliente'));
+    $fecha = date('d/m/Y H:i', strtotime($cita['inicio']));
+
+    $message = "❌ <b>Cita cancelada</b>\n\n";
+    $message .= "👤 <b>Cliente:</b> {$cliente}\n";
+    $message .= "📆 <b>Fecha:</b> {$fecha}\n";
+    $message .= "🚫 <b>Cancelado por:</b> {$cancelado_por}\n";
+
+    return telegram_notify_usuario($usuario_id_destino, $message, 'cita_cancelada');
+}
+
+/**
+ * Notificación de cita completada
+ */
+function telegram_notify_cita_completada(int $cita_id, int $usuario_id_destino): bool
+{
+    global $pdo;
+
+    $stmt = $pdo->prepare("SELECT c.*, cl.nombre as cliente FROM citas c LEFT JOIN clientes cl ON c.cliente_id = cl.id WHERE c.id = ? LIMIT 1");
+    $stmt->execute([$cita_id]);
+    $cita = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$cita) return false;
+
+    $cliente = htmlspecialchars($cita['cliente_nombre'] ?: ($cita['cliente'] ?? 'Cliente'));
+    $fecha = date('d/m/Y H:i', strtotime($cita['inicio']));
+
+    $message = "✅ <b>Cita completada</b>\n\n";
+    $message .= "👤 <b>Cliente:</b> {$cliente}\n";
+    $message .= "📆 <b>Fecha:</b> {$fecha}\n";
+    $message .= "✨ La cita ha sido marcada como completada.\n";
+
+    return telegram_notify_usuario($usuario_id_destino, $message, 'cita_completada');
+}
+
+/**
+ * Notificación de mensaje interno
+ */
+function telegram_notify_mensaje(int $mensaje_id, int $usuario_id_destino): bool
+{
+    global $pdo;
+
+    $stmt = $pdo->prepare("SELECT mi.*, u.nombre as remitente FROM mensajes_internos mi
+                           LEFT JOIN usuarios u ON mi.de_usuario_id = u.id
+                           WHERE mi.id = ? LIMIT 1");
+    $stmt->execute([$mensaje_id]);
+    $msg = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$msg) return false;
+
+    $remitente = htmlspecialchars($msg['remitente'] ?? 'Usuario');
+    $titulo = htmlspecialchars($msg['titulo'] ?? 'Mensaje');
+    $cuerpo = htmlspecialchars(strip_tags($msg['cuerpo'] ?? ''));
+
+    // Truncar cuerpo si es muy largo
+    if (mb_strlen($cuerpo) > 150) {
+        $cuerpo = mb_substr($cuerpo, 0, 150) . '...';
+    }
+
+    $message = "📨 <b>Nuevo mensaje interno</b>\n\n";
+    $message .= "👤 <b>De:</b> {$remitente}\n";
+    $message .= "📌 <b>Asunto:</b> {$titulo}\n";
+    $message .= "📝 <b>Mensaje:</b> {$cuerpo}\n";
+
+    return telegram_notify_usuario($usuario_id_destino, $message, 'mensaje_interno');
+}
+
+/**
+ * Obtiene configuración de encuestas al completar cita
+ */
+function empresa_get_encuestas_activas(int $empresa_id): bool
+{
+    global $pdo;
+    try {
+        $stmt = $pdo->prepare("SELECT config_json FROM empresas WHERE id = ? LIMIT 1");
+        $stmt->execute([$empresa_id]);
+        $config = $stmt->fetchColumn();
+        $data = json_decode($config ?: '{}', true);
+        // Por defecto activado (true) si no está definido
+        return ($data['encuestas_activas'] ?? '1') === '1' || ($data['encuestas_activas'] ?? true) === true;
+    } catch (Throwable $e) {
+        return true; // Por defecto activado
+    }
+}
+
+/**
+ * Establece configuración de encuestas al completar cita
+ */
+function empresa_set_encuestas_activas(int $empresa_id, bool $activo): bool
+{
+    global $pdo;
+    try {
+        $stmt = $pdo->prepare("SELECT config_json FROM empresas WHERE id = ? LIMIT 1");
+        $stmt->execute([$empresa_id]);
+        $config = $stmt->fetchColumn();
+        $data = json_decode($config ?: '{}', true);
+        $data['encuestas_activas'] = $activo ? '1' : '0';
+
+        $stmt = $pdo->prepare("UPDATE empresas SET config_json = ? WHERE id = ?");
+        $stmt->execute([json_encode($data), $empresa_id]);
+        return true;
+    } catch (Throwable $e) {
+        return false;
+    }
 }

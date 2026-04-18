@@ -48,6 +48,7 @@ switch ($action) {
             'direccion_general' => $config['direccion_general'] ?? '',
             'horario_general' => $config['horario_general'] ?? '',
             'gsc_meta_tag'    => $config['gsc_meta_tag'] ?? '',
+            'encuestas_activas' => $config['encuestas_activas'] ?? '1',
         ];
         json_response(['success' => true, 'data' => $data]);
         break;
@@ -139,6 +140,7 @@ switch ($action) {
         $config['direccion_general'] = trim($_POST['direccion_general'] ?? '');
         $config['horario_general'] = trim($_POST['horario_general'] ?? '');
         $config['gsc_meta_tag'] = trim($_POST['gsc_meta_tag'] ?? '');
+        $config['encuestas_activas'] = isset($_POST['encuestas_activas']) ? '1' : '0';
 
         $config_json = json_encode($config, JSON_UNESCAPED_UNICODE);
 

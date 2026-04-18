@@ -500,3 +500,25 @@ CREATE TABLE IF NOT EXISTS anuncios (
   PRIMARY KEY (id),
   UNIQUE KEY uq_anuncios_slot (slot)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------
+-- Notificaciones Telegram por Usuario (Planes de pago)
+-- -----------------------------
+CREATE TABLE IF NOT EXISTS notificaciones_telegram (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  usuario_id BIGINT UNSIGNED NOT NULL,
+  api_key VARCHAR(64) NOT NULL,
+  chat_id VARCHAR(50) NULL,
+  telegram_username VARCHAR(100) NULL,
+  activo TINYINT(1) NOT NULL DEFAULT 1,
+  -- Configuración de alertas por tipo (JSON con los tipos activos)
+  alertas_config JSON NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_notif_telegram_api_key (api_key),
+  UNIQUE KEY uq_notif_telegram_usuario (usuario_id),
+  KEY idx_notif_telegram_chat (chat_id),
+  CONSTRAINT fk_notif_telegram_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+    ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
