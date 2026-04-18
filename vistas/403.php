@@ -5,7 +5,7 @@
         <div class="text-sm text-gray-500">Error 503</div>
         <div class="mt-2 text-3xl font-extrabold text-gray-900">Acceso denegado</div>
         <div class="mt-3 text-gray-700">
-          No puedes acceder a esta pagina, gracias spor visitarnos, si crees que esto es un erro contacta a un administrador.
+          No puedes acceder a esta pagina, gracias por visitarnos, si crees que esto es un error contacta a un administrador.
         </div>
       </div>
 
