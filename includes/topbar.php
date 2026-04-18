@@ -363,7 +363,7 @@ if ($user && !$is_public) {
 
   <div class="pt-16 flex">
     <?php if ($suscripcion_alert): ?>
-      <div class="fixed top-[4.5rem] left-0 right-0 z-30 px-4">
+      <div class="fixed top-[4.5rem] left-0 right-0 z-100 px-4">
         <div class="max-w-7xl mx-auto rounded-xl border px-4 py-2 text-sm <?= ($suscripcion_alert['type'] === 'danger') ? 'bg-red-50 border-red-200 text-red-700' : 'bg-amber-50 border-amber-200 text-amber-700' ?>">
           <?= htmlspecialchars((string) ($suscripcion_alert['text'] ?? '')) ?>
         </div>

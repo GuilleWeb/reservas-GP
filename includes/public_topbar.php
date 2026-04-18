@@ -154,6 +154,8 @@ $meta_img = trim((string) ($logo_path ?: app_url('assets/logo.avif')));
             class="text-gray-700 hover:text-teal-600 font-medium font-semibold nav-link">Servicios</a>
           <a href="<?= htmlspecialchars(view_url('vistas/public/citas.php', $id_e)) ?>"
             class="text-gray-700 hover:text-teal-600 font-medium font-semibold nav-link">Agendar Cita</a>
+          <a href="<?= htmlspecialchars(view_url('vistas/public/contacto.php', $id_e)) ?>"
+            class="text-gray-700 hover:text-teal-600 font-medium font-semibold nav-link">Contacto</a>
         </nav>
 
       </div>
@@ -180,6 +182,10 @@ $meta_img = trim((string) ($logo_path ?: app_url('assets/logo.avif')));
           <a href="<?= htmlspecialchars(view_url('vistas/public/citas.php', $id_e)) ?>"
             class="nav-link flex items-center p-2 rounded hover:bg-gray-50 text-gray-700">
             <i data-lucide="calendar-plus" class="w-5"></i><span class="ml-2 sidebar-label">Citas</span>
+          </a>
+          <a href="<?= htmlspecialchars(view_url('vistas/public/contacto.php', $id_e)) ?>"
+            class="nav-link flex items-center p-2 rounded hover:bg-gray-50 text-gray-700">
+            <i data-lucide="message-circle" class="w-5"></i><span class="ml-2 sidebar-label">Contacto</span>
           </a>
         </nav>
       </div>

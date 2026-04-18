@@ -653,7 +653,10 @@ function create_notification(array $data)
     notifications_ensure_table();
     $empresa_id = (int) ($data['empresa_id'] ?? 0);
     $titulo = trim((string) ($data['titulo'] ?? ''));
-    if ($empresa_id <= 0 || $titulo === '') {
+    $usuario_id = isset($data['usuario_id']) ? (int) $data['usuario_id'] : null;
+    
+    // Permitir empresa_id=0 para notificaciones al superadmin (cuando hay usuario_id específico)
+    if (($empresa_id <= 0 && $usuario_id === null) || $titulo === '') {
         return false;
     }
     $stmt = $pdo->prepare("INSERT INTO notificaciones

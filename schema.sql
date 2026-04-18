@@ -442,13 +442,12 @@ CREATE TABLE IF NOT EXISTS home_page (
 
 CREATE TABLE IF NOT EXISTS mensajes_contacto (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  empresa_id BIGINT UNSIGNED NOT NULL,
+  empresa_id BIGINT UNSIGNED NULL, -- NULL para mensajes al superadmin/sistema
   sucursal_id BIGINT UNSIGNED NULL,
   cliente_id BIGINT UNSIGNED NULL,
-  nombre VARCHAR(150) NULL,
-  email VARCHAR(150) NULL,
-  telefono VARCHAR(40) NULL,
-  asunto VARCHAR(200) NULL,
+  nombre VARCHAR(150) NOT NULL,
+  email VARCHAR(150) NOT NULL,
+  asunto VARCHAR(255) NULL,
   mensaje TEXT NOT NULL,
   estado ENUM('nuevo','leido','archivado') NOT NULL DEFAULT 'nuevo',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

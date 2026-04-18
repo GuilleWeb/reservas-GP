@@ -875,6 +875,94 @@ $faq_schema = [
         </div>
       </div>
     </section>
+
+    <!-- ── CONTACTO ─────────────────────────────────────────────────────────── -->
+    <section class="py-16 max-w-7xl mx-auto px-5" id="contacto">
+      <div class="grid lg:grid-cols-2 gap-12 items-center">
+        <!-- Texto -->
+        <div class="reveal">
+          <div class="badge-pill mb-5">
+            <span class="pulse-dot"></span>
+            ¿Tienes preguntas?
+          </div>
+          <h2 class="text-4xl md:text-5xl font-extrabold text-slate-900 leading-tight mb-5">
+            ¿Necesitas ayuda para empezar? <span class="grad-text">Contáctanos</span>
+          </h2>
+          <p class="text-lg text-slate-500 mb-8">
+            ¿Tienes dudas sobre cómo funciona? ¿Necesitas una solución personalizada para tu negocio? 
+            Escríbenos y te ayudaremos a automatizar tu agenda de reservas.
+          </p>
+          <div class="flex flex-wrap gap-4">
+            <a href="https://wa.me/50251036244" target="_blank" class="btn-primary inline-flex items-center gap-2">
+              <i data-lucide="message-circle" class="w-5 h-5"></i>
+              WhatsApp
+            </a>
+            <a href="mailto:soporte@reservasgp.com" class="btn-ghost inline-flex items-center gap-2">
+              <i data-lucide="mail" class="w-5 h-5"></i>
+              soporte@reservasgp.com
+            </a>
+          </div>
+        </div>
+
+        <!-- Formulario -->
+        <div class="reveal-right delay-2">
+          <div class="bg-white rounded-3xl p-8 shadow-xl border border-slate-100">
+            <h3 class="text-2xl font-bold text-slate-900 mb-2">Envíanos un mensaje</h3>
+            <p class="text-slate-500 mb-6">Te responderemos en menos de 24 horas</p>
+            
+            <form id="contactFormHome" class="space-y-4">
+              <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Nombre *</label>
+                  <input type="text" name="nombre" required
+                         class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/20 transition-all outline-none"
+                         placeholder="Tu nombre">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Correo *</label>
+                  <input type="email" name="email" required
+                         class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/20 transition-all outline-none"
+                         placeholder="tu@email.com">
+                </div>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Empresa (opcional)</label>
+                <input type="text" name="empresa_remitente"
+                       class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/20 transition-all outline-none"
+                       placeholder="Nombre de tu negocio">
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Mensaje *</label>
+                <textarea name="mensaje" required rows="4"
+                          class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/20 transition-all outline-none resize-none"
+                          placeholder="¿En qué podemos ayudarte?"></textarea>
+              </div>
+              
+              <button type="submit" 
+                      class="w-full py-4 bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold rounded-xl shadow-lg shadow-teal-500/30 hover:shadow-xl hover:shadow-teal-500/40 transform hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2">
+                <i data-lucide="send" class="w-5 h-5"></i>
+                Enviar mensaje
+              </button>
+            </form>
+
+            <!-- Mensaje de éxito -->
+            <div id="successMessageHome" class="hidden mt-6 p-4 rounded-xl bg-green-50 border border-green-200">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                  <i data-lucide="check" class="w-5 h-5 text-green-600"></i>
+                </div>
+                <div>
+                  <p class="font-semibold text-green-900">¡Mensaje enviado!</p>
+                  <p class="text-sm text-green-700">Te contactaremos pronto.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
 
   <!-- ── FOOTER ─────────────────────────────────────────────────────────── -->
@@ -1100,6 +1188,39 @@ $faq_schema = [
 
       render();
     })();
+
+    // ── Contact form handler ─────────────────────────────────────────────
+    document.getElementById('contactFormHome')?.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const btn = this.querySelector('button[type="submit"]');
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Enviando...';
+      if (window.lucide) lucide.createIcons();
+
+      try {
+        const formData = new FormData(this);
+        const response = await fetch('<?= app_url('api/public/contacto-superadmin.php') ?>', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+          this.reset();
+          document.getElementById('successMessageHome').classList.remove('hidden');
+          setTimeout(() => document.getElementById('successMessageHome').classList.add('hidden'), 5000);
+        } else {
+          alert(data.message || 'Error al enviar el mensaje');
+        }
+      } catch (err) {
+        alert('Error de conexión. Intenta de nuevo.');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        if (window.lucide) lucide.createIcons();
+      }
+    });
 
   })();
   </script>
