@@ -5,6 +5,16 @@ header('Content-Type: application/xml; charset=utf-8');
 $empresa_slug = trim((string) ($_GET['empresa'] ?? ''));
 $urls = [];
 
+// Helper para convertir URL relativa a absoluta
+function sitemap_make_absolute($url) {
+    $url = trim((string) $url);
+    if ($url === '') return '';
+    // Ya es absoluta
+    if (preg_match('/^https?:\/\//i', $url)) return $url;
+    // Usar el helper existente
+    return app_url_absolute($url);
+}
+
 // Sitemap por empresa: si no hay slug, mostrar solo la landing.
 if ($empresa_slug === '') {
     $urls[] = [
@@ -21,24 +31,24 @@ if ($empresa_slug === '') {
 
         // URLs principales usando pretty URLs (slug/vista)
         $urls[] = [
-            'loc' => view_url('vistas/public/inicio.php', $slug),
+            'loc' => sitemap_make_absolute(view_url('vistas/public/inicio.php', $slug)),
             'priority' => '1.0',
             'changefreq' => 'daily',
         ];
         $urls[] = [
-            'loc' => view_url('vistas/public/ver-sedes.php', $slug),
+            'loc' => sitemap_make_absolute(view_url('vistas/public/ver-sedes.php', $slug)),
             'priority' => '0.8',
             'changefreq' => 'weekly',
         ];
         $urls[] = [
-            'loc' => view_url('vistas/public/servicios.php', $slug),
+            'loc' => sitemap_make_absolute(view_url('vistas/public/servicios.php', $slug)),
             'priority' => '0.8',
             'changefreq' => 'weekly',
         ];
 
         if (plan_allows_module((int) $empresa['id'], 'citas')) {
             $urls[] = [
-                'loc' => view_url('vistas/public/citas.php', $slug),
+                'loc' => sitemap_make_absolute(view_url('vistas/public/citas.php', $slug)),
                 'priority' => '0.9',
                 'changefreq' => 'daily',
             ];
@@ -47,7 +57,7 @@ if ($empresa_slug === '') {
         if (plan_allows_module((int) $empresa['id'], 'blog')) {
             // Página principal del blog
             $urls[] = [
-                'loc' => view_url('vistas/public/blog.php', $slug),
+                'loc' => sitemap_make_absolute(view_url('vistas/public/blog.php', $slug)),
                 'priority' => '0.8',
                 'changefreq' => 'daily',
             ];
@@ -69,7 +79,7 @@ if ($empresa_slug === '') {
                     : gmdate('Y-m-d\TH:i:s\Z');
 
                 $urls[] = [
-                    'loc' => $postUrl,
+                    'loc' => sitemap_make_absolute($postUrl),
                     'priority' => '0.7',
                     'changefreq' => 'monthly',
                     'lastmod' => $lastmod,

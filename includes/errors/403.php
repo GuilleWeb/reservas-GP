@@ -45,7 +45,7 @@ $title = $site_name.' | Acceso denegado';
     body {
       font-family: 'DM Sans', sans-serif;
       color: var(--ink);
-      background: #fff;
+      background: #ccc;
       overflow-x: hidden;
     }
     h1, h2, h3, h4, h5 {
