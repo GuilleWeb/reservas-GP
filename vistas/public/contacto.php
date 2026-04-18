@@ -23,10 +23,11 @@ $empresa_id = (int) ($empresa_info['id'] ?? 0);
 $empresa_nombre = htmlspecialchars($empresa_info['nombre'] ?? 'Empresa');
 $empresa_slogan = htmlspecialchars($empresa_info['slogan'] ?? '');
 $logo_path = $empresa_info['logo_path'] ?? '';
-$color_p = '#0d9488';
 
-// Configuración de contacto
+// Configuración de contacto y colores
 $config = json_decode($empresa_info['config_json'] ?? '{}', true);
+$colores = json_decode($empresa_info['colores_json'] ?? '{}', true);
+$color_p = $colores['principal'] ?? '#0d9488';
 $email_contacto = htmlspecialchars($config['email_contacto'] ?? '');
 $telefono_contacto = htmlspecialchars($config['telefono_contacto'] ?? '');
 $direccion_general = htmlspecialchars($config['direccion_general'] ?? '');

@@ -1014,6 +1014,14 @@ $faq_schema = [
   <!-- ── SCRIPTS ─────────────────────────────────────────────────────────── -->
   <script>
   (() => {
+    'use strict';
+    
+    // Manejo global de errores
+    window.addEventListener('error', (e) => {
+      console.error('JavaScript Error:', e.message, 'at', e.filename, 'line', e.lineno);
+    });
+    
+    try {
     // ── Lucide icons ──────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', () => {
       if (window.lucide) lucide.createIcons();
@@ -1195,37 +1203,63 @@ $faq_schema = [
     })();
 
     // ── Contact form handler ─────────────────────────────────────────────
-    document.getElementById('contactFormHome')?.addEventListener('submit', async function(e) {
-      e.preventDefault();
-      const btn = this.querySelector('button[type="submit"]');
-      const originalText = btn.innerHTML;
-      btn.disabled = true;
-      btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Enviando...';
-      if (window.lucide) lucide.createIcons();
-
-      try {
-        const formData = new FormData(this);
-        const response = await fetch('<?= app_url('api/public/contacto-superadmin.php') ?>', {
-          method: 'POST',
-          body: formData
-        });
-        const data = await response.json();
+    const contactForm = document.getElementById('contactFormHome');
+    if (contactForm) {
+      contactForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        e.stopPropagation();
         
-        if (data.success) {
-          this.reset();
-          document.getElementById('successMessageHome').classList.remove('hidden');
-          setTimeout(() => document.getElementById('successMessageHome').classList.add('hidden'), 5000);
-        } else {
-          alert(data.message || 'Error al enviar el mensaje');
+        const btn = this.querySelector('button[type="submit"]');
+        if (!btn) return;
+        
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="inline-flex items-center gap-2"><svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="4" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Enviando...</span>';
+
+        try {
+          const formData = new FormData(this);
+          const response = await fetch('<?= app_url('api/public/contacto-superadmin.php') ?>', {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          });
+          
+          if (!response.ok) {
+            throw new Error('HTTP error! status: ' + response.status);
+          }
+          
+          const data = await response.json();
+          
+          if (data.success) {
+            this.reset();
+            const successMsg = document.getElementById('successMessageHome');
+            if (successMsg) {
+              successMsg.classList.remove('hidden');
+              successMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              setTimeout(() => successMsg.classList.add('hidden'), 5000);
+            }
+          } else {
+            alert(data.message || 'Error al enviar el mensaje. Intenta de nuevo.');
+          }
+        } catch (err) {
+          console.error('Error enviando formulario:', err);
+          alert('Error de conexión. Revisa tu internet e intenta de nuevo.');
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = originalText;
         }
-      } catch (err) {
-        alert('Error de conexión. Intenta de nuevo.');
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-        if (window.lucide) lucide.createIcons();
-      }
-    });
+      });
+    }
+    
+    } catch (err) {
+      console.error('Error crítico en JavaScript:', err);
+      // Asegurar que el formulario al menos funcione sin JS
+      document.querySelectorAll('form').forEach(form => {
+        form.setAttribute('novalidate', 'true');
+      });
+    }
 
   })();
   </script>
