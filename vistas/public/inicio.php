@@ -116,7 +116,7 @@ include __DIR__ . '/../../includes/topbar.php';
         const url = baseBlogUrl + (baseBlogUrl.includes('?') ? '&' : '?') + 'id=' + encodeURIComponent(p.id);
         return `
           <article class="w-full max-w-md bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition">
-            <div class="h-48 bg-gray-100"><img src="../../${esc(image)}" class="w-full h-full object-cover" alt="${esc(p.titulo)}"></div>
+            <div class="h-48 bg-gray-100"><img src="${esc(image)}" class="w-full h-full object-cover" alt="${esc(p.titulo)}"></div>
             <div class="p-5">
               <h3 class="text-lg font-bold text-gray-800">${esc(p.titulo)}</h3>
               <p class="text-sm text-gray-500 mt-2">${esc(preview)}...</p>
