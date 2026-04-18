@@ -2288,3 +2288,265 @@ function send_superadmin_smtp_test_email($to_email)
     $html = render_email_layout($empresa_info, $subject, 'Prueba de correo exitosa', 'Este correo confirma que el motor SMTP está funcionando.', $content);
     return send_email_message($empresa_info, 'smtp_test', $to_email, $subject, $html);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NOTIFICACIONES TELEGRAM (Superadmin + Empresas)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Envía mensaje a Telegram para notificaciones de sistema.
+ * Prioridad: superadmin (servidor, suscripciones, nuevos registros)
+ * Futuro: empresas individuales (citas, mensajes)
+ *
+ * @param string $message Mensaje a enviar
+ * @param string $tipo Tipo de notificación: 'superadmin', 'empresa'
+ * @param int|null $empresa_id ID de empresa (para notificaciones específicas)
+ * @return bool
+ */
+function telegram_notify(string $message, string $tipo = 'superadmin', ?int $empresa_id = null): bool
+{
+    global $pdo;
+
+    // Configuración para superadmin (desde ajustes globales)
+    if ($tipo === 'superadmin') {
+        $token = get_global_setting('telegram_superadmin_token', '');
+        $chatId = get_global_setting('telegram_superadmin_chat_id', '');
+
+        // Fallback a constantes si no hay ajustes en BD
+        if ($token === '') {
+            $token = defined('TELEGRAM_SUPERADMIN_TOKEN') ? TELEGRAM_SUPERADMIN_TOKEN : '';
+        }
+        if ($chatId === '') {
+            $chatId = defined('TELEGRAM_SUPERADMIN_CHAT_ID') ? TELEGRAM_SUPERADMIN_CHAT_ID : '';
+        }
+
+        if ($token === '' || $chatId === '') {
+            error_log('Telegram: No configurado para superadmin');
+            return false;
+        }
+
+        return telegram_send_message($token, $chatId, $message);
+    }
+
+    // Configuración por empresa (futura implementación)
+    if ($tipo === 'empresa' && $empresa_id !== null && $empresa_id > 0) {
+        $enabled = get_empresa_setting($empresa_id, 'telegram_notificaciones_activas', '0');
+        if ((string) $enabled !== '1') {
+            return false; // Notificaciones desactivadas para esta empresa
+        }
+
+        $token = get_empresa_setting($empresa_id, 'telegram_bot_token', '');
+        $chatId = get_empresa_setting($empresa_id, 'telegram_chat_id', '');
+
+        if ($token === '' || $chatId === '') {
+            return false;
+        }
+
+        return telegram_send_message($token, $chatId, $message);
+    }
+
+    return false;
+}
+
+/**
+ * Envía mensaje directo a Telegram API
+ *
+ * @param string $token Bot token
+ * @param string $chatId Chat ID
+ * @param string $message Mensaje
+ * @return bool
+ */
+function telegram_send_message(string $token, string $chatId, string $message): bool
+{
+    if ($token === '' || $chatId === '' || $message === '') {
+        return false;
+    }
+
+    $url = "https://api.telegram.org/bot{$token}/sendMessage";
+
+    $payload = [
+        'chat_id' => $chatId,
+        'text' => $message,
+        'parse_mode' => 'HTML',
+        'disable_web_page_preview' => true,
+    ];
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $error = curl_error($ch);
+    curl_close($ch);
+
+    if ($error !== '') {
+        error_log("Telegram cURL error: {$error}");
+        return false;
+    }
+
+    if ($httpCode !== 200) {
+        error_log("Telegram HTTP error: {$httpCode}, response: {$response}");
+        return false;
+    }
+
+    $data = json_decode($response, true);
+    if (!isset($data['ok']) || $data['ok'] !== true) {
+        error_log("Telegram API error: " . ($data['description'] ?? 'Unknown'));
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * Crea tabla ajustes_empresa si no existe
+ */
+function ajustes_empresa_ensure_table(): void
+{
+    global $pdo;
+    static $ensured = false;
+    if ($ensured) return;
+
+    $sql = "CREATE TABLE IF NOT EXISTS ajustes_empresa (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        empresa_id BIGINT UNSIGNED NOT NULL,
+        clave VARCHAR(120) NOT NULL,
+        valor TEXT NULL,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY uq_ajustes_empresa_empresa_clave (empresa_id, clave),
+        KEY idx_ajustes_empresa_clave (clave),
+        CONSTRAINT fk_ajustes_empresa_empresa FOREIGN KEY (empresa_id) REFERENCES empresas(id)
+            ON UPDATE CASCADE ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+
+    try {
+        $pdo->exec($sql);
+    } catch (Throwable $e) {
+        error_log('Error creando tabla ajustes_empresa: ' . $e->getMessage());
+    }
+    $ensured = true;
+}
+
+/**
+ * Establece ajuste específico de una empresa
+ *
+ * @param int $empresa_id
+ * @param string $key
+ * @param string|null $value
+ * @return bool
+ */
+function set_empresa_setting(int $empresa_id, string $key, ?string $value): bool
+{
+    global $pdo;
+    ajustes_empresa_ensure_table();
+
+    if ($empresa_id <= 0 || $key === '') {
+        return false;
+    }
+
+    try {
+        $stmt = $pdo->prepare("INSERT INTO ajustes_empresa (empresa_id, clave, valor) VALUES (?, ?, ?)
+            ON DUPLICATE KEY UPDATE valor = VALUES(valor), updated_at = NOW()");
+        $stmt->execute([$empresa_id, $key, $value]);
+        return true;
+    } catch (Throwable $e) {
+        error_log('Error guardando ajuste empresa: ' . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Obtiene ajuste específico de una empresa
+ *
+ * @param int $empresa_id
+ * @param string $key
+ * @param mixed $default
+ * @return mixed
+ */
+function get_empresa_setting(int $empresa_id, string $key, $default = null)
+{
+    global $pdo;
+    ajustes_empresa_ensure_table();
+
+    if ($empresa_id <= 0 || $key === '') {
+        return $default;
+    }
+
+    try {
+        $stmt = $pdo->prepare("SELECT valor FROM ajustes_empresa WHERE empresa_id = ? AND clave = ? LIMIT 1");
+        $stmt->execute([$empresa_id, $key]);
+        $val = $stmt->fetchColumn();
+        return $val !== false ? $val : $default;
+    } catch (Throwable $e) {
+        return $default;
+    }
+}
+
+/**
+ * Notificación de nuevo registro de empresa (para superadmin)
+ *
+ * @param array $empresaDatos ['nombre', 'slug', 'email', 'plan']
+ * @return bool
+ */
+function telegram_notify_nueva_empresa(array $empresaDatos): bool
+{
+    $nombre = htmlspecialchars($empresaDatos['nombre'] ?? 'Desconocida');
+    $slug = htmlspecialchars($empresaDatos['slug'] ?? 'N/A');
+    $email = htmlspecialchars($empresaDatos['email'] ?? 'N/A');
+    $plan = htmlspecialchars($empresaDatos['plan'] ?? 'Básico');
+
+    $message = "🎉 <b>Nuevo registro de empresa</b>\n\n";
+    $message .= "🏢 <b>Empresa:</b> {$nombre}\n";
+    $message .= "🔗 <b>Slug:</b> {$slug}\n";
+    $message .= "📧 <b>Email:</b> {$email}\n";
+    $message .= "⭐ <b>Plan:</b> {$plan}\n";
+    $message .= "⏰ <b>Fecha:</b> " . date('d/m/Y H:i:s') . "\n";
+
+    return telegram_notify($message, 'superadmin');
+}
+
+/**
+ * Notificación de alerta del sistema (para superadmin)
+ *
+ * @param string $tipo 'servidor_caido', 'sin_espacio', 'suscripcion_vencida', 'error_critico'
+ * @param array $detalles
+ * @return bool
+ */
+function telegram_notify_alerta_sistema(string $tipo, array $detalles = []): bool
+{
+    $iconos = [
+        'servidor_caido' => '🔥',
+        'sin_espacio' => '💾',
+        'suscripcion_vencida' => '⚠️',
+        'error_critico' => '🚨',
+        'mensaje_superadmin' => '📨',
+    ];
+
+    $titulos = [
+        'servidor_caido' => 'SERVIDOR CAÍDO',
+        'sin_espacio' => 'SIN ESPACIO EN DISCO',
+        'suscripcion_vencida' => 'SUSCRIPCIÓN VENCIDA',
+        'error_critico' => 'ERROR CRÍTICO',
+        'mensaje_superadmin' => 'NUEVO MENSAJE PARA SUPERADMIN',
+    ];
+
+    $icono = $iconos[$tipo] ?? '⚡';
+    $titulo = $titulos[$tipo] ?? 'ALERTA DE SISTEMA';
+
+    $message = "{$icono} <b>{$titulo}</b>\n\n";
+
+    foreach ($detalles as $key => $value) {
+        $message .= "• <b>{$key}:</b> {$value}\n";
+    }
+
+    $message .= "⏰ <b>Detectado:</b> " . date('d/m/Y H:i:s') . "\n";
+    $message .= "🖥️ <b>Servidor:</b> " . htmlspecialchars($_SERVER['SERVER_NAME'] ?? 'localhost') . "\n";
+
+    return telegram_notify($message, 'superadmin');
+}

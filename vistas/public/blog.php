@@ -118,7 +118,7 @@ include __DIR__ . '/../../includes/topbar.php';
                                     <h3 class="text-2xl font-black text-gray-900 mb-3 leading-tight">${p.titulo}</h3>
                                     <p class="text-gray-500 text-sm mb-6">${getExcerpt(p.contenido)}</p>
                                 </div>
-                                <a href="${withQuery(BLOG_BASE_URL, 'id', p.id)}" class="inline-flex items-center text-teal-600 font-black text-sm uppercase tracking-wider group">
+                                <a href="${BLOG_BASE_URL.replace(/\/$/, '')}/${encodeURIComponent(p.slug || p.id)}" class="inline-flex items-center text-teal-600 font-black text-sm uppercase tracking-wider group">
                                     Seguir leyendo
                                     <i data-lucide="arrow-right" class="ml-2 transition group-hover:translate-x-1"></i>
                                 </a>
@@ -192,7 +192,7 @@ include __DIR__ . '/../../includes/topbar.php';
                     return;
                 }
                 related.forEach(p => {
-                    box.append(`<a href="${withQuery(BLOG_BASE_URL, 'id', p.id)}" class="block p-3 rounded-lg border hover:bg-gray-50"><div class="font-semibold text-gray-800 line-clamp-2">${p.titulo}</div></a>`);
+                    box.append(`<a href="${BLOG_BASE_URL.replace(/\/$/, '')}/${encodeURIComponent(p.slug || p.id)}" class="block p-3 rounded-lg border hover:bg-gray-50"><div class="font-semibold text-gray-800 line-clamp-2">${p.titulo}</div></a>`);
                 });
             });
         }

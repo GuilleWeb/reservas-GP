@@ -69,6 +69,8 @@ switch ($action) {
             'smtp_timeout',
             'smtp_from_email',
             'smtp_from_name',
+            'telegram_superadmin_token',
+            'telegram_superadmin_chat_id',
         ];
 
         $in = implode(',', array_fill(0, count($keys), '?'));
@@ -112,6 +114,8 @@ switch ($action) {
             'smtp_timeout' => intval($_POST['smtp_timeout'] ?? 12),
             'smtp_from_email' => trim($_POST['smtp_from_email'] ?? ''),
             'smtp_from_name' => trim($_POST['smtp_from_name'] ?? ''),
+            'telegram_superadmin_token' => trim($_POST['telegram_superadmin_token'] ?? ''),
+            'telegram_superadmin_chat_id' => trim($_POST['telegram_superadmin_chat_id'] ?? ''),
         ];
 
         if ($payload['system_name'] === '') {
@@ -164,6 +168,30 @@ switch ($action) {
             json_response(['success' => true, 'message' => 'Correo de prueba enviado correctamente.']);
         }
         json_response(['success' => false, 'message' => 'No se pudo enviar el correo de prueba. Revisa SMTP.'], 200);
+        break;
+
+    case 'test_telegram':
+        if (!$is_superadmin)
+            json_response(['error' => 'unauthorized'], 403);
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST')
+            json_response(['error' => 'invalid_method'], 405);
+
+        $token = trim((string) ($_POST['telegram_token'] ?? ''));
+        $chatId = trim((string) ($_POST['telegram_chat_id'] ?? ''));
+        $msg = trim((string) ($_POST['message'] ?? ''));
+
+        if ($token === '' || $chatId === '') {
+            json_response(['success' => false, 'message' => 'Token y Chat ID son obligatorios.'], 200);
+        }
+        if ($msg === '') {
+            $msg = '🧪 Prueba de notificación desde Reservas GP';
+        }
+
+        $ok = telegram_send_message($token, $chatId, $msg);
+        if ($ok) {
+            json_response(['success' => true, 'message' => 'Mensaje de prueba enviado a Telegram correctamente.']);
+        }
+        json_response(['success' => false, 'message' => 'No se pudo enviar el mensaje a Telegram. Revisa token y chat ID.'], 200);
         break;
 
     case 'get':

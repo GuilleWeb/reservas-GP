@@ -134,6 +134,42 @@ $is_tenant_admin = ($id_e && in_array($role, ['admin', 'gerente']));
                     </div>
                 </div>
 
+                <div class="pt-6 border-t border-gray-100">
+                    <h3 class="text-sm font-bold text-gray-900 mb-4 uppercase tracking-tighter">
+                        <i data-lucide="send" class="inline w-4 h-4 mr-1"></i> Notificaciones Telegram (SuperAdmin)
+                    </h3>
+                    <div class="bg-blue-50 border border-blue-100 rounded-lg p-3 mb-4">
+                        <p class="text-xs text-blue-800">
+                            Recibe alertas importantes del sistema: nuevos registros, servidor caído, sin espacio, suscripciones vencidas, etc.
+                        </p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Bot Token</label>
+                            <input id="telegram_superadmin_token" name="telegram_superadmin_token"
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono"
+                                placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz">
+                            <p class="text-[10px] text-gray-400 mt-1">Obtén el token de @BotFather en Telegram</p>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Chat ID</label>
+                            <input id="telegram_superadmin_chat_id" name="telegram_superadmin_chat_id"
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                                placeholder="8492198106">
+                            <p class="text-[10px] text-gray-400 mt-1">Inicia @userinfobot para obtener tu Chat ID</p>
+                        </div>
+                    </div>
+                    <div class="mt-3 flex flex-col md:flex-row gap-2 md:items-end">
+                        <div class="flex-1">
+                            <label class="block text-xs text-gray-500 mb-1">Mensaje de prueba</label>
+                            <input id="telegram_test_msg" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Mensaje de prueba para Telegram" value="🧪 Prueba de notificación desde Reservas GP">
+                        </div>
+                        <button type="button" id="btnTestTelegram" class="px-4 py-2 rounded-lg border font-semibold hover:bg-gray-50 bg-blue-50 border-blue-200 text-blue-700">
+                            <i data-lucide="send" class="inline w-4 h-4 mr-1"></i> Enviar prueba
+                        </button>
+                    </div>
+                </div>
+
                 <div class="pt-6 flex items-center justify-end gap-3 border-t">
                     <button type="button" id="btnReloadGlobal"
                         class="px-4 py-2 text-sm font-bold text-gray-600 border rounded-xl hover:bg-gray-50 transition">Recargar</button>
@@ -269,6 +305,9 @@ $is_tenant_admin = ($id_e && in_array($role, ['admin', 'gerente']));
                 $('#smtp_stat_failed').text(m.failed || 0);
                 $('#smtp_stat_booking').text(m.booking_sent || 0);
                 $('#smtp_stat_review').text(m.review_sent || 0);
+                // Telegram
+                $('#telegram_superadmin_token').val(d.telegram_superadmin_token || '');
+                $('#telegram_superadmin_chat_id').val(d.telegram_superadmin_chat_id || '');
             }, 'json');
         }
 
@@ -305,6 +344,26 @@ $is_tenant_admin = ($id_e && in_array($role, ['admin', 'gerente']));
                     loadPanelGlobal();
                 } else {
                     showCustomAlert((res && res.message) || 'No se pudo enviar prueba SMTP.', 6000, 'error');
+                }
+            }, 'json');
+        });
+
+        // Test Telegram
+        $('#btnTestTelegram').on('click', function () {
+            const token = ($('#telegram_superadmin_token').val() || '').trim();
+            const chatId = ($('#telegram_superadmin_chat_id').val() || '').trim();
+            const msg = ($('#telegram_test_msg').val() || '').trim();
+
+            if (!token || !chatId) {
+                showCustomAlert('Ingresa Bot Token y Chat ID para probar.', 4000, 'warning');
+                return;
+            }
+
+            $.post(API_AJUSTES, { action: 'test_telegram', telegram_token: token, telegram_chat_id: chatId, message: msg }, function (res) {
+                if (res && res.success) {
+                    showCustomAlert(res.message || 'Mensaje de prueba enviado a Telegram.', 4500, 'success');
+                } else {
+                    showCustomAlert((res && res.message) || 'No se pudo enviar a Telegram.', 6000, 'error');
                 }
             }, 'json');
         });

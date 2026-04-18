@@ -45,7 +45,7 @@ $title = $site_name.' | Acceso denegado';
     body {
       font-family: 'DM Sans', sans-serif;
       color: var(--ink);
-      background: #ccc;
+      background: #eee;
       overflow-x: hidden;
     }
     h1, h2, h3, h4, h5 {
@@ -61,7 +61,7 @@ $title = $site_name.' | Acceso denegado';
   <div id="progress-bar" role="progressbar" aria-hidden="true"></div>
 
   <!-- ── HEADER ──────────────────────────────────────────────────────────── -->
-  <header id="site-header" class="glass">
+  <header id="site-header" class="glass bg-white">
     <div class="max-w-7xl mx-auto px-5 h-16 flex items-center justify-between">
       <a href="<?= htmlspecialchars($site_name) ?>" class="flex items-center gap-2.5 group" aria-label="<?= htmlspecialchars($site_name) ?>">
         <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center text-white font-black text-sm shadow-md shadow-teal-500/30 transition-transform group-hover:rotate-6 group-hover:scale-105">GP</div>

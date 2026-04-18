@@ -113,7 +113,7 @@ include __DIR__ . '/../../includes/topbar.php';
         const image = p.imagen_path ? `/${p.imagen_path.replace(/^\/+/, '')}` : 'https://images.unsplash.com/photo-1550831107-1553da8c8464?auto=format&fit=crop&q=80&w=900';
         const preview = (p.contenido || '').replace(/<[^>]+>/g, '').slice(0, 120);
         const baseBlogUrl = <?= json_encode(view_url('vistas/public/blog.php', $empresa_slug ?: $empresa_id)) ?>;
-        const url = baseBlogUrl + (baseBlogUrl.includes('?') ? '&' : '?') + 'id=' + encodeURIComponent(p.id);
+        const url = baseBlogUrl.replace(/\/$/, '') + '/' + encodeURIComponent(p.slug || p.id);
         return `
           <article class="w-full max-w-md bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition">
             <div class="h-48 bg-gray-100"><img src="${esc(image)}" class="w-full h-full object-cover" alt="${esc(p.titulo)}"></div>

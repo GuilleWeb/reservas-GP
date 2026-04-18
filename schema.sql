@@ -384,6 +384,22 @@ CREATE TABLE IF NOT EXISTS ajustes_globales (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------
+-- Ajustes por empresa (incluye Telegram)
+-- -----------------------------
+CREATE TABLE IF NOT EXISTS ajustes_empresa (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  empresa_id BIGINT UNSIGNED NOT NULL,
+  clave VARCHAR(120) NOT NULL,
+  valor TEXT NULL,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_ajustes_empresa_empresa_clave (empresa_id, clave),
+  KEY idx_ajustes_empresa_clave (clave),
+  CONSTRAINT fk_ajustes_empresa_empresa FOREIGN KEY (empresa_id) REFERENCES empresas(id)
+    ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------
 -- Home / contenido público por empresa
 -- -----------------------------
 

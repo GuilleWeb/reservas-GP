@@ -172,6 +172,16 @@ try {
         ], $verify_url);
     }
 
+    // Notificar a superadmin vía Telegram
+    if (function_exists('telegram_notify_nueva_empresa')) {
+        telegram_notify_nueva_empresa([
+            'nombre' => $nombre_empresa,
+            'slug' => $slug,
+            'email' => $email,
+            'plan' => 'Básico',
+        ]);
+    }
+
     // Respuesta exitosa
     $successMessage = 'Registro completado exitosamente. Hemos enviado un correo de verificación a tu email. Tu cuenta y empresa permanecerán inactivas hasta que verifiques el correo. Tienes hasta 72 horas para verificarlo, de lo contrario el registro se eliminará automáticamente. Al verificar tu correo, se te pedirá establecer tu contraseña personalizada para poder iniciar sesión.';
     json_response([
