@@ -43,7 +43,7 @@ include __DIR__ . '/../../includes/public_topbar.php';
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
     <!-- Header -->
     <div class="text-center mb-12">
-        <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 shadow-lg mb-6">
+        <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-teal-900  shadow-lg mb-6">
             <?php if ($logo_path): ?>
                 <img src="<?= htmlspecialchars($logo_path) ?>" alt="Logo" class="w-16 h-16 object-cover rounded-full">
             <?php else: ?>
@@ -207,7 +207,7 @@ include __DIR__ . '/../../includes/public_topbar.php';
                 </div>
 
                 <button type="submit" 
-                        class="w-full py-4 px-6 bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold rounded-xl shadow-lg shadow-teal-500/30 hover:shadow-xl hover:shadow-teal-500/40 transform hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2">
+                        class="w-full py-4 px-6 bg-teal-700 text-white font-bold rounded-xl shadow-lg shadow-teal-500/30 hover:shadow-xl hover:shadow-teal-500/40 transform hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2">
                     <i data-lucide="send" class="w-5 h-5"></i>
                     Enviar mensaje
                 </button>
@@ -244,15 +244,93 @@ include __DIR__ . '/../../includes/public_topbar.php';
 
 <script>
 $(function() {
+    // Rate limiting: 15 minutos = 900 segundos
+    var RATE_LIMIT_SECONDS = 900;
+    var lastSentKey = 'contact_emp_last_sent_' + <?= $empresa_id ?>;
+    
+    function checkRateLimit() {
+        var lastSent = localStorage.getItem(lastSentKey);
+        if (!lastSent) return { allowed: true };
+        
+        var now = Date.now();
+        var elapsed = (now - parseInt(lastSent)) / 1000;
+        var remaining = Math.ceil(RATE_LIMIT_SECONDS - elapsed);
+        
+        if (elapsed < RATE_LIMIT_SECONDS) {
+            var minutes = Math.floor(remaining / 60);
+            var seconds = remaining % 60;
+            return { 
+                allowed: false, 
+                message: 'Has enviado un mensaje recientemente. Por favor espera ' + minutes + ' minutos' + (seconds > 0 ? ' y ' + seconds + ' segundos' : '') + ' antes de enviar otro.'
+            };
+        }
+        return { allowed: true };
+    }
+    
+    function setRateLimit() {
+        localStorage.setItem(lastSentKey, Date.now().toString());
+    }
+    
+    function showRateLimitError(message) {
+        var $container = $('#contactForm');
+        if (!$container.length) return;
+        
+        // Remover mensaje anterior
+        $('#rateLimitMessage').remove();
+        
+        // Crear mensaje de error estilizado
+        var errorHtml = '<div id="rateLimitMessage" class="mt-6 p-4 rounded-xl bg-red-50 border border-red-200">' +
+            '<div class="flex items-start gap-3">' +
+                '<div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">' +
+                    '<i data-lucide="alert-circle" class="w-5 h-5 text-red-600"></i>' +
+                '</div>' +
+                '<div class="flex-1">' +
+                    '<p class="font-semibold text-red-900">' + message + '</p>' +
+                    '<p class="text-sm text-red-700 mt-2">Mientras tanto, puedes contactarnos directamente por:</p>' +
+                    '<div class="flex flex-wrap gap-3 mt-3">' +
+                        '<?php if (!empty($telefono_contacto) || !empty($redes['whatsapp'])): ?>' +
+                        '<a href="https://wa.me/<?= !empty($redes['whatsapp']) ? preg_replace('/[^0-9]/', '', $redes['whatsapp']) : preg_replace('/[^0-9]/', '', $telefono_contacto) ?>" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors">' +
+                            '<i data-lucide="message-circle" class="w-4 h-4"></i>' +
+                            'WhatsApp' +
+                        '</a>' +
+                        '<?php endif; ?>' +
+                        '<?php if (!empty($email_contacto)): ?>' +
+                        '<a href="mailto:<?= $email_contacto ?>" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">' +
+                            '<i data-lucide="mail" class="w-4 h-4"></i>' +
+                            'Email' +
+                        '</a>' +
+                        '<?php endif; ?>' +
+                        '<?php if (empty($telefono_contacto) && empty($redes['whatsapp']) && empty($email_contacto)): ?>' +
+                        '<span class="text-sm text-gray-600">Revisa nuestra información de contacto arriba</span>' +
+                        '<?php endif; ?>' +
+                    '</div>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+        
+        $container.after(errorHtml);
+        if (window.lucide) lucide.createIcons();
+        
+        // Scroll al mensaje
+        $('#rateLimitMessage')[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    
     $('#contactForm').on('submit', function(e) {
         e.preventDefault();
         
-        const $form = $(this);
-        const $btn = $form.find('button[type="submit"]');
-        const originalText = $btn.html();
+        var $form = $(this);
+        var $btn = $form.find('button[type="submit"]');
+        var originalText = $btn.html();
+        
+        // Verificar rate limit antes de enviar
+        var rateCheck = checkRateLimit();
+        if (!rateCheck.allowed) {
+            showRateLimitError(rateCheck.message);
+            return;
+        }
         
         $btn.prop('disabled', true).html('<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Enviando...');
-        lucide.createIcons();
+        if (window.lucide) lucide.createIcons();
         
         $.ajax({
             url: '<?= app_url('api/public/contacto.php') ?>',
@@ -261,24 +339,30 @@ $(function() {
             dataType: 'json',
             success: function(res) {
                 if (res.success) {
+                    setRateLimit(); // Guardar timestamp
                     $form[0].reset();
+                    $('#rateLimitMessage').remove(); // Quitar error si existe
                     $('#successMessage').removeClass('hidden');
                     $('#errorMessage').addClass('hidden');
-                    setTimeout(() => $('#successMessage').addClass('hidden'), 5000);
+                    setTimeout(function() { $('#successMessage').addClass('hidden'); }, 5000);
                 } else {
-                    $('#errorText').text(res.message || 'Error al enviar el mensaje');
-                    $('#errorMessage').removeClass('hidden');
+                    // Error del backend (rate limit, validación, etc.)
+                    showRateLimitError(res.message || 'Error al enviar el mensaje. Intenta de nuevo.');
                     $('#successMessage').addClass('hidden');
                 }
             },
-            error: function() {
-                $('#errorText').text('Error de conexión. Intenta de nuevo.');
-                $('#errorMessage').removeClass('hidden');
+            error: function(xhr) {
+                var errorMsg = 'Error de conexión. Intenta de nuevo.';
+                // Intentar obtener mensaje del error
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                }
+                showRateLimitError(errorMsg + ' O contáctanos directamente por los canales de arriba.');
                 $('#successMessage').addClass('hidden');
             },
             complete: function() {
                 $btn.prop('disabled', false).html(originalText);
-                lucide.createIcons();
+                if (window.lucide) lucide.createIcons();
             }
         });
     });

@@ -85,71 +85,6 @@ include __DIR__ . '/../../includes/topbar.php';
             </div>
             <p class="text-xs text-gray-500 mt-1">Envía correo de encuesta al marcar cita como completada</p>
           </div>
-          <!-- Sección Telegram -->
-          <div class="md:col-span-2 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-5 border border-blue-100">
-            <div class="flex items-center gap-2 mb-3">
-              <div class="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center">
-                <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
-              </div>
-              <div>
-                <h3 class="font-bold text-gray-900">Notificaciones por Telegram</h3>
-                <p class="text-xs text-blue-600 font-medium">Solo para planes de pago</p>
-              </div>
-            </div>
-            
-            <div id="telegram_section">
-              <!-- Estado: No activado -->
-              <div id="telegram_not_active" class="hidden">
-                <p class="text-sm text-gray-600 mb-3">Recibe alertas de citas y mensajes directamente en Telegram.</p>
-                <button type="button" id="btnGenerarApiKey" class="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2">
-                  <i data-lucide="key" class="w-4 h-4"></i>
-                  Generar API Key para vincular
-                </button>
-              </div>
-              
-              <!-- Estado: Activado -->
-              <div id="telegram_active" class="hidden">
-                <div class="flex items-center gap-2 mb-3 p-3 bg-green-100 rounded-lg">
-                  <i data-lucide="check-circle" class="w-5 h-5 text-green-600"></i>
-                  <span class="text-sm font-medium text-green-800">Telegram vinculado y activo</span>
-                </div>
-                <div class="grid md:grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Tu API Key</label>
-                    <div class="flex gap-2">
-                      <input type="text" id="telegram_api_key" readonly class="flex-1 text-sm font-mono bg-gray-100 border rounded px-3 py-2">
-                      <button type="button" id="btnCopiarApiKey" class="px-3 py-2 bg-gray-200 hover:bg-gray-300 rounded transition-colors" title="Copiar">
-                        <i data-lucide="copy" class="w-4 h-4"></i>
-                      </button>
-                    </div>
-                  </div>
-                  <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Usuario Telegram</label>
-                    <input type="text" id="telegram_username_display" readonly class="w-full text-sm bg-gray-100 border rounded px-3 py-2">
-                  </div>
-                </div>
-                <div class="flex gap-2">
-                  <button type="button" id="btnDesactivarTelegram" class="flex-1 py-2 px-4 bg-red-100 hover:bg-red-200 text-red-700 font-medium rounded-lg transition-colors">
-                    Desactivar
-                  </button>
-                  <a href="https://t.me/ReservasGP_bot" target="_blank" class="flex-1 py-2 px-4 bg-blue-100 hover:bg-blue-200 text-blue-700 font-medium rounded-lg transition-colors text-center">
-                    Abrir Bot
-                  </a>
-                </div>
-              </div>
-              
-              <!-- Instrucciones -->
-              <div class="mt-4 p-3 bg-white/50 rounded-lg text-xs text-gray-600 space-y-1">
-                <p class="font-medium text-gray-700">Cómo vincular:</p>
-                <ol class="list-decimal list-inside space-y-1 ml-1">
-                  <li>Genera tu API Key con el botón superior</li>
-                  <li>Abre nuestro bot: <a href="https://t.me/ReservasGP_bot" target="_blank" class="text-blue-600 hover:underline">@ReservasGP_bot</a></li>
-                  <li>Escribe <code>/start</code> y selecciona tu rol</li>
-                  <li>Pega tu API Key cuando te la pidan</li>
-                </ol>
-              </div>
-            </div>
-          </div>
           <div class="md:col-span-2">
             <label class="text-sm font-medium text-gray-700">Meta tag Google Search Console</label>
             <input id="company_gsc_meta_tag" name="gsc_meta_tag" class="border rounded-lg px-3 py-2 w-full"
@@ -556,80 +491,12 @@ include __DIR__ . '/../../includes/topbar.php';
       });
     });
 
-    // ========== TELEGRAM SECTION ==========
-    function loadTelegramStatus() {
-      $.get('<?= app_url('api/admin/telegram_config.php') ?>', { action: 'get_status' }, function(res) {
-        if (res.success && res.active) {
-          $('#telegram_not_active').addClass('hidden');
-          $('#telegram_active').removeClass('hidden');
-          $('#telegram_api_key').val(res.api_key || '');
-          $('#telegram_username_display').val(res.telegram_username ? '@' + res.telegram_username : 'Vinculado');
-        } else {
-          $('#telegram_not_active').removeClass('hidden');
-          $('#telegram_active').addClass('hidden');
-        }
-      }, 'json');
-    }
-
-    $('#btnGenerarApiKey').on('click', function() {
-      const $btn = $(this);
-      $btn.prop('disabled', true).html('<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Generando...');
-      lucide.createIcons();
-
-      $.post('<?= app_url('api/admin/telegram_config.php') ?>', { 
-        action: 'generate_api_key',
-        csrf_token: '<?= generate_csrf() ?>'
-      }, function(res) {
-        if (res.success) {
-          $('#telegram_not_active').addClass('hidden');
-          $('#telegram_active').removeClass('hidden');
-          $('#telegram_api_key').val(res.api_key);
-          $('#telegram_username_display').val('Pendiente de vincular');
-          showCustomAlert('API Key generada. Abre el bot de Telegram para vincular.', 5000, 'success');
-        } else {
-          showCustomAlert(res.message || 'Error al generar API Key', 3000, 'error');
-        }
-      }, 'json').fail(function() {
-        showCustomAlert('Error de conexión', 3000, 'error');
-      }).always(function() {
-        $btn.prop('disabled', false).html('<i data-lucide="key" class="w-4 h-4"></i> Generar API Key para vincular');
-        lucide.createIcons();
-      });
-    });
-
-    $('#btnCopiarApiKey').on('click', function() {
-      const apiKey = $('#telegram_api_key').val();
-      navigator.clipboard.writeText(apiKey).then(function() {
-        showCustomAlert('API Key copiada al portapapeles', 2000, 'success');
-      });
-    });
-
-    $('#btnDesactivarTelegram').on('click', function() {
-      if (!confirm('¿Desactivar notificaciones de Telegram? Podrás volver a activarlas cuando quieras.')) return;
-
-      $.post('<?= app_url('api/admin/telegram_config.php') ?>', { 
-        action: 'deactivate',
-        csrf_token: '<?= generate_csrf() ?>'
-      }, function(res) {
-        if (res.success) {
-          $('#telegram_not_active').removeClass('hidden');
-          $('#telegram_active').addClass('hidden');
-          showCustomAlert('Notificaciones de Telegram desactivadas', 3000, 'success');
-        } else {
-          showCustomAlert(res.message || 'Error al desactivar', 3000, 'error');
-        }
-      }, 'json').fail(function() {
-        showCustomAlert('Error de conexión', 3000, 'error');
-      });
-    });
-
     $('#company_encuestas_activas').on('change', function() {
       $('#encuestas_label').text($(this).is(':checked') ? 'Activadas' : 'Desactivadas');
     });
 
     // Cargar pestaña inicial (Empresa)
     loadCompanyData();
-    loadTelegramStatus();
   });
 </script>
 

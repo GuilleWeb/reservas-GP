@@ -92,25 +92,7 @@ try {
         'referencia_id' => $mensaje_id,
     ]);
     
-    // Intentar enviar notificación por Telegram si el admin tiene activo
-    $stmt = $pdo->prepare("SELECT u.id FROM usuarios u WHERE u.empresa_id = ? AND u.rol = 'admin' AND u.activo = 1 LIMIT 1");
-    $stmt->execute([$empresa_id]);
-    $admin = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    if ($admin) {
-        $telegram_msg = "📨 <b>Nuevo mensaje de contacto</b>\n\n";
-        $telegram_msg .= "👤 <b>De:</b> " . htmlspecialchars($nombre) . "\n";
-        $telegram_msg .= "📧 <b>Email:</b> " . htmlspecialchars($email) . "\n";
-        if ($empresa_remitente) {
-            $telegram_msg .= "🏢 <b>Empresa:</b> " . htmlspecialchars($empresa_remitente) . "\n";
-        }
-        $telegram_msg .= "\n📝 <b>Mensaje:</b>\n" . htmlspecialchars(mb_substr($mensaje, 0, 200));
-        if (mb_strlen($mensaje) > 200) {
-            $telegram_msg .= "...";
-        }
-        
-        telegram_notify_usuario((int) $admin['id'], $telegram_msg, 'mensaje_contacto');
-    }
+    // Notificación interna creada - Telegram desactivado para empresas
     
     // Guardar timestamp para rate limiting
     $dir = dirname($rate_limit_file);

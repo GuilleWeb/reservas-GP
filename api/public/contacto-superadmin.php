@@ -92,7 +92,8 @@ try {
             $telegram_msg .= "...";
         }
         
-        telegram_notify_usuario((int) $superadmin_id, $telegram_msg, 'mensaje_contacto');
+        // Notificación Telegram al superadmin (función global del sistema)
+        telegram_notify($telegram_msg, 'superadmin');
     }
     
     // Guardar timestamp para rate limiting
