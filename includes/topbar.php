@@ -117,9 +117,15 @@ if ($user && !$is_public) {
     <?= $gsc_meta_tag . PHP_EOL ?>
   <?php endif; ?>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class'
+    };
+  </script>
   <?php if ($color_p): ?>
     <script>
       tailwind.config = {
+        darkMode: 'class',
         theme: {
           extend: {
             colors: {
@@ -152,7 +158,21 @@ if ($user && !$is_public) {
   </script>
 </head>
 
-<body class="bg-gray-50 min-h-screen font-sans <?= $is_public ? 'app-public' : 'app-private' ?>">
+<?php if (!$is_public): ?>
+<script>
+  (function() {
+    try {
+      var key = 'reservasgp-theme';
+      var saved = localStorage.getItem(key);
+      var isDark = (saved === 'dark');
+      if (isDark) document.documentElement.classList.add('dark');
+      else document.documentElement.classList.remove('dark');
+    } catch (e) {}
+  })();
+</script>
+<?php endif; ?>
+
+<body class="min-h-screen font-sans <?= $is_public ? 'app-public' : 'app-private' ?> bg-gray-50 text-gray-900 dark:bg-slate-950 dark:text-slate-100">
 
   <style>
     html {
@@ -173,6 +193,12 @@ if ($user && !$is_public) {
       padding: 0.55rem 0.75rem;
       line-height: 1.3rem;
       transition: box-shadow .2s ease, border-color .2s ease, background-color .2s ease;
+    }
+
+    html.dark body.app-private main :where(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="color"]) {
+      border-color: #334155;
+      background-color: #0f172a;
+      color: #e2e8f0;
     }
 
     body.app-private main :where(input, select, textarea):focus {
@@ -236,15 +262,46 @@ if ($user && !$is_public) {
       border-bottom: 1px solid #e5e7eb;
     }
 
+    html.dark body.app-private main table thead th {
+      background-color: rgba(15, 23, 42, 0.85);
+      color: #cbd5e1;
+      border-bottom-color: rgba(51, 65, 85, 0.6);
+    }
+
     body.app-private main table tbody td {
       border-bottom: 1px solid #f1f5f9;
       color: #111827;
       vertical-align: middle;
     }
 
-    body.app-private main table thead th[data-sort] {
-      cursor: pointer;
-      user-select: none;
+    html.dark body.app-private main table tbody td {
+      border-bottom-color: rgba(51, 65, 85, 0.45);
+      color: #e2e8f0;
+    }
+
+    html.dark body.app-private main .bg-white {
+      background-color: rgba(15, 23, 42, 0.72) !important;
+    }
+
+    html.dark body.app-private main .text-gray-900 {
+      color: #f8fafc !important;
+    }
+
+    html.dark body.app-private main .text-gray-800,
+    html.dark body.app-private main .text-gray-700,
+    html.dark body.app-private main .text-gray-600 {
+      color: #cbd5e1 !important;
+    }
+
+    html.dark body.app-private main .text-gray-500,
+    html.dark body.app-private main .text-gray-400 {
+      color: #94a3b8 !important;
+    }
+
+    html.dark body.app-private main .border,
+    html.dark body.app-private main .border-gray-200,
+    html.dark body.app-private main .border-gray-100 {
+      border-color: rgba(51, 65, 85, 0.65) !important;
     }
   </style>
 
@@ -266,17 +323,17 @@ if ($user && !$is_public) {
     <div class="h-6 fixed top-0"></div>
   <?php endif; ?>
 
-  <header class="fixed top-0 left-0 right-0 bg-white shadow z-40 m-2 rounded-lg shadow h-16 px-4">
+  <header class="fixed top-0 left-0 right-0 bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 shadow z-40 m-2 rounded-lg h-16 px-4">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16">
 
         <div class="flex items-center gap-2">
-          <button id="menuToggle" class="md:hidden text-gray-700 focus:outline-none">
+          <button id="menuToggle" class="md:hidden text-gray-700 dark:text-slate-200 focus:outline-none">
             <i data-lucide="menu" class="text-xl"></i>
           </button>
           <?php if (!$is_public): ?>
             <button id="sidebarCollapse"
-              class="hidden md:inline-flex text-gray-700 focus:outline-none h-10 w-10 items-center justify-center rounded-lg hover:bg-gray-50 border"
+              class="hidden md:inline-flex text-gray-700 dark:text-slate-200 focus:outline-none h-10 w-10 items-center justify-center rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 border dark:border-slate-700"
               title="Contraer sidebar">
               <i data-lucide="chevrons-left"></i>
             </button>
@@ -288,9 +345,9 @@ if ($user && !$is_public) {
           : htmlspecialchars($public_home_url) ?>" class="flex items-center space-x-3">
           <img src="<?= htmlspecialchars($logo_path) ?>" alt="logo" class="h-10 w-10 object-cover rounded-full">
           <div>
-            <div class="font-semibold text-lg text-teal-700"><?= $empresa_nombre ?></div>
+            <div class="font-semibold text-lg text-teal-700 dark:text-teal-400"><?= $empresa_nombre ?></div>
             <?php if (!$is_public): ?>
-              <small class="text-xs text-gray-500">Ver inicio</small>
+              <small class="text-xs text-gray-500 dark:text-slate-400">Ver inicio</small>
             <?php endif; ?>
           </div>
         </a>
@@ -323,29 +380,29 @@ if ($user && !$is_public) {
           <?php if ($user): ?>
             <?php if (!$is_public): ?>
               <div class="relative">
-                <button id="notifBtn" class="relative h-9 w-9 grid place-items-center rounded-lg border hover:bg-gray-50 text-gray-700">
+                <button id="notifBtn" class="relative h-9 w-9 grid place-items-center rounded-lg border hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-700 dark:text-slate-200 dark:border-slate-700">
                   <i data-lucide="bell"></i>
                   <?php if ($notif_unread > 0): ?>
                     <span class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-[10px] font-bold grid place-items-center"><?= (int) $notif_unread ?></span>
                   <?php endif; ?>
                 </button>
-                <div id="notifMenu" class="hidden absolute right-0 mt-2 w-80 bg-white border rounded-xl shadow-xl z-50 max-h-96 overflow-auto">
-                  <div class="p-3 border-b text-sm font-semibold text-gray-800">Notificaciones</div>
+                <div id="notifMenu" class="hidden absolute right-0 mt-2 w-80 bg-white dark:bg-slate-900 border dark:border-slate-700 rounded-xl shadow-xl z-50 max-h-96 overflow-auto">
+                  <div class="p-3 border-b dark:border-slate-700 text-sm font-semibold text-gray-800 dark:text-slate-100">Notificaciones</div>
                   <?php if (!empty($notif_items)): ?>
                     <?php foreach ($notif_items as $n): ?>
-                      <div class="px-3 py-2 border-b last:border-b-0 hover:bg-gray-50">
-                        <div class="text-sm font-medium text-gray-800"><?= htmlspecialchars((string) ($n['titulo'] ?? 'Notificación')) ?></div>
-                        <div class="text-xs text-gray-500"><?= htmlspecialchars((string) ($n['descripcion'] ?? '')) ?></div>
-                        <div class="text-[11px] text-gray-400 mt-1"><?= htmlspecialchars((string) ($n['created_at'] ?? '')) ?></div>
+                      <div class="px-3 py-2 border-b dark:border-slate-700 last:border-b-0 hover:bg-gray-50 dark:hover:bg-slate-800">
+                        <div class="text-sm font-medium text-gray-800 dark:text-slate-100"><?= htmlspecialchars((string) ($n['titulo'] ?? 'Notificación')) ?></div>
+                        <div class="text-xs text-gray-500 dark:text-slate-400"><?= htmlspecialchars((string) ($n['descripcion'] ?? '')) ?></div>
+                        <div class="text-[11px] text-gray-400 dark:text-slate-500 mt-1"><?= htmlspecialchars((string) ($n['created_at'] ?? '')) ?></div>
                       </div>
                     <?php endforeach; ?>
                   <?php else: ?>
-                    <div class="p-3 text-sm text-gray-500">No tienes notificaciones nuevas.</div>
+                    <div class="p-3 text-sm text-gray-500 dark:text-slate-400">No tienes notificaciones nuevas.</div>
                   <?php endif; ?>
                 </div>
               </div>
             <?php endif; ?>
-            <div class="text-sm text-gray-700 hidden sm:block">
+            <div class="text-sm text-gray-700 dark:text-slate-200 hidden sm:block">
               Hola, <span class="font-medium"><?= htmlspecialchars($user['nombre']) ?></span>
             </div>
             <button id="logoutBtn" class="px-2 py-1 flex rounded-md bg-red-500 text-white hover:opacity-90">
@@ -364,7 +421,7 @@ if ($user && !$is_public) {
   <div class="pt-16 flex">
     <?php if ($suscripcion_alert): ?>
       <div class="fixed top-[4.5rem] left-0 right-0 z-100 px-4">
-        <div class="max-w-7xl mx-auto rounded-xl border px-4 py-2 text-sm <?= ($suscripcion_alert['type'] === 'danger') ? 'bg-red-50 border-red-200 text-red-700' : 'bg-amber-50 border-amber-200 text-amber-700' ?>">
+        <div class="max-w-7xl mx-auto rounded-xl border px-4 py-2 text-sm <?= ($suscripcion_alert['type'] === 'danger') ? 'bg-red-50 border-red-200 text-red-700 dark:bg-red-950/40 dark:border-red-900/60 dark:text-red-200' : 'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950/40 dark:border-amber-900/60 dark:text-amber-200' ?>">
           <?= htmlspecialchars((string) ($suscripcion_alert['text'] ?? '')) ?>
         </div>
       </div>
@@ -373,7 +430,7 @@ if ($user && !$is_public) {
 
     <?php if (!$is_public): ?>
       <aside id="sidebar"
-        class="fixed md:static top-16 left-0 w-64 md:w-64 bg-white border-r min-h-screen transform -translate-x-full md:translate-x-0 transition-all duration-300 ease-in-out z-30 m-2 rounded-lg shadow">
+        class="fixed md:static top-16 left-0 w-64 md:w-64 bg-white dark:bg-slate-900 border-r dark:border-slate-800 min-h-screen transform -translate-x-full md:translate-x-0 transition-all duration-300 ease-in-out z-30 m-2 rounded-lg shadow">
         <div class="p-4">
           <nav class="space-y-1" id="sidebarNav">
             <?php if ($user): ?>
@@ -391,143 +448,143 @@ if ($user && !$is_public) {
 
             <?php if ($sidebar_role === 'superadmin' && !$id_e): ?>
               <a href="<?= htmlspecialchars(view_url('vistas/superadmin/dashboard.php')) ?>"
-                class="nav-link flex items-center p-2 rounded hover:bg-gray-50">
+                class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
                 <i data-lucide="trending-up" class="w-5"></i><span class="ml-2 sidebar-label">Dashboard</span>
               </a>
               <a href="<?= htmlspecialchars(view_url('vistas/superadmin/empresas.php')) ?>"
-                class="nav-link flex items-center p-2 rounded hover:bg-gray-50">
+                class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
                 <i data-lucide="building" class="w-5"></i><span class="ml-2 sidebar-label">Empresas</span>
               </a>
               <a href="<?= htmlspecialchars(view_url('vistas/superadmin/planes.php')) ?>"
-                class="nav-link flex items-center p-2 rounded hover:bg-gray-50">
+                class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
                 <i data-lucide="layers" class="w-5"></i><span class="ml-2 sidebar-label">Planes</span>
               </a>
               <a href="<?= htmlspecialchars(view_url('vistas/superadmin/suscripciones.php')) ?>"
-                class="nav-link flex items-center p-2 rounded hover:bg-gray-50">
+                class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
                 <i data-lucide="badge-dollar-sign" class="w-5"></i><span class="ml-2 sidebar-label">Suscripciones</span>
               </a>
               <a href="<?= htmlspecialchars(view_url('vistas/superadmin/anuncios.php')) ?>"
-                class="nav-link flex items-center p-2 rounded hover:bg-gray-50">
+                class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
                 <i data-lucide="megaphone" class="w-5"></i><span class="ml-2 sidebar-label">Anuncios</span>
               </a>
               <a href="<?= htmlspecialchars(view_url('vistas/superadmin/mensajes.php')) ?>"
-                class="nav-link flex items-center p-2 rounded hover:bg-gray-50">
+                class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
                 <i data-lucide="inbox" class="w-5"></i><span class="ml-2 sidebar-label">Mensajes</span>
               </a>
               <a href="<?= htmlspecialchars(view_url('vistas/superadmin/usuarios.php')) ?>"
-                class="nav-link flex items-center p-2 rounded hover:bg-gray-50">
+                class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
                 <i data-lucide="users" class="w-5"></i><span class="ml-2 sidebar-label">Usuarios</span>
               </a>
               <a href="<?= htmlspecialchars(view_url('vistas/superadmin/ajustes.php')) ?>"
-                class="nav-link flex items-center p-2 rounded hover:bg-gray-50">
+                class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
                 <i data-lucide="sliders-horizontal" class="w-5"></i><span class="ml-2 sidebar-label">Ajustes</span>
               </a>
               <a href="<?= htmlspecialchars(view_url('vistas/superadmin/cron_jobs.php')) ?>"
-                class="nav-link flex items-center p-2 rounded hover:bg-gray-50">
+                class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
                 <i data-lucide="timer" class="w-5"></i><span class="ml-2 sidebar-label">Cron Jobs</span>
               </a>
 
             <?php elseif ($sidebar_role === 'admin'): ?>
               <a href="<?= htmlspecialchars(view_url('vistas/admin/dashboard.php', $id_e)) ?>"
-                class="nav-link flex items-center p-2 rounded hover:bg-gray-50">
+                class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
                 <i data-lucide="pie-chart" class="w-5"></i><span class="ml-2 sidebar-label">Dashboard</span>
               </a>
               <a href="<?= htmlspecialchars(view_url('vistas/admin/usuarios.php', $id_e)) ?>"
-                class="nav-link flex items-center p-2 rounded hover:bg-gray-50">
+                class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
                 <i data-lucide="users" class="w-5"></i><span class="ml-2 sidebar-label">Usuarios</span>
               </a>
               <a href="<?= htmlspecialchars(view_url('vistas/admin/servicios.php', $id_e)) ?>"
-                class="nav-link flex items-center p-2 rounded hover:bg-gray-50">
+                class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
                 <i data-lucide="stethoscope" class="w-5"></i><span class="ml-2 sidebar-label">Servicios</span>
               </a>
               <a href="<?= htmlspecialchars(view_url('vistas/admin/sucursales.php', $id_e)) ?>"
-                class="nav-link flex items-center p-2 rounded hover:bg-gray-50">
+                class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
                 <i data-lucide="store" class="w-5"></i><span class="ml-2 sidebar-label">Sucursales</span>
               </a>
               <a href="<?= htmlspecialchars(view_url('vistas/admin/admin-citas.php', $id_e)) ?>"
-                class="nav-link flex items-center p-2 rounded hover:bg-gray-50">
+                class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
                 <i data-lucide="calendar" class="w-5"></i><span class="ml-2 sidebar-label">Citas</span>
               </a>
               <?php if ($plan_can('clientes')): ?>
               <a href="<?= htmlspecialchars(view_url('vistas/admin/clientes.php', $id_e)) ?>"
-                class="nav-link flex items-center p-2 rounded hover:bg-gray-50">
+                class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
                 <i data-lucide="tag" class="w-5"></i><span class="ml-2 sidebar-label">Clientes</span>
               </a>
               <?php endif; ?>
               <?php if ($plan_can('resenas')): ?>
               <a href="<?= htmlspecialchars(view_url('vistas/admin/resenas.php', $id_e)) ?>"
-                class="nav-link flex items-center p-2 rounded hover:bg-gray-50">
+                class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
                 <i data-lucide="star" class="w-5"></i><span class="ml-2 sidebar-label">Reseñas</span>
               </a>
               <?php endif; ?>
               <?php if ($plan_can('blog')): ?>
               <a href="<?= htmlspecialchars(view_url('vistas/admin/blog.php', $id_e)) ?>"
-                class="nav-link flex items-center p-2 rounded hover:bg-gray-50">
+                class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
                 <i data-lucide="monitor-play" class="w-5"></i><span class="ml-2 sidebar-label">Blog</span>
               </a>
               <?php endif; ?>
               <?php if ($plan_can('home_page')): ?>
               <a href="<?= htmlspecialchars(view_url('vistas/admin/home_page.php', $id_e)) ?>"
-                class="nav-link flex items-center p-2 rounded hover:bg-gray-50">
+                class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
                 <i data-lucide="paintbrush" class="w-5"></i><span class="ml-2 sidebar-label">Administrar inicio</span>
               </a>
               <?php endif; ?>
               <a href="<?= htmlspecialchars(view_url('vistas/admin/ajustes.php', $id_e)) ?>"
-                class="nav-link flex items-center p-2 rounded hover:bg-gray-50">
+                class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
                 <i data-lucide="settings" class="w-5"></i><span class="ml-2 sidebar-label">Ajustes</span>
               </a>
               <?php if ($plan_can('mensajes')): ?>
               <a href="<?= htmlspecialchars(view_url('vistas/admin/mensajes.php', $id_e)) ?>"
-                class="nav-link flex items-center p-2 rounded hover:bg-gray-50">
+                class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
                 <i data-lucide="inbox" class="w-5"></i><span class="ml-2 sidebar-label">Mensajes<?php if ($sidebar_msg_unread > 0): ?> <span class="ml-1 inline-flex px-1.5 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-bold"><?= (int) $sidebar_msg_unread ?></span><?php endif; ?></span>
               </a>
               <?php endif; ?>
               <a href="<?= htmlspecialchars(view_url('vistas/admin/movimientos.php', $id_e)) ?>"
-                class="nav-link flex items-center p-2 rounded hover:bg-gray-50">
+                class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
                 <i data-lucide="history" class="w-5"></i><span class="ml-2 sidebar-label">Movimientos</span>
               </a>
 
             <?php elseif ($sidebar_role === 'gerente'): ?>
               <a href="<?= htmlspecialchars(view_url('vistas/sucursal/dashboard.php', $id_e)) ?>"
-                class="nav-link flex items-center p-2 rounded hover:bg-gray-50">
+                class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
                 <i data-lucide="pie-chart" class="w-5"></i><span class="ml-2 sidebar-label">Dashboard</span>
               </a>
               <a href="<?= htmlspecialchars(view_url('vistas/sucursal/usuarios.php', $id_e)) ?>"
-                class="nav-link flex items-center p-2 rounded hover:bg-gray-50">
+                class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
                 <i data-lucide="users" class="w-5"></i><span class="ml-2 sidebar-label">Usuarios</span>
               </a>
               <a href="<?= htmlspecialchars(view_url('vistas/sucursal/servicios.php', $id_e)) ?>"
-                class="nav-link flex items-center p-2 rounded hover:bg-gray-50">
+                class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
                 <i data-lucide="stethoscope" class="w-5"></i><span class="ml-2 sidebar-label">Servicios</span>
               </a>
               <a href="<?= htmlspecialchars(view_url('vistas/sucursal/admin-citas.php', $id_e)) ?>"
-                class="nav-link flex items-center p-2 rounded hover:bg-gray-50">
+                class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
                 <i data-lucide="calendar" class="w-5"></i><span class="ml-2 sidebar-label">Citas</span>
               </a>
               <a href="<?= htmlspecialchars(view_url('vistas/sucursal/ajustes.php', $id_e)) ?>"
-                class="nav-link flex items-center p-2 rounded hover:bg-gray-50">
+                class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
                 <i data-lucide="settings" class="w-5"></i><span class="ml-2 sidebar-label">Ajustes</span>
               </a>
               <a href="<?= htmlspecialchars(view_url('vistas/sucursal/mensajes.php', $id_e)) ?>"
-                class="nav-link flex items-center p-2 rounded hover:bg-gray-50">
+                class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
                 <i data-lucide="inbox" class="w-5"></i><span class="ml-2 sidebar-label">Mensajes<?php if ($sidebar_msg_unread > 0): ?> <span class="ml-1 inline-flex px-1.5 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-bold"><?= (int) $sidebar_msg_unread ?></span><?php endif; ?></span>
               </a>
 
             <?php elseif ($sidebar_role === 'empleado'): ?>
               <a href="<?= htmlspecialchars(view_url('vistas/empleado/dashboard.php', $id_e)) ?>"
-                class="nav-link flex items-center p-2 rounded hover:bg-gray-50">
+                class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
                 <i data-lucide="pie-chart" class="w-5"></i><span class="ml-2 sidebar-label">Dashboard</span>
               </a>
               <a href="<?= htmlspecialchars(view_url('vistas/empleado/citas.php', $id_e)) ?>"
-                class="nav-link flex items-center p-2 rounded hover:bg-gray-50">
+                class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
                 <i data-lucide="calendar" class="w-5"></i><span class="ml-2 sidebar-label">Citas</span>
               </a>
               <a href="<?= htmlspecialchars(view_url('vistas/empleado/ajustes.php', $id_e)) ?>"
-                class="nav-link flex items-center p-2 rounded hover:bg-gray-50">
+                class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
                 <i data-lucide="settings" class="w-5"></i><span class="ml-2 sidebar-label">Ajustes</span>
               </a>
               <a href="<?= htmlspecialchars(view_url('vistas/empleado/mensajes.php', $id_e)) ?>"
-                class="nav-link flex items-center p-2 rounded hover:bg-gray-50">
+                class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
                 <i data-lucide="inbox" class="w-5"></i><span class="ml-2 sidebar-label">Mensajes<?php if ($sidebar_msg_unread > 0): ?> <span class="ml-1 inline-flex px-1.5 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-bold"><?= (int) $sidebar_msg_unread ?></span><?php endif; ?></span>
               </a>
 
@@ -638,7 +695,7 @@ if ($user && !$is_public) {
     <div id="overlay" class="fixed inset-0 bg-black bg-opacity-40 hidden z-20 md:hidden"></div>
 
     <main
-      class="flex-1 w-full <?= $is_public ? 'p-6 bg-gradient-to-br from-teal-100 via-white to-teal-50' : 'p-6' ?> overflow-x-hidden">
+      class="flex-1 w-full <?= $is_public ? 'p-6 bg-gradient-to-br from-teal-100 via-white to-teal-50' : 'p-6 bg-gray-50 dark:bg-slate-950' ?> overflow-x-hidden">
       <?php if ($show_ads && $ad_panel && (int) ($ad_panel['activo'] ?? 0) === 1 && !empty($ad_panel['imagen_path'])): ?>
         <?php
           $adPanelImg = app_url(ltrim((string) $ad_panel['imagen_path'], '/'));

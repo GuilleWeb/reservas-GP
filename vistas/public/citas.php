@@ -23,14 +23,14 @@ include __DIR__ . '/../../includes/topbar.php';
     }
 
     .step-dot.active {
-        background-color: #0d9488;
+        background-color: var(--twc-teal-600);
         color: #fff;
         transform: scale(1.08);
-        box-shadow: 0 10px 18px rgba(13, 148, 136, 0.25);
+        box-shadow: 0 10px 18px rgb(var(--twc-teal-600-rgb) / 0.25);
     }
 
     .step-dot.completed {
-        background-color: #14b8a6;
+        background-color: var(--twc-teal-500);
         color: #fff;
     }
     .step-nav {
@@ -65,9 +65,9 @@ include __DIR__ . '/../../includes/topbar.php';
     }
 
     .card-choice.selected {
-        border-color: #14b8a6;
-        background: rgba(20, 184, 166, 0.08);
-        box-shadow: 0 12px 24px rgba(20, 184, 166, 0.16);
+        border-color: var(--twc-teal-500);
+        background: rgb(var(--twc-teal-500-rgb) / 0.08);
+        box-shadow: 0 12px 24px rgb(var(--twc-teal-500-rgb) / 0.16);
     }
 
     .time-pill {
@@ -87,10 +87,10 @@ include __DIR__ . '/../../includes/topbar.php';
     }
 
     .time-pill.selected {
-        background: #0d9488;
-        border-color: #0d9488;
+        background: var(--twc-teal-600);
+        border-color: var(--twc-teal-600);
         color: #fff;
-        box-shadow: 0 10px 18px rgba(13, 148, 136, 0.25);
+        box-shadow: 0 10px 18px rgb(var(--twc-teal-600-rgb) / 0.25);
     }
 
     .time-pill.occupied {
@@ -100,6 +100,32 @@ include __DIR__ . '/../../includes/topbar.php';
         cursor: not-allowed;
     }
 </style>
+
+<script>
+    (function () {
+        try {
+            const probe = document.createElement('span');
+            probe.style.cssText = 'position:absolute;left:-9999px;top:-9999px;';
+            document.body.appendChild(probe);
+
+            function setVars(cls, varName) {
+                probe.className = cls;
+                const c = getComputedStyle(probe).color;
+                document.documentElement.style.setProperty(varName, c);
+                const m = String(c || '').match(/rgba?\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+                if (m) {
+                    document.documentElement.style.setProperty(varName + '-rgb', `${m[1]} ${m[2]} ${m[3]}`);
+                }
+            }
+
+            setVars('text-teal-600', '--twc-teal-600');
+            setVars('text-teal-500', '--twc-teal-500');
+
+            probe.remove();
+        } catch (e) {
+        }
+    })();
+</script>
 
 <div class="max-w-5xl mx-auto px-4 py-12">
     <!-- Wizard Header -->
@@ -218,51 +244,37 @@ include __DIR__ . '/../../includes/topbar.php';
         <!-- Step 5: Datos Personales -->
         <div id="stepView5" class="step-view hidden space-y-8">
             <h2 class="text-2xl font-black text-gray-900 border-l-4 border-teal-500 pl-4">Tus Datos de Contacto</h2>
-            <form id="datosForm" class="max-w-2xl space-y-6">
-                <div class="bg-teal-50 border border-teal-100 rounded-2xl p-4 space-y-3">
-                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                        <div>
-                            <div class="text-sm font-black text-teal-800">¿Ya soy cliente?</div>
-                            <div class="text-xs text-teal-700">Ingresa tu correo para recuperar tus datos de forma segura.</div>
-                        </div>
-                        <button id="btnSoyCliente" type="button" class="px-4 py-2 rounded-xl bg-white border text-teal-700 font-semibold hover:bg-teal-50">Ya soy cliente</button>
-                    </div>
-                    <div id="soyClientePanel" class="hidden space-y-3">
-                        <div class="flex flex-col md:flex-row gap-2">
-                            <input id="clienteLookupEmail" type="email" class="flex-1 p-3 bg-white border border-teal-200 rounded-xl" placeholder="correo@ejemplo.com">
-                            <button id="btnBuscarCliente" type="button" class="px-4 py-2 rounded-xl bg-teal-600 text-white font-semibold hover:bg-teal-700">Buscar</button>
-                        </div>
-                        <div id="clienteLookupHint" class="hidden text-xs text-teal-800 bg-white border border-teal-100 rounded-xl p-3"></div>
-                    </div>
-                </div>
+            <form id="datosForm" class="w-full space-y-6">
                 <div class="space-y-1">
-                    <label class="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Nombre
-                        Completo</label>
-                    <input type="text" id="cli_nombre" name="nombre"
-                        class="w-full p-4 bg-white border border-gray-100 rounded-2xl focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition-all"
-                        required placeholder="Juan Pérez">
+                    <label class="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Correo</label>
+                    <input type="email" id="cli_email" name="email"
+                        class="w-full p-4 bg-white border border-gray-100 rounded-2xl focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition-all text-center"
+                        required placeholder="correo@ejemplo.com" autocomplete="email">
+                    <div id="clienteLookupHint" class="hidden text-xs text-teal-800 bg-white border border-teal-100 rounded-xl p-3"></div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                <div id="clienteExtraFields" class="hidden">
                     <div class="space-y-1">
-                        <label class="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Email</label>
-                        <input type="email" id="cli_email" name="email"
+                        <label class="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Nombre
+                            Completo</label>
+                        <input type="text" id="cli_nombre" name="nombre"
                             class="w-full p-4 bg-white border border-gray-100 rounded-2xl focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition-all"
-                            required placeholder="juan@ejemplo.com">
+                            required placeholder="Juan Pérez" autocomplete="name">
                     </div>
-                    <div class="space-y-1">
+                    <div class="mt-4 space-y-1">
                         <label
                             class="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Teléfono</label>
                         <input type="tel" id="cli_telefono" name="telefono"
                             class="w-full p-4 bg-white border border-gray-100 rounded-2xl focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition-all"
-                            required placeholder="55 1234 5678">
+                            required placeholder="55 1234 5678" autocomplete="tel">
                     </div>
-                </div>
-                <div class="space-y-1">
-                    <label class="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Notas
-                        Adicionales</label>
-                    <textarea id="cli_notas" name="notas"
-                        class="w-full p-4 bg-white border border-gray-100 rounded-2xl focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition-all"
-                        rows="3" placeholder="¿Algo que debamos saber?"></textarea>
+                    <div class="mt-4 space-y-1">
+                        <label class="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Notas
+                            Adicionales</label>
+                        <textarea id="cli_notas" name="notas"
+                            class="w-full p-4 bg-white border border-gray-100 rounded-2xl focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition-all"
+                            rows="3" placeholder="¿Algo que debamos saber?"></textarea>
+                    </div>
                 </div>
             </form>
         </div>
@@ -590,80 +602,97 @@ include __DIR__ . '/../../includes/topbar.php';
                 selection.p_nombre = $('#cli_nombre').val();
                 selection.p_email = $('#cli_email').val();
                 selection.p_telefono = $('#cli_telefono').val();
-                const hasMasked = String(selection.p_nombre).includes('*') || String(selection.p_telefono).includes('*');
-                if (hasMasked && !clienteLookupToken) {
-                    ok = false;
-                } else {
-                    ok = (selection.p_nombre && selection.p_email && selection.p_telefono);
-                }
+                const extrasVisible = !$('#clienteExtraFields').hasClass('hidden');
+                ok = extrasVisible && (selection.p_nombre && selection.p_email && selection.p_telefono);
             }
             if (currentStep === 6) ok = true;
 
             $('#nextBtn').prop('disabled', !ok);
         }
 
-        $('#cli_nombre, #cli_email, #cli_telefono').on('input', function () {
-            if ($(this).attr('id') !== 'cli_email') {
-                clienteLookupToken = '';
-                clienteLookupData = null;
-                $('#clienteLookupHint').addClass('hidden').text('');
-            }
+        let clienteLookupTimer = null;
+
+        function clearClienteLookupUI() {
+            clienteLookupToken = '';
+            clienteLookupData = null;
+            $('#clienteLookupHint').addClass('hidden').text('');
+            $('#clienteExtraFields').addClass('hidden');
+            $('#cli_nombre').val('');
+            $('#cli_telefono').val('');
+            $('#cli_email').prop('readonly', false);
+        }
+
+        $(document).on('click', '#btnEditarCorreo', function (e) {
+            e.preventDefault();
+            $('#cli_email').prop('readonly', false).val('').trigger('input').trigger('focus');
+            clearClienteLookupUI();
             validateStep();
             renderSelectedSummary();
         });
 
-        $('#btnSoyCliente').on('click', function () {
-            $('#soyClientePanel').toggleClass('hidden');
-            if (!$('#soyClientePanel').hasClass('hidden')) {
-                $('#clienteLookupEmail').val(String($('#cli_email').val() || ''));
-                $('#clienteLookupEmail').trigger('focus');
-            }
-        });
-
-        $('#cli_email').on('blur', function () {
-            const email = String($(this).val() || '').trim();
-            if (!email || clienteLookupToken || autoFillLock) return;
-            $('#clienteLookupEmail').val(email);
-            $('#btnBuscarCliente').trigger('click');
-        });
-
-        $('#btnBuscarCliente').on('click', async function () {
+        async function lookupClienteByEmail(email) {
             if (autoFillLock) return;
-            const email = String($('#clienteLookupEmail').val() || '').trim();
-            if (!email) {
-                showCustomAlert('Ingresa el correo para buscar tus datos.', 3000, 'warning');
-                return;
-            }
             autoFillLock = true;
-            const btn = $(this);
-            const prev = btn.text();
-            btn.prop('disabled', true).text('Buscando...');
             try {
                 const res = await $.get(API, { action: 'find_cliente_secure', id_e: slug, email });
                 if (res && res.success && res.data && res.data.exists) {
                     clienteLookupToken = String(res.data.lookup_token || '');
                     clienteLookupData = res.data;
-                    $('#cli_email').val(email);
-                    $('#cli_nombre').val(maskName(res.data.nombre_masked || ''));
-                    $('#cli_telefono').val(maskPhone(res.data.telefono_masked || ''));
+                    $('#clienteExtraFields').removeClass('hidden');
+                    $('#cli_nombre').val(String(res.data.nombre || ''));
+                    $('#cli_telefono').val(String(res.data.telefono || ''));
+                    $('#cli_email').prop('readonly', true);
                     $('#clienteLookupHint')
                         .removeClass('hidden')
-                        .html(`Cliente encontrado. Datos protegidos cargados para continuar.<br><span class="text-teal-700 font-semibold">Nombre: ${maskName(res.data.nombre_masked || '')} · Tel: ${maskPhone(res.data.telefono_masked || '')}</span>`);
-                    showCustomAlert('Datos recuperados de forma segura.', 2800, 'success');
+                        .html('Cliente encontrado. Puedes confirmar o actualizar tu nombre/teléfono si es necesario. <a href="#" id="btnEditarCorreo" class="font-semibold underline text-teal-700">Cambiar correo</a>');
                 } else {
                     clienteLookupToken = '';
                     clienteLookupData = null;
-                    $('#clienteLookupHint').removeClass('hidden').text('No encontramos un cliente registrado con ese correo en esta empresa.');
-                    showCustomAlert('No se encontró cliente con ese correo.', 3200, 'warning');
+                    $('#cli_email').prop('readonly', false);
+                    $('#clienteExtraFields').removeClass('hidden');
+                    $('#cli_nombre').val('');
+                    $('#cli_telefono').val('');
+                    $('#clienteLookupHint').addClass('hidden').text('');
                 }
             } catch (e) {
-                showCustomAlert('No se pudo validar el cliente en este momento.', 3200, 'error');
+                $('#cli_email').prop('readonly', false);
+                $('#clienteExtraFields').removeClass('hidden');
+                $('#clienteLookupHint').removeClass('hidden').text('No se pudo validar el correo en este momento. Continúa llenando tus datos.');
             } finally {
                 autoFillLock = false;
-                btn.prop('disabled', false).text(prev);
                 validateStep();
                 renderSelectedSummary();
             }
+        }
+
+        $('#cli_email').on('input', function () {
+            if ($(this).prop('readonly')) return;
+            const email = String($(this).val() || '').trim();
+            clearTimeout(clienteLookupTimer);
+            clearClienteLookupUI();
+            if (!email) {
+                validateStep();
+                renderSelectedSummary();
+                return;
+            }
+            const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+            if (!isValid) {
+                validateStep();
+                renderSelectedSummary();
+                return;
+            }
+            // Debounce para no consultar en cada tecla.
+            clienteLookupTimer = setTimeout(() => {
+                lookupClienteByEmail(email);
+            }, 600);
+            $('#clienteExtraFields').removeClass('hidden');
+            validateStep();
+            renderSelectedSummary();
+        });
+
+        $('#cli_nombre, #cli_telefono, #cli_notas').on('input', function () {
+            validateStep();
+            renderSelectedSummary();
         });
 
         if (initialUser && (initialUser.nombre || initialUser.email || initialUser.telefono)) {

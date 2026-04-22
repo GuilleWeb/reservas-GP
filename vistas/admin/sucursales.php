@@ -49,8 +49,8 @@ $user = current_user();
           </div>
 
           <input type="hidden" id="horarios_json" name="horarios_json" value="">
-          <div class="rounded-xl border p-3 bg-gray-50">
-            <div class="text-sm font-semibold text-gray-800 mb-2">Horarios avanzados</div>
+          <div class="rounded-xl border p-3 bg-gray-50 dark:bg-slate-950/30 dark:border-slate-800">
+            <div class="text-sm font-semibold text-gray-800 dark:text-slate-100 mb-2">Horarios avanzados</div>
             <div id="horariosGrid" class="space-y-2">
               <?php
               $dias = [
@@ -145,9 +145,9 @@ $user = current_user();
           </div>
         </div>
 
-        <div class="flex-1 overflow-auto bg-gray-50 rounded-lg border border-gray-100">
+        <div class="flex-1 overflow-auto bg-gray-50 dark:bg-slate-950/30 rounded-lg border border-gray-100 dark:border-slate-800">
           <table class="w-full text-left border-collapse min-w-max">
-            <thead class="bg-gray-50 text-gray-700">
+            <thead class="bg-gray-50 dark:bg-slate-950/50 text-gray-700 dark:text-slate-300">
               <tr>
                 <th class="text-left px-4 py-3 cursor-pointer select-none">Sucursal</th>
                 <th class="text-left px-4 py-3 cursor-pointer select-none">Dirección</th>
@@ -175,13 +175,13 @@ $user = current_user();
         <div class="font-semibold text-gray-900">Asignar Usuarios a Sucursal</div>
         <div class="text-xs text-gray-500">Solo se listan usuarios sin sucursal o ya asignados a esta sucursal.</div>
       </div>
-      <button type="button" id="closeAssignUsersModal" class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-gray-50"><i data-lucide="x"></i></button>
+      <button type="button" id="closeAssignUsersModal" class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-gray-50 dark:hover:bg-slate-800 dark:border-slate-700"><i data-lucide="x"></i></button>
     </div>
     <div class="p-4">
       <div id="assignUsersBody" class="space-y-4 max-h-[60vh] overflow-auto"></div>
     </div>
-    <div class="p-4 border-t flex items-center justify-end gap-2">
-      <button type="button" id="cancelAssignUsers" class="px-3 py-2 rounded-lg border text-sm hover:bg-gray-50">Cancelar</button>
+    <div class="p-4 border-t dark:border-slate-800 flex items-center justify-end gap-2">
+      <button type="button" id="cancelAssignUsers" class="px-3 py-2 rounded-lg border text-sm hover:bg-gray-50 dark:hover:bg-slate-800 dark:border-slate-700">Cancelar</button>
       <button type="button" id="saveAssignUsers" class="px-3 py-2 rounded-lg bg-teal-600 text-white text-sm font-semibold hover:bg-teal-700">Guardar</button>
     </div>
   </div>

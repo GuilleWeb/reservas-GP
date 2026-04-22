@@ -7,13 +7,13 @@ include __DIR__ . '/../../includes/topbar.php';
 ?>
 
 <div class="max-w-7xl mx-auto">
-  <div class="bg-white shadow rounded-2xl p-6 border min-h-[500px]">
+  <div class="bg-white dark:bg-slate-900/60 dark:border-slate-800 shadow rounded-2xl p-6 border min-h-[500px]">
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
       <div>
-        <h2 class="text-xl font-bold text-gray-800">Agenda de Citas (Administración)</h2>
-        <p class="text-sm text-gray-500">Vista tabla y calendario para todas las citas de la empresa.</p>
+        <h2 class="text-xl font-bold text-gray-800 dark:text-slate-100">Agenda de Citas (Administración)</h2>
+        <p class="text-sm text-gray-500 dark:text-slate-400">Vista tabla y calendario para todas las citas de la empresa.</p>
       </div>
-      <div class="inline-flex rounded-xl border border-gray-200 p-1 bg-gray-50">
+      <div class="inline-flex rounded-xl border border-gray-200 dark:border-slate-700 p-1 bg-gray-50 dark:bg-slate-950/30">
         <button id="btnViewTable" class="px-4 py-2 rounded-lg text-sm font-semibold text-gray-700">Tabla</button>
         <button id="btnViewCalendar" class="px-4 py-2 rounded-lg text-sm font-semibold bg-teal-600 text-white">Calendario</button>
       </div>
@@ -48,17 +48,17 @@ include __DIR__ . '/../../includes/topbar.php';
     </div>
 
     <div id="tableView" class="hidden">
-      <div class="flex-1 overflow-auto bg-gray-50 rounded-lg border border-gray-100">
+      <div class="flex-1 overflow-auto bg-gray-50 dark:bg-slate-950/30 rounded-lg border border-gray-100 dark:border-slate-800">
         <table class="w-full text-left border-collapse min-w-max">
-          <thead class="bg-white border-b sticky top-0 z-10 shadow-sm">
+          <thead class="bg-white dark:bg-slate-950/60 border-b dark:border-slate-800 sticky top-0 z-10 shadow-sm">
             <tr>
-              <th class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Fecha / Hora</th>
-              <th class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Cliente / Servicio</th>
-              <th class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Estado</th>
-              <th class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase text-right">Acciones</th>
+              <th class="py-3 px-4 text-xs font-semibold text-gray-600 dark:text-slate-300 uppercase">Fecha / Hora</th>
+              <th class="py-3 px-4 text-xs font-semibold text-gray-600 dark:text-slate-300 uppercase">Cliente / Servicio</th>
+              <th class="py-3 px-4 text-xs font-semibold text-gray-600 dark:text-slate-300 uppercase">Estado</th>
+              <th class="py-3 px-4 text-xs font-semibold text-gray-600 dark:text-slate-300 uppercase text-right">Acciones</th>
             </tr>
           </thead>
-          <tbody id="tableBody" class="divide-y divide-gray-100 bg-white"></tbody>
+          <tbody id="tableBody" class="divide-y divide-gray-100 dark:divide-slate-800 bg-white dark:bg-slate-950/20"></tbody>
         </table>
       </div>
       <div class="mt-4 flex flex-col sm:flex-row items-center justify-between border-t pt-4">
@@ -69,25 +69,25 @@ include __DIR__ . '/../../includes/topbar.php';
 
     <div id="calendarView" class="hidden">
       <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        <div class="lg:col-span-4 rounded-2xl border border-gray-200 bg-white overflow-hidden">
-          <div class="px-4 py-3 border-b bg-gray-50 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-            <div class="inline-flex rounded-lg border border-gray-200 p-1 bg-white">
+        <div class="lg:col-span-4 rounded-2xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-950/20 overflow-hidden">
+          <div class="px-4 py-3 border-b border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-950/40 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div class="inline-flex rounded-lg border border-gray-200 dark:border-slate-700 p-1 bg-white dark:bg-slate-950/30">
               <button id="btnModeMonth" class="px-3 h-8 rounded-md text-xs font-semibold text-gray-700">Mes</button>
               <button id="btnModeWeek" class="px-3 h-8 rounded-md text-xs font-semibold text-gray-700">Semana</button>
               <button id="btnModeDay" class="px-3 h-8 rounded-md text-xs font-semibold bg-teal-600 text-white">Día</button>
             </div>
             <div class="flex items-center gap-2">
-              <button id="btnPrevRange" class="h-9 w-9 grid place-items-center rounded-lg border bg-white hover:bg-gray-50">
+              <button id="btnPrevRange" class="h-9 w-9 grid place-items-center rounded-lg border bg-white dark:bg-slate-950/30 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800">
                 <i data-lucide="chevron-left"></i>
               </button>
-              <div id="rangeLabel" class="text-sm font-semibold text-gray-700 min-w-[190px] text-center"></div>
-              <button id="btnNextRange" class="h-9 w-9 grid place-items-center rounded-lg border bg-white hover:bg-gray-50">
+              <div id="rangeLabel" class="text-sm font-semibold text-gray-700 dark:text-slate-200 min-w-[190px] text-center"></div>
+              <button id="btnNextRange" class="h-9 w-9 grid place-items-center rounded-lg border bg-white dark:bg-slate-950/30 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800">
                 <i data-lucide="chevron-right"></i>
               </button>
-              <button id="btnToday" class="px-3 h-9 rounded-lg border bg-white text-sm font-medium hover:bg-gray-50">Hoy</button>
+              <button id="btnToday" class="px-3 h-9 rounded-lg border bg-white dark:bg-slate-950/30 dark:border-slate-700 text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-800">Hoy</button>
             </div>
           </div>
-          <div id="weekdayHead" class="grid grid-cols-7 border-b text-xs font-semibold text-gray-600 bg-gray-50">
+          <div id="weekdayHead" class="grid grid-cols-7 border-b border-gray-200 dark:border-slate-800 text-xs font-semibold text-gray-600 dark:text-slate-300 bg-gray-50 dark:bg-slate-950/40">
             <div class="p-2 text-center">Lun</div>
             <div class="p-2 text-center">Mar</div>
             <div class="p-2 text-center">Mié</div>
@@ -96,10 +96,10 @@ include __DIR__ . '/../../includes/topbar.php';
             <div class="p-2 text-center">Sáb</div>
             <div class="p-2 text-center">Dom</div>
           </div>
-          <div id="calendarGrid" class="grid grid-cols-7 gap-2 p-3 bg-gray-50"></div>
+          <div id="calendarGrid" class="grid grid-cols-7 gap-2 p-3 bg-gray-50 dark:bg-slate-950/30"></div>
         </div>
-        <div class="lg:col-span-1 bg-gray-50 rounded-xl border border-gray-100 p-4">
-          <div class="text-sm font-semibold text-gray-800 mb-2" id="dayAgendaTitle">Citas del día</div>
+        <div class="lg:col-span-1 bg-gray-50 dark:bg-slate-950/30 rounded-xl border border-gray-100 dark:border-slate-800 p-4">
+          <div class="text-sm font-semibold text-gray-800 dark:text-slate-100 mb-2" id="dayAgendaTitle">Citas del día</div>
           <div id="dayAgenda" class="space-y-2 max-h-[420px] overflow-auto"></div>
         </div>
       </div>
@@ -108,10 +108,10 @@ include __DIR__ . '/../../includes/topbar.php';
 </div>
 
 <div id="citaModal" class="fixed inset-0 bg-black/40 z-50 hidden items-center justify-center p-4">
-  <div class="bg-white rounded-2xl shadow-xl border w-full max-w-2xl p-5">
+  <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border dark:border-slate-800 w-full max-w-2xl p-5">
     <div class="flex items-center justify-between mb-4">
-      <h3 class="font-semibold text-gray-900">Detalle de cita</h3>
-      <button type="button" id="btnCloseModal" class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-gray-50">
+      <h3 class="font-semibold text-gray-900 dark:text-slate-100">Detalle de cita</h3>
+      <button type="button" id="btnCloseModal" class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-gray-50 dark:hover:bg-slate-800 dark:border-slate-700">
         <i data-lucide="x"></i>
       </button>
     </div>
@@ -119,7 +119,7 @@ include __DIR__ . '/../../includes/topbar.php';
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
       <div>
         <label class="text-xs text-gray-600">Estado</label>
-        <select id="mEstado" class="border rounded-lg p-2 w-full bg-gray-50" disabled>
+        <select id="mEstado" class="border rounded-lg p-2 w-full bg-gray-50 dark:bg-slate-950/30 dark:border-slate-700" disabled>
           <option value="pendiente">Pendiente</option>
           <option value="confirmada">Confirmada</option>
           <option value="cancelada">Cancelada</option>
@@ -129,12 +129,12 @@ include __DIR__ . '/../../includes/topbar.php';
       </div>
       <div class="md:col-span-2">
         <label class="text-xs text-gray-600">Observación</label>
-        <textarea id="mNotas" rows="3" class="border rounded-lg p-2 w-full bg-gray-50" disabled></textarea>
+        <textarea id="mNotas" rows="3" class="border rounded-lg p-2 w-full bg-gray-50 dark:bg-slate-950/30 dark:border-slate-700" disabled></textarea>
       </div>
     </div>
     <div class="mt-4 pt-4 border-t flex items-center justify-between">
       <div class="text-xs text-gray-500 max-w-md">Recomendación: confirma la cita con el cliente 10 minutos antes para reducir ausencias.</div>
-      <button type="button" id="btnEditModal" class="px-3 py-2 rounded-lg border text-sm hover:bg-gray-50">Editar</button>
+      <button type="button" id="btnEditModal" class="px-3 py-2 rounded-lg border text-sm hover:bg-gray-50 dark:hover:bg-slate-800 dark:border-slate-700">Editar</button>
       <button type="button" id="btnSaveModal" class="px-3 py-2 rounded-lg bg-teal-600 text-white text-sm font-semibold hover:bg-teal-700 hidden">Guardar cambios</button>
     </div>
   </div>
@@ -283,6 +283,7 @@ include __DIR__ . '/../../includes/topbar.php';
   function setCalendarMode(mode){ calendarMode=mode; $('#btnModeMonth').toggleClass('bg-teal-600 text-white',mode==='month').toggleClass('text-gray-700',mode!=='month'); $('#btnModeWeek').toggleClass('bg-teal-600 text-white',mode==='week').toggleClass('text-gray-700',mode!=='week'); $('#btnModeDay').toggleClass('bg-teal-600 text-white',mode==='day').toggleClass('text-gray-700',mode!=='day'); loadCalendarRange(); }
 
   function openModal(item){
+    return;
     modalItemId=parseInt(item.id||0,10);
     const info=$('#modalInfo').empty();
     const fecha=parseSqlDate(item.inicio), fin=item.fin?parseSqlDate(item.fin):null;

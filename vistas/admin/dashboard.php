@@ -46,16 +46,15 @@ include __DIR__ . '/../../includes/topbar.php';
 
 $stats = [];
 
+// Stats para superadmin
 if ($role === 'superadmin' && !$id_e) {
   $stats['empresas_activas'] = (int) $pdo->query("SELECT COUNT(*) FROM empresas WHERE activo=1")->fetchColumn();
   $stats['empresas_inactivas'] = (int) $pdo->query("SELECT COUNT(*) FROM empresas WHERE activo=0")->fetchColumn();
   $stats['planes_activos'] = (int) $pdo->query("SELECT COUNT(*) FROM planes WHERE activo=1")->fetchColumn();
   $stats['sucursales_activas'] = (int) $pdo->query("SELECT COUNT(*) FROM sucursales WHERE activo=1")->fetchColumn();
   $stats['usuarios_activos'] = (int) $pdo->query("SELECT COUNT(*) FROM usuarios WHERE activo=1")->fetchColumn();
-  $stats['admins_activos'] = (int) $pdo->query("SELECT COUNT(*) FROM usuarios WHERE activo=1 AND rol='admin'")->fetchColumn();
-  $stats['gerentes_activos'] = (int) $pdo->query("SELECT COUNT(*) FROM usuarios WHERE activo=1 AND rol='gerente'")->fetchColumn();
-  $stats['empleados_activos'] = (int) $pdo->query("SELECT COUNT(*) FROM usuarios WHERE activo=1 AND rol='empleado'")->fetchColumn();
-  $stats['clientes_activos'] = (int) $pdo->query("SELECT COUNT(*) FROM usuarios WHERE activo=1 AND rol='cliente'")->fetchColumn();
+  $stats['citas_hoy'] = (int) $pdo->query("SELECT COUNT(*) FROM citas WHERE DATE(inicio) = CURDATE()")->fetchColumn();
+  $stats['citas_mes'] = (int) $pdo->query("SELECT COUNT(*) FROM citas WHERE YEAR(inicio)=YEAR(CURDATE()) AND MONTH(inicio)=MONTH(CURDATE())")->fetchColumn();
 
   $stmt = $pdo->prepare("SELECT COUNT(*) FROM mensajes_contacto WHERE estado='nuevo'");
   $stmt->execute();
@@ -65,11 +64,26 @@ if ($role === 'superadmin' && !$id_e) {
     $stmt = $pdo->prepare("SELECT ae.id, ae.tipo, ae.entidad, ae.entidad_id, ae.descripcion, ae.actor_rol, ae.created_at
                                FROM auditoria_eventos ae
                                ORDER BY ae.id DESC
-                               LIMIT 12");
+                               LIMIT 10");
     $stmt->execute();
     $stats['movimientos'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
   } catch (Throwable $e) {
     $stats['movimientos'] = [];
+  }
+
+  // Top empresas por citas
+  try {
+    $stmt = $pdo->prepare("SELECT e.nombre, COUNT(c.id) as total_citas
+                           FROM empresas e
+                           LEFT JOIN citas c ON c.empresa_id = e.id
+                           WHERE e.activo = 1
+                           GROUP BY e.id
+                           ORDER BY total_citas DESC
+                           LIMIT 5");
+    $stmt->execute();
+    $topEmpresas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+  } catch (Throwable $e) {
+    $topEmpresas = [];
   }
 }
 ?>
@@ -91,79 +105,260 @@ if ($role === 'superadmin' && !$id_e) {
     </div>
 
     <?php if ($role === 'superadmin' && !$id_e): ?>
-      <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="rounded-2xl border bg-white p-4">
-          <div class="text-xs text-gray-500">Empresas activas</div>
-          <div class="mt-1 text-2xl font-extrabold text-gray-900"><?= (int) ($stats['empresas_activas'] ?? 0) ?></div>
-        </div>
-        <div class="rounded-2xl border bg-white p-4">
-          <div class="text-xs text-gray-500">Sucursales activas</div>
-          <div class="mt-1 text-2xl font-extrabold text-gray-900"><?= (int) ($stats['sucursales_activas'] ?? 0) ?></div>
-        </div>
-        <div class="rounded-2xl border bg-white p-4">
-          <div class="text-xs text-gray-500">Usuarios activos</div>
-          <div class="mt-1 text-2xl font-extrabold text-gray-900"><?= (int) ($stats['usuarios_activos'] ?? 0) ?></div>
-        </div>
-        <div class="rounded-2xl border bg-white p-4">
-          <div class="text-xs text-gray-500">Mensajes nuevos</div>
-          <div class="mt-1 text-2xl font-extrabold text-gray-900"><?= (int) ($stats['mensajes_nuevos'] ?? 0) ?></div>
-        </div>
-      </div>
+      <!-- Dashboard Superadmin Moderno - Dark Mode -->
+      <div id="dashboard-root" class="mt-6 -mx-6 -mb-6 min-h-screen bg-slate-900 text-slate-100 transition-colors duration-300">
 
-      <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="rounded-2xl border bg-white p-4">
-          <div class="text-xs text-gray-500">Planes activos</div>
-          <div class="mt-1 text-xl font-bold text-gray-900"><?= (int) ($stats['planes_activos'] ?? 0) ?></div>
-        </div>
-        <div class="rounded-2xl border bg-white p-4">
-          <div class="text-xs text-gray-500">Empresas inactivas</div>
-          <div class="mt-1 text-xl font-bold text-gray-900"><?= (int) ($stats['empresas_inactivas'] ?? 0) ?></div>
-        </div>
-        <div class="rounded-2xl border bg-white p-4">
-          <div class="text-xs text-gray-500">Admins activos</div>
-          <div class="mt-1 text-xl font-bold text-gray-900"><?= (int) ($stats['admins_activos'] ?? 0) ?></div>
-        </div>
-        <div class="rounded-2xl border bg-white p-4">
-          <div class="text-xs text-gray-500">Empleados activos</div>
-          <div class="mt-1 text-xl font-bold text-gray-900"><?= (int) ($stats['empleados_activos'] ?? 0) ?></div>
-        </div>
-      </div>
+        <!-- Header -->
+        <div class="border-b border-slate-800 bg-slate-900/50 backdrop-blur px-6 py-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center shadow-lg shadow-teal-500/20">
+                <i data-lucide="layout-dashboard" class="w-5 h-5 text-white"></i>
+              </div>
+              <div>
+                <h1 class="text-xl font-bold text-white">Panel Superadmin</h1>
+                <p class="text-xs text-slate-400">Control total del sistema</p>
+              </div>
+            </div>
 
-      <div class="mt-4 rounded-2xl border bg-white p-4">
-        <div class="flex items-center justify-between gap-3">
-          <div class="font-semibold text-gray-900">Últimos movimientos</div>
-          <div class="text-xs text-gray-500">Estado: <span class="font-semibold text-teal-700">Operando</span></div>
+            <div class="flex items-center gap-4">
+              <!-- Theme Toggle -->
+              <button id="theme-toggle" class="relative w-14 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center px-1 transition-colors hover:border-slate-600">
+                <span class="sr-only">Cambiar tema</span>
+                <i data-lucide="sun" class="w-4 h-4 text-amber-400 absolute left-2"></i>
+                <i data-lucide="moon" class="w-4 h-4 text-cyan-400 absolute right-2"></i>
+                <div id="theme-indicator" class="w-6 h-6 rounded-full bg-slate-600 shadow-md transform transition-transform translate-x-6"></div>
+              </button>
+
+              <div class="flex items-center gap-3 pl-4 border-l border-slate-800">
+                <div class="text-right hidden sm:block">
+                  <p class="text-sm font-medium text-white"><?= htmlspecialchars($user['nombre'] ?? '') ?></p>
+                  <p class="text-xs text-teal-400">Superadmin</p>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-slate-700 to-slate-600 border border-slate-500 flex items-center justify-center">
+                  <i data-lucide="user" class="w-5 h-5 text-slate-300"></i>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="mt-3 overflow-x-auto">
-          <table class="min-w-full text-sm">
-            <thead class="bg-gray-50 text-gray-700">
-              <tr>
-                <th class="text-left px-3 py-2">Fecha</th>
-                <th class="text-left px-3 py-2">Actor</th>
-                <th class="text-left px-3 py-2">Evento</th>
-                <th class="text-left px-3 py-2">Entidad</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y">
-              <?php foreach (($stats['movimientos'] ?? []) as $m): ?>
-                <tr class="hover:bg-gray-50">
-                  <td class="px-3 py-2 font-mono text-xs text-gray-600"><?= htmlspecialchars($m['created_at'] ?? '') ?></td>
-                  <td class="px-3 py-2"><?= htmlspecialchars($m['actor_rol'] ?? '') ?></td>
-                  <td class="px-3 py-2">
-                    <?= htmlspecialchars($m['tipo'] ?? '') ?>
-                    <?= ($m['descripcion'] ?? '') ? ' - ' . htmlspecialchars($m['descripcion']) : '' ?>
-                  </td>
-                  <td class="px-3 py-2"><?= htmlspecialchars($m['entidad'] ?? '') ?> #<?= (int) ($m['entidad_id'] ?? 0) ?>
-                  </td>
-                </tr>
-              <?php endforeach; ?>
-              <?php if (empty($stats['movimientos'] ?? [])): ?>
-                <tr>
-                  <td class="px-3 py-3 text-gray-500" colspan="4">Aún no hay movimientos registrados.</td>
-                </tr>
-              <?php endif; ?>
-            </tbody>
-          </table>
+
+        <div class="p-6">
+          <!-- Stats Principales -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="group relative overflow-hidden rounded-2xl bg-slate-800/50 border border-slate-700/50 p-5 hover:border-teal-500/30 transition-all">
+              <div class="absolute inset-0 bg-gradient-to-br from-teal-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div class="relative flex items-start justify-between">
+                <div>
+                  <p class="text-slate-400 text-sm font-medium">Empresas Activas</p>
+                  <p class="text-3xl font-bold text-white mt-1"><?= number_format($stats['empresas_activas']) ?></p>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-teal-500/10 flex items-center justify-center">
+                  <i data-lucide="building-2" class="w-6 h-6 text-teal-400"></i>
+                </div>
+              </div>
+            </div>
+
+            <div class="group relative overflow-hidden rounded-2xl bg-slate-800/50 border border-slate-700/50 p-5 hover:border-cyan-500/30 transition-all">
+              <div class="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div class="relative flex items-start justify-between">
+                <div>
+                  <p class="text-slate-400 text-sm font-medium">Usuarios Totales</p>
+                  <p class="text-3xl font-bold text-white mt-1"><?= number_format($stats['usuarios_activos']) ?></p>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center">
+                  <i data-lucide="users" class="w-6 h-6 text-cyan-400"></i>
+                </div>
+              </div>
+            </div>
+
+            <div class="group relative overflow-hidden rounded-2xl bg-slate-800/50 border border-slate-700/50 p-5 hover:border-emerald-500/30 transition-all">
+              <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div class="relative flex items-start justify-between">
+                <div>
+                  <p class="text-slate-400 text-sm font-medium">Citas Hoy</p>
+                  <p class="text-3xl font-bold text-white mt-1"><?= number_format($stats['citas_hoy']) ?></p>
+                  <p class="text-xs text-emerald-400 mt-2"><?= number_format($stats['citas_mes']) ?> este mes</p>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                  <i data-lucide="calendar-check" class="w-6 h-6 text-emerald-400"></i>
+                </div>
+              </div>
+            </div>
+
+            <div class="group relative overflow-hidden rounded-2xl bg-slate-800/50 border border-slate-700/50 p-5 hover:border-amber-500/30 transition-all">
+              <div class="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div class="relative flex items-start justify-between">
+                <div>
+                  <p class="text-slate-400 text-sm font-medium">Mensajes Nuevos</p>
+                  <p class="text-3xl font-bold text-white mt-1"><?= number_format($stats['mensajes_nuevos']) ?></p>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                  <i data-lucide="message-square" class="w-6 h-6 text-amber-400"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stats Secundarias -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 mb-6">
+            <div class="rounded-xl bg-slate-800/30 border border-slate-700/30 p-3 text-center">
+              <p class="text-2xl font-bold text-white"><?= number_format($stats['sucursales_activas']) ?></p>
+              <p class="text-xs text-slate-400">Sucursales</p>
+            </div>
+            <div class="rounded-xl bg-slate-800/30 border border-slate-700/30 p-3 text-center">
+              <p class="text-2xl font-bold text-white"><?= number_format($stats['planes_activos']) ?></p>
+              <p class="text-xs text-slate-400">Planes</p>
+            </div>
+            <div class="rounded-xl bg-slate-800/30 border border-slate-700/30 p-3 text-center">
+              <p class="text-2xl font-bold text-slate-400"><?= number_format($stats['empresas_inactivas']) ?></p>
+              <p class="text-xs text-slate-500">Inactivas</p>
+            </div>
+            <div class="rounded-xl bg-slate-800/30 border border-slate-700/30 p-3 text-center">
+              <p class="text-2xl font-bold text-teal-400"><?= number_format($stats['citas_mes']) ?></p>
+              <p class="text-xs text-slate-400">Citas/mes</p>
+            </div>
+            <div class="rounded-xl bg-slate-800/30 border border-slate-700/30 p-3 text-center col-span-2">
+              <p class="text-xs text-slate-400 mb-1">Estado del Sistema</p>
+              <div class="flex items-center justify-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span class="text-sm font-medium text-emerald-400">Operando</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Grid Principal -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Movimientos -->
+            <div class="lg:col-span-2 rounded-2xl bg-slate-800/50 border border-slate-700/50 overflow-hidden">
+              <div class="px-6 py-4 border-b border-slate-700/50 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="activity" class="w-5 h-5 text-teal-400"></i>
+                  <h3 class="font-semibold text-white">Movimientos Recientes</h3>
+                </div>
+                <a href="<?= view_url('vistas/admin/movimientos.php') ?>" class="text-sm text-teal-400 hover:text-teal-300">Ver todo</a>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead class="bg-slate-900/50 text-slate-400">
+                    <tr>
+                      <th class="text-left px-4 py-3 font-medium">Fecha</th>
+                      <th class="text-left px-4 py-3 font-medium">Actor</th>
+                      <th class="text-left px-4 py-3 font-medium">Evento</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-700/50">
+                    <?php foreach ($stats['movimientos'] as $m): ?>
+                      <tr class="hover:bg-slate-700/30 transition-colors">
+                        <td class="px-4 py-3 text-slate-400 font-mono text-xs"><?= htmlspecialchars(substr($m['created_at'], 0, 16)) ?></td>
+                        <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-700 text-slate-300"><?= htmlspecialchars($m['actor_rol'] ?? 'system') ?></span></td>
+                        <td class="px-4 py-3 text-slate-200"><?= htmlspecialchars($m['tipo'] ?? '') ?> <span class="text-slate-500">- <?= htmlspecialchars(substr($m['descripcion'] ?? '', 0, 40)) ?></span></td>
+                      </tr>
+                    <?php endforeach; ?>
+                    <?php if (empty($stats['movimientos'])): ?>
+                      <tr><td colspan="3" class="px-4 py-8 text-center text-slate-500"><i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 opacity-50"></i><p>No hay movimientos</p></td></tr>
+                    <?php endif; ?>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Top Empresas -->
+            <div class="rounded-2xl bg-slate-800/50 border border-slate-700/50 overflow-hidden">
+              <div class="px-6 py-4 border-b border-slate-700/50">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="trophy" class="w-5 h-5 text-amber-400"></i>
+                  <h3 class="font-semibold text-white">Top Empresas</h3>
+                </div>
+                <p class="text-xs text-slate-400 mt-1">Por número de citas</p>
+              </div>
+              <div class="p-4 space-y-3">
+                <?php foreach ($topEmpresas as $idx => $emp):
+                  $maxCitas = !empty($topEmpresas) && isset($topEmpresas[0]['total_citas']) ? max(1, (int)$topEmpresas[0]['total_citas']) : 1;
+                  $pct = min(100, ((int)$emp['total_citas'] / $maxCitas) * 100);
+                ?>
+                  <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-900/50 border border-slate-700/30 hover:border-teal-500/30 transition-colors">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center text-white font-bold text-sm"><?= $idx + 1 ?></div>
+                    <div class="flex-1 min-w-0">
+                      <p class="font-medium text-white truncate"><?= htmlspecialchars($emp['nombre']) ?></p>
+                      <p class="text-xs text-slate-400"><?= number_format($emp['total_citas']) ?> citas</p>
+                    </div>
+                    <div class="w-16 bg-slate-700 rounded-full h-1.5 overflow-hidden">
+                      <div class="h-full bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full" style="width: <?= $pct ?>%"></div>
+                    </div>
+                  </div>
+                <?php endforeach; ?>
+                <?php if (empty($topEmpresas)): ?>
+                  <div class="text-center py-8 text-slate-500"><i data-lucide="bar-chart-2" class="w-8 h-8 mx-auto mb-2 opacity-50"></i><p class="text-sm">Sin datos</p></div>
+                <?php endif; ?>
+              </div>
+            </div>
+          </div>
+
+          <!-- Accesos Rápidos -->
+          <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <a href="<?= view_url('vistas/admin/empresas.php') ?>" class="group flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-teal-500/10 to-teal-600/5 border border-teal-500/20 hover:border-teal-500/40 transition-all">
+              <div class="w-12 h-12 rounded-xl bg-teal-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <i data-lucide="building-2" class="w-6 h-6 text-teal-400"></i>
+              </div>
+              <div><p class="font-semibold text-white">Empresas</p><p class="text-xs text-slate-400">Gestionar</p></div>
+              <i data-lucide="arrow-right" class="w-5 h-5 text-slate-500 ml-auto group-hover:text-teal-400 group-hover:translate-x-1 transition-all"></i>
+            </a>
+
+            <a href="<?= view_url('vistas/admin/planes.php') ?>" class="group flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-cyan-500/10 to-cyan-600/5 border border-cyan-500/20 hover:border-cyan-500/40 transition-all">
+              <div class="w-12 h-12 rounded-xl bg-cyan-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <i data-lucide="credit-card" class="w-6 h-6 text-cyan-400"></i>
+              </div>
+              <div><p class="font-semibold text-white">Planes</p><p class="text-xs text-slate-400">Configurar</p></div>
+              <i data-lucide="arrow-right" class="w-5 h-5 text-slate-500 ml-auto group-hover:text-cyan-400 group-hover:translate-x-1 transition-all"></i>
+            </a>
+
+            <a href="<?= view_url('vistas/admin/mensajes.php') ?>" class="group flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-amber-500/10 to-amber-600/5 border border-amber-500/20 hover:border-amber-500/40 transition-all">
+              <div class="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <i data-lucide="message-square" class="w-6 h-6 text-amber-400"></i>
+              </div>
+              <div><p class="font-semibold text-white">Mensajes</p><p class="text-xs text-slate-400"><?= $stats['mensajes_nuevos'] ?> nuevos</p></div>
+              <i data-lucide="arrow-right" class="w-5 h-5 text-slate-500 ml-auto group-hover:text-amber-400 group-hover:translate-x-1 transition-all"></i>
+            </a>
+
+            <a href="<?= view_url('vistas/admin/ajustes.php') ?>" class="group flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20 hover:border-purple-500/40 transition-all">
+              <div class="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <i data-lucide="settings" class="w-6 h-6 text-purple-400"></i>
+              </div>
+              <div><p class="font-semibold text-white">Ajustes</p><p class="text-xs text-slate-400">Configuración</p></div>
+              <i data-lucide="arrow-right" class="w-5 h-5 text-slate-500 ml-auto group-hover:text-purple-400 group-hover:translate-x-1 transition-all"></i>
+            </a>
+          </div>
+
+          <!-- Theme Toggle Script -->
+          <script>
+            (function() {
+              const root = document.getElementById('dashboard-root');
+              const toggle = document.getElementById('theme-toggle');
+              const indicator = document.getElementById('theme-indicator');
+              const STORAGE_KEY = 'reservasgp-theme';
+              let isDark = localStorage.getItem(STORAGE_KEY) !== 'light';
+
+              function updateTheme() {
+                if (isDark) {
+                  indicator.style.transform = 'translateX(24px)';
+                  indicator.classList.remove('bg-slate-200');
+                  indicator.classList.add('bg-slate-600');
+                } else {
+                  indicator.style.transform = 'translateX(0)';
+                  indicator.classList.remove('bg-slate-600');
+                  indicator.classList.add('bg-slate-200');
+                }
+              }
+              updateTheme();
+
+              toggle.addEventListener('click', function() {
+                isDark = !isDark;
+                localStorage.setItem(STORAGE_KEY, isDark ? 'dark' : 'light');
+                updateTheme();
+              });
+            })();
+          </script>
         </div>
       </div>
     <?php else: ?>
@@ -172,10 +367,9 @@ $s_stats = [];
 try {
    $eid = (int) $id_e;
    $s_stats['citas_hoy'] = (int) $pdo->query("SELECT COUNT(*) FROM citas WHERE empresa_id = {$eid} AND DATE(inicio) = CURDATE()")->fetchColumn();
-   $s_stats['citas_total'] = (int) $pdo->query("SELECT COUNT(*) FROM citas WHERE empresa_id = {$eid}")->fetchColumn();
    $s_stats['sucursales'] = (int) $pdo->query("SELECT COUNT(*) FROM sucursales WHERE empresa_id = {$eid} AND activo = 1")->fetchColumn();
    $s_stats['empleados'] = (int) $pdo->query("SELECT COUNT(*) FROM usuarios WHERE empresa_id = {$eid} AND rol IN ('admin','gerente','empleado') AND activo = 1")->fetchColumn();
-   $s_stats['clientes'] = (int) $pdo->query("SELECT COUNT(*) FROM clientes c JOIN cliente_empresas ce ON ce.cliente_id = c.id WHERE ce.empresa_id = {$eid} AND c.activo = 1")->fetchColumn();
+   $s_stats['clientes'] = (int) $pdo->query("SELECT COUNT(*) FROM clientes c WHERE c.empresa_id = {$eid} AND c.activo = 1")->fetchColumn();
    $s_stats['servicios'] = (int) $pdo->query("SELECT COUNT(*) FROM servicios WHERE empresa_id = {$eid} AND activo = 1")->fetchColumn();
    $s_stats['citas_mes'] = (int) $pdo->query("SELECT COUNT(*) FROM citas WHERE empresa_id = {$eid} AND YEAR(inicio)=YEAR(CURDATE()) AND MONTH(inicio)=MONTH(CURDATE())")->fetchColumn();
    $s_stats['citas_mes_prev'] = (int) $pdo->query("SELECT COUNT(*) FROM citas WHERE empresa_id = {$eid} AND YEAR(inicio)=YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND MONTH(inicio)=MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))")->fetchColumn();
@@ -195,10 +389,6 @@ try {
         <div class="rounded-2xl border bg-white p-4">
           <div class="text-xs text-gray-500">Citas Hoy</div>
           <div class="mt-1 text-2xl font-extrabold text-gray-900"><?= (int)($s_stats['citas_hoy'] ?? 0) ?></div>
-        </div>
-        <div class="rounded-2xl border bg-white p-4">
-          <div class="text-xs text-gray-500">Citas Totales</div>
-          <div class="mt-1 text-2xl font-extrabold text-gray-900"><?= (int)($s_stats['citas_total'] ?? 0) ?></div>
         </div>
         <div class="rounded-2xl border bg-white p-4">
           <div class="text-xs text-gray-500">Sucursales</div>

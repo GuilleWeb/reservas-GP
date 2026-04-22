@@ -196,9 +196,8 @@ switch ($action) {
 
         if ($cliente_id > 0) {
             $stmt = $pdo->prepare('SELECT c.id, c.nombre, c.telefono, c.email
-                                   FROM cliente_empresas ce
-                                   JOIN clientes c ON c.id = ce.cliente_id
-                                   WHERE ce.empresa_id = ? AND ce.cliente_id = ? AND c.activo = 1
+                                   FROM clientes c
+                                   WHERE c.empresa_id = ? AND c.id = ? AND c.activo = 1
                                    LIMIT 1');
             $stmt->execute([$empresa_id, $cliente_id]);
             $cli = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
@@ -412,9 +411,8 @@ switch ($action) {
         $empleados = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $stmt = $pdo->prepare('SELECT c.id, c.nombre, c.telefono, c.email
-                               FROM cliente_empresas ce
-                               JOIN clientes c ON c.id = ce.cliente_id
-                               WHERE ce.empresa_id = ? AND c.activo = 1
+                               FROM clientes c
+                               WHERE c.empresa_id = ? AND c.activo = 1
                                ORDER BY c.nombre ASC');
         $stmt->execute([$empresa_id]);
         $clientes = $stmt->fetchAll(PDO::FETCH_ASSOC);

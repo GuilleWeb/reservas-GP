@@ -181,9 +181,8 @@ switch ($action) {
             json_out(['success' => true, 'data' => ['exists' => false]]);
         }
         $stmt = $pdo->prepare("SELECT c.id, c.nombre, c.email, c.telefono
-                               FROM cliente_empresas ce
-                               JOIN clientes c ON c.id = ce.cliente_id
-                               WHERE ce.empresa_id = ? AND c.activo = 1 AND LOWER(c.email) = LOWER(?)
+                               FROM clientes c
+                               WHERE c.empresa_id = ? AND c.activo = 1 AND LOWER(c.email) = LOWER(?)
                                ORDER BY c.id DESC
                                LIMIT 1");
         $stmt->execute([$empresa_id, $email]);
@@ -197,8 +196,8 @@ switch ($action) {
             'data' => [
                 'exists' => true,
                 'lookup_token' => $token,
-                'nombre_masked' => mask_name_public((string) ($row['nombre'] ?? '')),
-                'telefono_masked' => mask_phone_public((string) ($row['telefono'] ?? '')),
+                'nombre' => (string) ($row['nombre'] ?? ''),
+                'telefono' => (string) ($row['telefono'] ?? ''),
             ]
         ]);
         break;
@@ -472,9 +471,8 @@ switch ($action) {
                     json_out(['success' => false, 'message' => 'Validación de cliente expirada. Intenta nuevamente.'], 400);
                 }
                 $stmtCliToken = $pdo->prepare("SELECT c.id, c.nombre, c.email, c.telefono
-                                               FROM cliente_empresas ce
-                                               JOIN clientes c ON c.id = ce.cliente_id
-                                               WHERE ce.empresa_id = ? AND c.id = ? AND c.activo = 1
+                                               FROM clientes c
+                                               WHERE c.empresa_id = ? AND c.id = ? AND c.activo = 1
                                                LIMIT 1");
                 $stmtCliToken->execute([$empresa_id, (int) ($tok['cid'] ?? 0)]);
                 $cli = $stmtCliToken->fetch(PDO::FETCH_ASSOC) ?: null;
@@ -482,9 +480,15 @@ switch ($action) {
                     json_out(['success' => false, 'message' => 'No se pudo validar el cliente recuperado.'], 400);
                 }
                 $cliente_id = (int) $cli['id'];
-                $nombre = (string) ($cli['nombre'] ?? $nombre);
+                // Mantener correo del cliente (no permitir cambio sin validación adicional).
                 $email = (string) ($cli['email'] ?? $email);
-                $telefono = (string) ($cli['telefono'] ?? $telefono);
+                // Permitir actualizar nombre/teléfono si el usuario los modificó.
+                if ($nombre === '') {
+                    $nombre = (string) ($cli['nombre'] ?? '');
+                }
+                if ($telefono === '') {
+                    $telefono = (string) ($cli['telefono'] ?? '');
+                }
             } elseif ($email !== '' || $telefono !== '') {
                 $where = [];
                 $params = [$empresa_id];
@@ -497,9 +501,8 @@ switch ($action) {
                     $params[] = $telefono;
                 }
                 $sqlCli = "SELECT c.id
-                           FROM cliente_empresas ce
-                           JOIN clientes c ON c.id = ce.cliente_id
-                           WHERE ce.empresa_id = ? AND c.activo = 1 AND (" . implode(' OR ', $where) . ")
+                           FROM clientes c
+                           WHERE c.empresa_id = ? AND c.activo = 1 AND (" . implode(' OR ', $where) . ")
                            LIMIT 1";
                 $stmtCli = $pdo->prepare($sqlCli);
                 $stmtCli->execute($params);
@@ -507,25 +510,28 @@ switch ($action) {
             }
 
             if ((int) $cliente_id <= 0) {
-                $insCli = $pdo->prepare("INSERT INTO clientes (nombre, email, telefono, activo, created_at, updated_at) VALUES (?,?,?,?,NOW(),NOW())");
+                $insCli = $pdo->prepare("INSERT INTO clientes (empresa_id, sucursal_id, nombre, email, telefono, activo, created_at, updated_at) VALUES (?,?,?,?,?,?,NOW(),NOW())");
                 $insCli->execute([
+                    $empresa_id,
+                    $sede_id > 0 ? $sede_id : null,
                     (string) $nombre,
                     $email !== '' ? (string) $email : null,
                     $telefono !== '' ? (string) $telefono : null,
                     1,
                 ]);
                 $cliente_id = (int) $pdo->lastInsertId();
-                if ($cliente_id > 0) {
-                    $lnk = $pdo->prepare("INSERT INTO cliente_empresas (cliente_id, empresa_id, creado_por_usuario_id, created_at)
-                                          VALUES (?,?,NULL,NOW())
-                                          ON DUPLICATE KEY UPDATE empresa_id=VALUES(empresa_id)");
-                    $lnk->execute([$cliente_id, $empresa_id]);
-                }
             } elseif ((int) $cliente_id > 0) {
-                $lnk = $pdo->prepare("INSERT INTO cliente_empresas (cliente_id, empresa_id, creado_por_usuario_id, created_at)
-                                      VALUES (?,?,NULL,NOW())
-                                      ON DUPLICATE KEY UPDATE empresa_id=VALUES(empresa_id)");
-                $lnk->execute([(int) $cliente_id, $empresa_id]);
+                $updCli = $pdo->prepare("UPDATE clientes
+                                         SET nombre = ?, email = ?, telefono = ?, sucursal_id = COALESCE(?, sucursal_id), updated_at = NOW()
+                                         WHERE id = ? AND empresa_id = ?");
+                $updCli->execute([
+                    (string) $nombre,
+                    $email !== '' ? (string) $email : null,
+                    $telefono !== '' ? (string) $telefono : null,
+                    $sede_id > 0 ? $sede_id : null,
+                    (int) $cliente_id,
+                    $empresa_id,
+                ]);
             }
 
             $codigo_publico = make_public_booking_code($empresa_id);

@@ -132,6 +132,8 @@ CREATE TABLE IF NOT EXISTS auditoria_eventos (
 
 CREATE TABLE IF NOT EXISTS clientes (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  empresa_id BIGINT UNSIGNED NOT NULL,
+  sucursal_id BIGINT UNSIGNED NULL,
   nombre VARCHAR(150) NOT NULL,
   email VARCHAR(150) NULL,
   telefono VARCHAR(40) NULL,
@@ -141,24 +143,14 @@ CREATE TABLE IF NOT EXISTS clientes (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
+  UNIQUE KEY uq_clientes_empresa_email (empresa_id, email),
+  KEY idx_clientes_empresa (empresa_id),
+  KEY idx_clientes_sucursal (sucursal_id),
   KEY idx_clientes_email (email),
-  KEY idx_clientes_telefono (telefono)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS cliente_empresas (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  cliente_id BIGINT UNSIGNED NOT NULL,
-  empresa_id BIGINT UNSIGNED NOT NULL,
-  creado_por_usuario_id BIGINT UNSIGNED NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  UNIQUE KEY uq_cliente_empresas (cliente_id, empresa_id),
-  KEY idx_cliente_empresas_empresa (empresa_id),
-  CONSTRAINT fk_cliente_empresas_cliente FOREIGN KEY (cliente_id) REFERENCES clientes(id)
+  KEY idx_clientes_telefono (telefono),
+  CONSTRAINT fk_clientes_empresa FOREIGN KEY (empresa_id) REFERENCES empresas(id)
     ON UPDATE CASCADE ON DELETE CASCADE,
-  CONSTRAINT fk_cliente_empresas_empresa FOREIGN KEY (empresa_id) REFERENCES empresas(id)
-    ON UPDATE CASCADE ON DELETE CASCADE,
-  CONSTRAINT fk_cliente_empresas_creado_por FOREIGN KEY (creado_por_usuario_id) REFERENCES usuarios(id)
+  CONSTRAINT fk_clientes_sucursal FOREIGN KEY (sucursal_id) REFERENCES sucursales(id)
     ON UPDATE CASCADE ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

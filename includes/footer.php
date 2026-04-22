@@ -118,12 +118,12 @@
   class="fixed bottom-4 right-4 w-full max-w-sm z-[9999] space-y-3 pointer-events-none shadow-xl"></div>
 <!-- Modal de Confirmación -->
 <div id="customConfirmModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-  <div class="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
-    <h3 id="confirmTitle" class="text-lg font-semibold text-gray-800 mb-2">Confirmar acción</h3>
-    <p id="confirmText" class="text-gray-600 mb-6">¿Estás seguro de continuar?</p>
+  <div class="bg-white dark:bg-slate-900 rounded-lg shadow-lg max-w-md w-full p-6 border border-transparent dark:border-slate-800">
+    <h3 id="confirmTitle" class="text-lg font-semibold text-gray-800 dark:text-slate-100 mb-2">Confirmar acción</h3>
+    <p id="confirmText" class="text-gray-600 dark:text-slate-300 mb-6">¿Estás seguro de continuar?</p>
     <div class="flex justify-end gap-3">
       <button id="confirmCancelBtn"
-        class="px-4 py-2 rounded border border-gray-300 text-gray-700 font-semibold hover:bg-gray-100">
+        class="px-4 py-2 rounded border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-slate-200 font-semibold hover:bg-gray-100 dark:hover:bg-slate-800">
         Cancelar
       </button>
       <button id="confirmOkBtn" class="px-4 py-2 rounded text-white font-semibold bg-teal-600 hover:bg-teal-700">
@@ -167,9 +167,9 @@
       const href = $(this).attr('href');
       if (path.startsWith(href)) {
         $(this)
-          .addClass('bg-teal-100 text-teal-700 font-semibold')
+          .addClass('bg-teal-100 text-teal-700 font-semibold dark:bg-slate-800 dark:text-teal-300')
           .find('i')
-          .addClass('text-teal-600');
+          .addClass('text-teal-600 dark:text-teal-300');
       }
     });
   });

@@ -135,7 +135,7 @@ if ($role === 'superadmin' && !$id_e) {
 ?>
 
 <div class="max-w-7xl mx-auto">
-  <div class="bg-white rounded-2xl shadow p-6">
+  <div class="bg-white dark:bg-slate-900/60 dark:border dark:border-slate-800 rounded-2xl shadow p-6">
     <div class="text-sm text-gray-500">Dashboard</div>
     <div class="mt-1 text-2xl font-extrabold text-gray-900">
       <?php if ($role === 'superadmin'): ?>
@@ -152,21 +152,21 @@ if ($role === 'superadmin' && !$id_e) {
 
     <?php if ($role === 'superadmin' && !$id_e): ?>
       <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="rounded-2xl border bg-white p-4">
-          <div class="text-xs text-gray-500">Empresas activas</div>
-          <div class="mt-1 text-2xl font-extrabold text-gray-900"><?= (int) ($stats['empresas_activas'] ?? 0) ?></div>
+        <div class="rounded-2xl border dark:border-slate-800 bg-white dark:bg-slate-900/50 p-4">
+          <div class="text-xs text-gray-500 dark:text-slate-400">Empresas activas</div>
+          <div class="mt-1 text-2xl font-extrabold text-gray-900 dark:text-white"><?= (int) ($stats['empresas_activas'] ?? 0) ?></div>
         </div>
-        <div class="rounded-2xl border bg-white p-4">
-          <div class="text-xs text-gray-500">Suscripciones activas</div>
-          <div class="mt-1 text-2xl font-extrabold text-gray-900"><?= (int) ($stats['suscripciones_activas'] ?? 0) ?></div>
+        <div class="rounded-2xl border dark:border-slate-800 bg-white dark:bg-slate-900/50 p-4">
+          <div class="text-xs text-gray-500 dark:text-slate-400">Suscripciones activas</div>
+          <div class="mt-1 text-2xl font-extrabold text-gray-900 dark:text-white"><?= (int) ($stats['suscripciones_activas'] ?? 0) ?></div>
         </div>
-        <div class="rounded-2xl border bg-white p-4">
-          <div class="text-xs text-gray-500">Próximas a vencer (7 días)</div>
-          <div class="mt-1 text-2xl font-extrabold text-gray-900"><?= (int) ($stats['suscripciones_por_vencer'] ?? 0) ?></div>
+        <div class="rounded-2xl border dark:border-slate-800 bg-white dark:bg-slate-900/50 p-4">
+          <div class="text-xs text-gray-500 dark:text-slate-400">Por vencer (7 días)</div>
+          <div class="mt-1 text-2xl font-extrabold text-gray-900 dark:text-white"><?= (int) ($stats['suscripciones_por_vencer'] ?? 0) ?></div>
         </div>
-        <div class="rounded-2xl border bg-white p-4">
-          <div class="text-xs text-gray-500">Vencidas</div>
-          <div class="mt-1 text-2xl font-extrabold text-gray-900"><?= (int) ($stats['suscripciones_vencidas'] ?? 0) ?></div>
+        <div class="rounded-2xl border dark:border-slate-800 bg-white dark:bg-slate-900/50 p-4">
+          <div class="text-xs text-gray-500 dark:text-slate-400">Vencidas</div>
+          <div class="mt-1 text-2xl font-extrabold text-gray-900 dark:text-white"><?= (int) ($stats['suscripciones_vencidas'] ?? 0) ?></div>
         </div>
       </div>
 
@@ -176,21 +176,21 @@ if ($role === 'superadmin' && !$id_e) {
         $deltaAbs = $ingMes - $ingPrev;
         $deltaPct = $ingPrev > 0 ? (($deltaAbs / $ingPrev) * 100) : ($ingMes > 0 ? 100 : 0);
       ?>
-      <div class="mt-4 rounded-2xl border bg-white p-4">
-        <div class="font-semibold text-gray-900">Ingresos por Suscripciones</div>
+      <div class="mt-4 rounded-2xl border dark:border-slate-800 bg-white dark:bg-slate-900/50 p-4">
+        <div class="font-semibold text-gray-900 dark:text-white">Ingresos por Suscripciones</div>
         <div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div class="rounded-xl border p-3">
-            <div class="text-xs text-gray-500">Mes actual</div>
-            <div class="font-extrabold text-gray-900 text-2xl">$<?= number_format($ingMes, 2) ?></div>
+          <div class="rounded-xl border dark:border-slate-800 p-3 bg-white dark:bg-slate-950/30">
+            <div class="text-xs text-gray-500 dark:text-slate-400">Mes actual</div>
+            <div class="font-extrabold text-gray-900 dark:text-white text-2xl">$<?= number_format($ingMes, 2) ?></div>
           </div>
-          <div class="rounded-xl border p-3">
-            <div class="text-xs text-gray-500">Mes anterior</div>
-            <div class="font-extrabold text-gray-900 text-2xl">$<?= number_format($ingPrev, 2) ?></div>
+          <div class="rounded-xl border dark:border-slate-800 p-3 bg-white dark:bg-slate-950/30">
+            <div class="text-xs text-gray-500 dark:text-slate-400">Mes anterior</div>
+            <div class="font-extrabold text-gray-900 dark:text-white text-2xl">$<?= number_format($ingPrev, 2) ?></div>
           </div>
-          <div class="rounded-xl border p-3">
-            <div class="text-xs text-gray-500">Variación</div>
-            <div class="font-extrabold <?= $deltaAbs >= 0 ? 'text-teal-700' : 'text-red-700' ?> text-2xl"><?= $deltaAbs >= 0 ? '+' : '' ?>$<?= number_format($deltaAbs, 2) ?></div>
-            <div class="text-xs <?= $deltaAbs >= 0 ? 'text-teal-700' : 'text-red-700' ?>"><?= $deltaAbs >= 0 ? '+' : '' ?><?= number_format($deltaPct, 1) ?>%</div>
+          <div class="rounded-xl border dark:border-slate-800 p-3 bg-white dark:bg-slate-950/30">
+            <div class="text-xs text-gray-500 dark:text-slate-400">Variación vs mes anterior</div>
+            <div class="font-extrabold <?= $deltaAbs >= 0 ? 'text-teal-700 dark:text-teal-400' : 'text-red-700 dark:text-red-400' ?> text-2xl"><?= $deltaAbs >= 0 ? '+' : '' ?>$<?= number_format($deltaAbs, 2) ?></div>
+            <div class="text-xs <?= $deltaAbs >= 0 ? 'text-teal-700 dark:text-teal-400' : 'text-red-700 dark:text-red-400' ?>"><?= $deltaAbs >= 0 ? '+' : '' ?><?= number_format($deltaPct, 1) ?>%</div>
           </div>
         </div>
         <div class="mt-4 grid grid-cols-6 gap-2 items-end">
@@ -204,21 +204,21 @@ if ($role === 'superadmin' && !$id_e) {
             <?php $h = max(8, (int) round(((float) ($t['monto'] ?? 0) / $maxT) * 120)); ?>
             <div class="text-center">
               <div class="mx-auto w-8 rounded-t-md bg-teal-500" style="height: <?= $h ?>px"></div>
-              <div class="text-[10px] text-gray-500 mt-1"><?= htmlspecialchars((string) ($t['label'] ?? '')) ?></div>
-              <div class="text-[10px] font-semibold text-gray-700">$<?= number_format((float) ($t['monto'] ?? 0), 0) ?></div>
+              <div class="text-[10px] text-gray-500 dark:text-slate-400 mt-1"><?= htmlspecialchars((string) ($t['label'] ?? '')) ?></div>
+              <div class="text-[10px] font-semibold text-gray-700 dark:text-slate-200">$<?= number_format((float) ($t['monto'] ?? 0), 0) ?></div>
             </div>
           <?php endforeach; ?>
         </div>
       </div>
 
-      <div class="mt-4 rounded-2xl border bg-white p-4">
+      <div class="mt-4 rounded-2xl border dark:border-slate-800 bg-white dark:bg-slate-900/50 p-4">
         <div class="flex items-center justify-between gap-3">
-          <div class="font-semibold text-gray-900">Últimos movimientos</div>
-          <div class="text-xs text-gray-500">Estado: <span class="font-semibold text-teal-700">Operando</span></div>
+          <div class="font-semibold text-gray-900 dark:text-white">Últimos movimientos</div>
+          <div class="text-xs text-gray-500 dark:text-slate-400">Estado: <span class="font-semibold text-teal-700 dark:text-teal-400">Operando</span></div>
         </div>
         <div class="mt-3 overflow-x-auto">
           <table class="min-w-full text-sm">
-            <thead class="bg-gray-50 text-gray-700">
+            <thead class="bg-gray-50 dark:bg-slate-950/50 text-gray-700 dark:text-slate-300">
               <tr>
                 <th class="text-left px-3 py-2">Fecha</th>
                 <th class="text-left px-3 py-2">Actor</th>
@@ -228,8 +228,8 @@ if ($role === 'superadmin' && !$id_e) {
             </thead>
             <tbody class="divide-y">
               <?php foreach (($stats['movimientos'] ?? []) as $m): ?>
-                <tr class="hover:bg-gray-50">
-                  <td class="px-3 py-2 font-mono text-xs text-gray-600"><?= htmlspecialchars($m['created_at'] ?? '') ?></td>
+                <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/40">
+                  <td class="px-3 py-2 font-mono text-xs text-gray-600 dark:text-slate-400"><?= htmlspecialchars($m['created_at'] ?? '') ?></td>
                   <td class="px-3 py-2"><?= htmlspecialchars($m['actor_rol'] ?? '') ?></td>
                   <td class="px-3 py-2">
                     <?= htmlspecialchars($m['tipo'] ?? '') ?>    <?= ($m['descripcion'] ?? '') ? ' - ' . htmlspecialchars($m['descripcion']) : '' ?>
@@ -240,7 +240,7 @@ if ($role === 'superadmin' && !$id_e) {
               <?php endforeach; ?>
               <?php if (empty($stats['movimientos'] ?? [])): ?>
                 <tr>
-                  <td class="px-3 py-3 text-gray-500" colspan="4">Aún no hay movimientos registrados.</td>
+                  <td class="px-3 py-3 text-gray-500 dark:text-slate-400" colspan="4">Aún no hay movimientos registrados.</td>
                 </tr>
               <?php endif; ?>
             </tbody>
@@ -248,72 +248,72 @@ if ($role === 'superadmin' && !$id_e) {
         </div>
       </div>
 
-      <div class="mt-4 rounded-2xl border bg-white p-4">
-        <div class="font-semibold text-gray-900">Estado del Hosting / Runtime</div>
+      <div class="mt-4 rounded-2xl border dark:border-slate-800 bg-white dark:bg-slate-900/50 p-4">
+        <div class="font-semibold text-gray-900 dark:text-white">Estado del Hosting / Runtime</div>
         <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-          <div class="rounded-xl border p-3">
-            <div class="text-xs text-gray-500">PHP</div>
-            <div class="font-bold text-gray-900"><?= htmlspecialchars((string) ($stats['php_version'] ?? '-')) ?></div>
+          <div class="rounded-xl border dark:border-slate-800 p-3 bg-white dark:bg-slate-950/30">
+            <div class="text-xs text-gray-500 dark:text-slate-400">PHP</div>
+            <div class="font-bold text-gray-900 dark:text-white"><?= htmlspecialchars((string) ($stats['php_version'] ?? '-')) ?></div>
           </div>
-          <div class="rounded-xl border p-3">
-            <div class="text-xs text-gray-500">Memoria proceso</div>
-            <div class="font-bold text-gray-900"><?= number_format((float) ($stats['memory_usage_mb'] ?? 0), 2) ?> MB</div>
-            <div class="text-xs text-gray-500">Pico: <?= number_format((float) ($stats['memory_peak_mb'] ?? 0), 2) ?> MB</div>
+          <div class="rounded-xl border dark:border-slate-800 p-3 bg-white dark:bg-slate-950/30">
+            <div class="text-xs text-gray-500 dark:text-slate-400">Memoria proceso</div>
+            <div class="font-bold text-gray-900 dark:text-white"><?= number_format((float) ($stats['memory_usage_mb'] ?? 0), 2) ?> MB</div>
+            <div class="text-xs text-gray-500 dark:text-slate-400">Pico: <?= number_format((float) ($stats['memory_peak_mb'] ?? 0), 2) ?> MB</div>
           </div>
-          <div class="rounded-xl border p-3">
-            <div class="text-xs text-gray-500">Límite memoria PHP</div>
-            <div class="font-bold text-gray-900"><?= htmlspecialchars((string) ($stats['memory_limit'] ?? '-')) ?></div>
-            <div class="text-xs text-gray-500">Max exec: <?= htmlspecialchars((string) ($stats['max_execution_time'] ?? '-')) ?>s</div>
+          <div class="rounded-xl border dark:border-slate-800 p-3 bg-white dark:bg-slate-950/30">
+            <div class="text-xs text-gray-500 dark:text-slate-400">Límite memoria PHP</div>
+            <div class="font-bold text-gray-900 dark:text-white"><?= htmlspecialchars((string) ($stats['memory_limit'] ?? '-')) ?></div>
+            <div class="text-xs text-gray-500 dark:text-slate-400">Max exec: <?= htmlspecialchars((string) ($stats['max_execution_time'] ?? '-')) ?>s</div>
           </div>
-          <div class="rounded-xl border p-3">
-            <div class="text-xs text-gray-500">DB size</div>
-            <div class="font-bold text-gray-900"><?= number_format((float) ($stats['db_size_mb'] ?? 0), 2) ?> MB</div>
+          <div class="rounded-xl border dark:border-slate-800 p-3 bg-white dark:bg-slate-950/30">
+            <div class="text-xs text-gray-500 dark:text-slate-400">DB size</div>
+            <div class="font-bold text-gray-900 dark:text-white"><?= number_format((float) ($stats['db_size_mb'] ?? 0), 2) ?> MB</div>
           </div>
-          <div class="rounded-xl border p-3">
-            <div class="text-xs text-gray-500">Disco usado</div>
-            <div class="font-bold text-gray-900"><?= number_format((float) ($stats['disk_used_gb'] ?? 0), 2) ?> GB</div>
+          <div class="rounded-xl border dark:border-slate-800 p-3 bg-white dark:bg-slate-950/30">
+            <div class="text-xs text-gray-500 dark:text-slate-400">Disco usado</div>
+            <div class="font-bold text-gray-900 dark:text-white"><?= number_format((float) ($stats['disk_used_gb'] ?? 0), 2) ?> GB</div>
           </div>
-          <div class="rounded-xl border p-3">
-            <div class="text-xs text-gray-500">Disco libre</div>
-            <div class="font-bold text-gray-900"><?= number_format((float) ($stats['disk_free_gb'] ?? 0), 2) ?> GB</div>
+          <div class="rounded-xl border dark:border-slate-800 p-3 bg-white dark:bg-slate-950/30">
+            <div class="text-xs text-gray-500 dark:text-slate-400">Disco libre</div>
+            <div class="font-bold text-gray-900 dark:text-white"><?= number_format((float) ($stats['disk_free_gb'] ?? 0), 2) ?> GB</div>
           </div>
-          <div class="rounded-xl border p-3">
-            <div class="text-xs text-gray-500">Upload/Post max</div>
-            <div class="font-bold text-gray-900"><?= htmlspecialchars((string) ($stats['upload_max'] ?? '-')) ?> / <?= htmlspecialchars((string) ($stats['post_max'] ?? '-')) ?></div>
+          <div class="rounded-xl border dark:border-slate-800 p-3 bg-white dark:bg-slate-950/30">
+            <div class="text-xs text-gray-500 dark:text-slate-400">Upload/Post max</div>
+            <div class="font-bold text-gray-900 dark:text-white"><?= htmlspecialchars((string) ($stats['upload_max'] ?? '-')) ?> / <?= htmlspecialchars((string) ($stats['post_max'] ?? '-')) ?></div>
           </div>
-          <div class="rounded-xl border p-3">
-            <div class="text-xs text-gray-500">Estado App</div>
-            <div class="font-bold text-teal-700">Operando</div>
+          <div class="rounded-xl border dark:border-slate-800 p-3 bg-white dark:bg-slate-950/30">
+            <div class="text-xs text-gray-500 dark:text-slate-400">Estado App</div>
+            <div class="font-bold text-teal-700 dark:text-teal-400">Operando</div>
           </div>
         </div>
       </div>
 
-      <div class="mt-4 rounded-2xl border bg-white p-4">
-        <div class="font-semibold text-gray-900">Métricas de Correo (30 días)</div>
+      <div class="mt-4 rounded-2xl border dark:border-slate-800 bg-white dark:bg-slate-900/50 p-4">
+        <div class="font-semibold text-gray-900 dark:text-white">Métricas de Correo (30 días)</div>
         <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 text-sm">
-          <div class="rounded-xl border p-3">
-            <div class="text-xs text-gray-500">Enviados</div>
-            <div class="font-bold text-teal-700"><?= (int) (($stats['email']['sent'] ?? 0)) ?></div>
+          <div class="rounded-xl border dark:border-slate-800 p-3 bg-white dark:bg-slate-950/30">
+            <div class="text-xs text-gray-500 dark:text-slate-400">Enviados</div>
+            <div class="font-bold text-teal-700 dark:text-teal-400"><?= (int) (($stats['email']['sent'] ?? 0)) ?></div>
           </div>
-          <div class="rounded-xl border p-3">
-            <div class="text-xs text-gray-500">Fallidos</div>
-            <div class="font-bold text-red-600"><?= (int) (($stats['email']['failed'] ?? 0)) ?></div>
+          <div class="rounded-xl border dark:border-slate-800 p-3 bg-white dark:bg-slate-950/30">
+            <div class="text-xs text-gray-500 dark:text-slate-400">Fallidos</div>
+            <div class="font-bold text-red-600 dark:text-red-400"><?= (int) (($stats['email']['failed'] ?? 0)) ?></div>
           </div>
-          <div class="rounded-xl border p-3">
-            <div class="text-xs text-gray-500">Confirmaciones cita</div>
-            <div class="font-bold text-gray-900"><?= (int) (($stats['email']['booking_sent'] ?? 0)) ?></div>
+          <div class="rounded-xl border dark:border-slate-800 p-3 bg-white dark:bg-slate-950/30">
+            <div class="text-xs text-gray-500 dark:text-slate-400">Confirmaciones cita</div>
+            <div class="font-bold text-gray-900 dark:text-white"><?= (int) (($stats['email']['booking_sent'] ?? 0)) ?></div>
           </div>
-          <div class="rounded-xl border p-3">
-            <div class="text-xs text-gray-500">Invitaciones reseña</div>
-            <div class="font-bold text-gray-900"><?= (int) (($stats['email']['review_sent'] ?? 0)) ?></div>
+          <div class="rounded-xl border dark:border-slate-800 p-3 bg-white dark:bg-slate-950/30">
+            <div class="text-xs text-gray-500 dark:text-slate-400">Invitaciones reseña</div>
+            <div class="font-bold text-gray-900 dark:text-white"><?= (int) (($stats['email']['review_sent'] ?? 0)) ?></div>
           </div>
-          <div class="rounded-xl border p-3">
-            <div class="text-xs text-gray-500">Recuperación de contraseña</div>
-            <div class="font-bold text-gray-900"><?= (int) (($stats['email']['password_reset_sent'] ?? 0)) ?></div>
+          <div class="rounded-xl border dark:border-slate-800 p-3 bg-white dark:bg-slate-950/30">
+            <div class="text-xs text-gray-500 dark:text-slate-400">Recuperación de contraseña</div>
+            <div class="font-bold text-gray-900 dark:text-white"><?= (int) (($stats['email']['password_reset_sent'] ?? 0)) ?></div>
           </div>
-          <div class="rounded-xl border p-3">
-            <div class="text-xs text-gray-500">Verificación de correo</div>
-            <div class="font-bold text-gray-900"><?= (int) (($stats['email']['email_verification_sent'] ?? 0)) ?></div>
+          <div class="rounded-xl border dark:border-slate-800 p-3 bg-white dark:bg-slate-950/30">
+            <div class="text-xs text-gray-500 dark:text-slate-400">Verificación de correo</div>
+            <div class="font-bold text-gray-900 dark:text-white"><?= (int) (($stats['email']['email_verification_sent'] ?? 0)) ?></div>
           </div>
         </div>
       </div>

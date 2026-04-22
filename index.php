@@ -729,89 +729,85 @@ $faq_schema = [
         <!-- Mockup Dashboard -->
         <div class="reveal delay-3 relative mx-auto max-w-5xl">
           <!-- Browser frame -->
-          <div class="bg-slate-800 rounded-t-xl p-3 flex items-center gap-2">
+          <div class="bg-white rounded-t-xl p-3 flex items-center gap-2 border border-slate-200 border-b-0">
             <div class="flex gap-1.5">
               <div class="w-3 h-3 rounded-full bg-red-500"></div>
               <div class="w-3 h-3 rounded-full bg-amber-500"></div>
               <div class="w-3 h-3 rounded-full bg-green-500"></div>
             </div>
-            <div class="flex-1 bg-slate-700 rounded-lg px-3 py-1 text-xs text-slate-400 text-center">app.reservasgp.com/dashboard</div>
+            <div class="flex-1 bg-slate-100 rounded-lg px-3 py-1 text-xs text-slate-500 text-center">app.reservasgp.com/dashboard</div>
           </div>
           
           <!-- Dashboard content -->
-          <div class="bg-slate-800 rounded-b-xl p-4 md:p-6 border-t border-slate-700">
+          <div class="bg-white rounded-b-xl p-4 md:p-6 border border-slate-200">
             <div class="grid md:grid-cols-4 gap-4 mb-6">
               <!-- Stats cards -->
-              <div class="bg-slate-700/50 rounded-lg p-4 border border-slate-600">
-                <div class="text-slate-400 text-xs mb-1">Citas hoy</div>
-                <div class="text-2xl font-bold text-white">12</div>
-                <div class="text-emerald-400 text-xs flex items-center gap-1 mt-1">
-                  <i data-lucide="trending-up" class="w-3 h-3"></i> +3 vs ayer
+              <div class="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                <div class="text-slate-500 text-xs mb-1">Citas hoy</div>
+                <div class="text-2xl font-bold text-slate-900">12</div>
+                <div class="text-slate-400 text-xs mt-1">Programadas</div>
+              </div>
+              <div class="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                <div class="text-slate-500 text-xs mb-1">Clientes</div>
+                <div class="text-2xl font-bold text-slate-900">5</div>
+                <div class="text-slate-400 text-xs mt-1">Activos</div>
+              </div>
+              <div class="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                <div class="text-slate-500 text-xs mb-1">Asistencia</div>
+                <div class="text-2xl font-bold text-slate-900">94%</div>
+                <div class="text-emerald-600 text-xs flex items-center gap-1 mt-1">
+                  <i data-lucide="check" class="w-3 h-3"></i> Buen estado
                 </div>
               </div>
-              <div class="bg-slate-700/50 rounded-lg p-4 border border-slate-600">
-                <div class="text-slate-400 text-xs mb-1">Nuevos clientes</div>
-                <div class="text-2xl font-bold text-white">5</div>
-                <div class="text-emerald-400 text-xs flex items-center gap-1 mt-1">
-                  <i data-lucide="trending-up" class="w-3 h-3"></i> +20%
-                </div>
-              </div>
-              <div class="bg-slate-700/50 rounded-lg p-4 border border-slate-600">
-                <div class="text-slate-400 text-xs mb-1">Tasa de asistencia</div>
-                <div class="text-2xl font-bold text-white">94%</div>
-                <div class="text-emerald-400 text-xs flex items-center gap-1 mt-1">
-                  <i data-lucide="check" class="w-3 h-3"></i> Excelente
-                </div>
-              </div>
-              <div class="bg-slate-700/50 rounded-lg p-4 border border-slate-600">
-                <div class="text-slate-400 text-xs mb-1">Reseñas nuevas</div>
-                <div class="text-2xl font-bold text-white">8</div>
-                <div class="text-amber-400 text-xs flex items-center gap-1 mt-1">
-                  <i data-lucide="star" class="w-3 h-3 fill-current"></i> 4.8 promedio
+              <div class="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                <div class="text-slate-500 text-xs mb-1">Reseñas</div>
+                <div class="text-2xl font-bold text-slate-900">8</div>
+                <div class="text-amber-600 text-xs flex items-center gap-1 mt-1">
+                  <i data-lucide="star" class="w-3 h-3"></i> 4.8 promedio
                 </div>
               </div>
             </div>
             
             <!-- Calendar preview -->
-            <div class="bg-slate-700/30 rounded-lg p-4 border border-slate-600">
+            <div class="bg-white rounded-lg p-4 border border-slate-200">
               <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center gap-2">
-                  <div class="w-8 h-8 rounded-lg bg-teal-500/20 flex items-center justify-center">
-                    <i data-lucide="calendar" class="w-4 h-4 text-teal-400"></i>
+                  <div class="w-8 h-8 rounded-lg bg-teal-500/15 flex items-center justify-center">
+                    <i data-lucide="calendar" class="w-4 h-4 text-teal-700"></i>
                   </div>
-                  <span class="text-white font-medium">Agenda de hoy</span>
+                  <span class="text-slate-900 font-medium">Agenda de hoy</span>
                 </div>
                 <div class="flex gap-2">
-                  <span class="px-2 py-1 bg-emerald-500/20 text-emerald-400 text-xs rounded">Confirmadas: 10</span>
-                  <span class="px-2 py-1 bg-amber-500/20 text-amber-400 text-xs rounded">Pendientes: 2</span>
+                  <span class="px-2 py-1 bg-emerald-500/15 text-emerald-700 text-xs rounded">Confirmadas: 10</span>
+                  <span class="px-2 py-1 bg-amber-500/15 text-amber-700 text-xs rounded">Pendientes: 2</span>
                 </div>
               </div>
               
               <!-- Appointment rows -->
               <div class="space-y-2">
-                <div class="flex items-center gap-3 p-3 bg-slate-700/50 rounded-lg">
-                  <div class="text-slate-400 text-sm w-16">09:00</div>
+                <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                  <div class="text-slate-500 text-sm w-16">09:00</div>
                   <div class="flex-1">
-                    <div class="text-white font-medium">Juan Pérez</div>
-                    <div class="text-slate-400 text-sm">Consulta general · Dr. García</div>
+                    <div class="text-slate-900 font-medium">Juan Pérez</div>
+                    <div class="text-slate-500 text-sm">Consulta general · Dr. García</div>
                   </div>
-                  <span class="px-2 py-1 bg-emerald-500/20 text-emerald-400 text-xs rounded">Confirmada</span>
+                  <span class="px-2 py-1 bg-emerald-500/15 text-emerald-700 text-xs rounded">Confirmada</span>
                 </div>
-                <div class="flex items-center gap-3 p-3 bg-slate-700/50 rounded-lg">
-                  <div class="text-slate-400 text-sm w-16">10:30</div>
+                <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                  <div class="text-slate-500 text-sm w-16">10:30</div>
                   <div class="flex-1">
-                    <div class="text-white font-medium">María López</div>
-                    <div class="text-slate-400 text-sm">Corte y peinado · Ana (Estilista)</div>
+                    <div class="text-slate-900 font-medium">María López</div>
+                    <div class="text-slate-500 text-sm">Corte y peinado · Ana (Estilista)</div>
                   </div>
-                  <span class="px-2 py-1 bg-emerald-500/20 text-emerald-400 text-xs rounded">En sala</span>
+                  <span class="px-2 py-1 bg-emerald-500/15 text-emerald-700 text-xs rounded">En sala</span>
                 </div>
-                <div class="flex items-center gap-3 p-3 bg-slate-700/50 rounded-lg">
-                  <div class="text-slate-400 text-sm w-16">14:00</div>
+                <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                  <div class="text-slate-500 text-sm w-16">14:00</div>
                   <div class="flex-1">
-                    <div class="text-white font-medium">Pedro Gómez</div>
-                    <div class="text-slate-400 text-sm">Masaje relajante · Sucursal Norte</div>
+                    <div class="text-slate-900 font-medium">Pedro Gómez</div>
+                    <div class="text-slate-500 text-sm">Masaje relajante · Sucursal Norte</div>
                   </div>
-                  <span class="px-2 py-1 bg-amber-500/20 text-amber-400 text-xs rounded">Pendiente</span>
+                  <span class="px-2 py-1 bg-amber-500/15 text-amber-700 text-xs rounded">Pendiente</span>
                 </div>
               </div>
             </div>
@@ -829,39 +825,16 @@ $faq_schema = [
       </div>
     </section>
 
+    <?php /* 
+    ═══════════════════════════════════════════════════════════════════════════
+    SECCIÓN COMENTADA: BENEFICIOS (Redundante con Características Avanzadas)
+    ═══════════════════════════════════════════════════════════════════════════
     <!-- ── BENEFICIOS ──────────────────────────────────────────────────────── -->
     <section id="beneficios" class="py-24 bg-white border-y border-slate-100">
-      <div class="max-w-7xl mx-auto px-5">
-        <div class="text-center max-w-2xl mx-auto mb-16">
-          <div class="badge-pill reveal mx-auto mb-5">Diseñado para crecer</div>
-          <h2 class="reveal text-4xl font-extrabold text-slate-900 delay-1">Todo lo que tu negocio necesita para profesionalizarse</h2>
-          <p class="reveal delay-2 mt-4 text-slate-500 text-lg">Una sola plataforma para gestionar cada aspecto de tu agenda y equipo.</p>
-        </div>
-
-        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <?php
-          $feats = [
-            ['icon'=>'building-2','t'=>'Multisucursal','d'=>'Configura horarios, equipo y servicios de forma independiente por cada sede.'],
-            ['icon'=>'zap','t'=>'Reservas 24/7','d'=>'Tus clientes agendan en segundos desde cualquier dispositivo, sin llamadas.'],
-            ['icon'=>'shield-check','t'=>'Roles de acceso','d'=>'Admin, Gerente y Empleado: cada uno ve solo lo que necesita.'],
-            ['icon'=>'bar-chart-3','t'=>'Métricas reales','d'=>'Conoce servicios más vendidos, tasa de conversión y rendimiento del equipo.'],
-            ['icon'=>'star','t'=>'Reseñas automáticas','d'=>'Al completar una cita, el cliente recibe un correo para dejar su opinión.'],
-            ['icon'=>'mail','t'=>'Notificaciones','d'=>'Confirmaciones, recordatorios y actualizaciones de estado por email.'],
-            ['icon'=>'palette','t'=>'Tu marca','d'=>'Logo, color corporativo y dominio propio. La plataforma luce como tuya.'],
-            ['icon'=>'file-text','t'=>'Blog integrado','d'=>'Publica contenido valioso para atraer clientes orgánicamente.'],
-          ];
-          foreach($feats as $i=>$f):
-            $d = $i < 4 ? $i+1 : (($i-4)+1);
-          ?>
-          <article class="feat-card reveal delay-<?= $d ?>">
-            <div class="feat-icon"><i data-lucide="<?= $f['icon'] ?>" class="w-5 h-5"></i></div>
-            <h3 class="text-base font-bold mb-2"><?= $f['t'] ?></h3>
-            <p class="text-sm text-slate-500 leading-relaxed"><?= $f['d'] ?></p>
-          </article>
-          <?php endforeach; ?>
-        </div>
-      </div>
+      ...
     </section>
+    ═══════════════════════════════════════════════════════════════════════════
+    */ ?>
 
     <!-- ── POR QUÉ ELEGIRNOS ────────────────────────────────────────────────── -->
     <section id="por-que-nosotros" class="py-24 bg-gradient-to-br from-teal-600 via-teal-700 to-cyan-700 relative overflow-hidden">
@@ -1041,61 +1014,14 @@ $faq_schema = [
       </div>
     </section>
 
+    <?php /*
+    ═══════════════════════════════════════════════════════════════════════════
+    SECCIÓN COMENTADA: ROLES (Muy técnica para visitantes de landing)
+    ═══════════════════════════════════════════════════════════════════════════
     <!-- ── ROLES ──────────────────────────────────────────────────────────── -->
-    <section class="py-24 max-w-7xl mx-auto px-5">
-      <div class="text-center mb-12">
-        <div class="badge-pill reveal mx-auto mb-5">Para todo tu equipo</div>
-        <h2 class="reveal delay-1 text-4xl font-extrabold text-slate-900">Cada persona tiene lo que necesita</h2>
-        <p class="reveal delay-2 mt-4 text-slate-500 max-w-xl mx-auto">Accesos diferenciados para que cada rol trabaje de forma eficiente y enfocada.</p>
-      </div>
-
-      <div class="reveal delay-2 bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
-        <!-- Tab nav -->
-        <div class="border-b border-slate-100 px-6 py-4 flex gap-3 flex-wrap">
-          <button class="role-tab active" data-role="admin">Administrador</button>
-          <button class="role-tab" data-role="gerente">Gerente</button>
-          <button class="role-tab" data-role="empleado">Empleado</button>
-          <button class="role-tab" data-role="cliente">Cliente</button>
-        </div>
-
-        <!-- Panels -->
-        <div class="p-8">
-          <?php
-          $roles = [
-            'admin' => [
-              'desc' => 'Control total de la empresa. Ve, gestiona y actúa en nombre de cualquier rol inferior.',
-              'items' => ['Dashboard con métricas avanzadas de toda la empresa','Gestión de usuarios y asignación de roles','CRUD de servicios y asignación a empleados','Gestión de sucursales con horarios independientes','Calendario de citas con filtros avanzados','Administración de clientes y reseñas','Blog corporativo propio','Personalización completa de la página pública','Configuración de empresa: colores, logo, SEO','Mensajería interna con todo el equipo'],
-            ],
-            'gerente' => [
-              'desc' => 'Responsable de su sucursal. Gestiona el equipo y las operaciones del día a día.',
-              'items' => ['Dashboard de métricas de su sucursal','Gestión de usuarios de su sucursal','Servicios asignados a su sucursal','RUD de citas de su sucursal','Ajustes de sucursal: foto, horario, información','Mensajería con roles superiores e inferiores'],
-            ],
-            'empleado' => [
-              'desc' => 'Accede solo a lo relevante para su trabajo diario y sus propias citas.',
-              'items' => ['Dashboard personal con sus métricas','Vista y cambio de estado de sus citas','Ajustes de perfil personal'],
-            ],
-            'cliente' => [
-              'desc' => 'Experiencia simple y rápida para agendar y gestionar sus reservas.',
-              'items' => ['Historial de citas anteriores','Motor de agendamiento en pocos pasos','Ajustes de perfil personal'],
-            ],
-          ];
-          foreach($roles as $key=>$r):
-          ?>
-          <div class="role-panel <?= $key==='admin'?'active':'' ?>" id="role-<?= $key ?>">
-            <p class="text-slate-500 mb-6 text-sm"><?= $r['desc'] ?></p>
-            <div class="grid sm:grid-cols-2 gap-3">
-              <?php foreach($r['items'] as $item): ?>
-              <div class="flex items-start gap-2.5 text-sm text-slate-700">
-                <div class="w-5 h-5 rounded-full bg-teal-50 flex items-center justify-center flex-shrink-0 mt-0.5"><i data-lucide="check" class="w-3 h-3 text-teal-600"></i></div>
-                <?= $item ?>
-              </div>
-              <?php endforeach; ?>
-            </div>
-          </div>
-          <?php endforeach; ?>
-        </div>
-      </div>
-    </section>
+    <section class="py-24 max-w-7xl mx-auto px-5">...</section>
+    ═══════════════════════════════════════════════════════════════════════════
+    */ ?>
 
     <!-- ── CARACTERÍSTICAS AVANZADAS ─────────────────────────────────────────── -->
     <section id="features" class="py-24 bg-gradient-to-b from-slate-50 via-white to-slate-50">
@@ -1258,77 +1184,14 @@ $faq_schema = [
           </div>
         </div>
 
-        <div class="mt-10 grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          <?php if (empty($plans)): ?>
-          <div class="md:col-span-3 bg-white border rounded-2xl p-6 text-center text-slate-500">
-            No pudimos cargar los planes en este momento. Intenta recargar en unos segundos.
+        <div id="planes-container" class="mt-10 grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <!-- Los planes se cargan dinámicamente desde el API -->
+          <div class="md:col-span-3 text-center py-12">
+            <div class="inline-flex items-center gap-2 text-slate-400">
+              <i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i>
+              <span>Cargando planes...</span>
+            </div>
           </div>
-          <?php endif; ?>
-          <?php foreach($plans as $idx=>$p):
-            $pm = (float)$p['precio'];
-            $pa = (float)($p['precio_anual'] ?? 0);
-            $is_free = $pm <= 0;
-            $featured = $idx === 1;
-          ?>
-          <article class="plan-card reveal delay-<?= $idx+1 ?> <?= $featured?'featured':'' ?>">
-            <?php if($featured): ?><span class="plan-badge">Más popular</span><?php endif; ?>
-
-            <div class="mb-6">
-              <h3 class="text-xl font-extrabold text-slate-900"><?= htmlspecialchars($p['nombre']) ?></h3>
-              <p class="text-sm text-slate-500 mt-1"><?= htmlspecialchars($p['descripcion']) ?></p>
-            </div>
-
-            <div class="mb-8 pb-8 border-b border-slate-100">
-              <?php if($is_free): ?>
-              <div class="plan-price-val text-slate-900">Gratis</div>
-              <div class="text-xs text-slate-400 mt-1">Para siempre</div>
-              <?php else: ?>
-              <div class="flex items-end gap-1.5">
-                <span class="plan-price-val text-slate-900" data-price-monthly="<?= $pm ?>" data-price-yearly="<?= $pa ?>">Q<?= number_format($pm,0) ?></span>
-                <span class="text-slate-400 font-semibold mb-1.5 price-period">/mes</span>
-              </div>
-              <div class="text-xs text-slate-400 mt-1 plan-annual-note" <?= !$pa?'style="display:none"':'' ?>>
-                O <strong class="text-teal-600">Q<?= number_format($pa,0) ?></strong>/año (ahorra <?= $pm>0?number_format(($pm*12)-$pa,0):'0' ?> Q)
-              </div>
-              <?php endif; ?>
-            </div>
-
-            <ul class="space-y-2.5 mb-8 flex-grow">
-              <?php
-              $feats_plan = [
-                [$p['max_sucursales'].' '.($p['max_sucursales']==1?'Sucursal':'Sucursales'), 'building-2'],
-                [$p['max_empleados'].' Profesionales', 'users'],
-                [$p['max_servicios'].' Servicios', 'list'],
-                [number_format((int)$p['max_clientes']).' Clientes', 'user-check'],
-              ];
-              // Bonus feats por plan
-              $bonus = [];
-              if(!$is_free) $bonus[] = ['Blog integrado','file-text'];
-              if($idx>=2)   $bonus[] = ['Sucursales ilimitadas disponibles','building'];
-              foreach(array_merge($feats_plan,$bonus) as $pf):
-              ?>
-              <li class="plan-feat">
-                <div class="w-4 h-4 rounded-full bg-teal-50 grid place-items-center flex-shrink-0"><i data-lucide="check" class="w-2.5 h-2.5 text-teal-600"></i></div>
-                <span class="text-slate-600"><?= $pf[0] ?></span>
-              </li>
-              <?php endforeach; ?>
-              <?php if($is_free): ?>
-              <li class="plan-feat text-slate-400">
-                <div class="w-4 h-4 rounded-full bg-slate-50 grid place-items-center flex-shrink-0"><i data-lucide="x" class="w-2.5 h-2.5 text-slate-300"></i></div>
-                <span>Blog (plan de pago)</span>
-              </li>
-              <?php endif; ?>
-            </ul>
-
-            <?php if($is_free): ?>
-            <a href="<?= htmlspecialchars($login_url) ?>" class="plan-cta-primary">Comenzar gratis</a>
-            <?php elseif($featured): ?>
-            <a href="<?= htmlspecialchars($login_url) ?>" class="plan-cta-primary">Contratar <?= htmlspecialchars($p['nombre']) ?></a>
-            <?php else: ?>
-            <a href="<?= htmlspecialchars($login_url) ?>" class="plan-cta-secondary">Contratar <?= htmlspecialchars($p['nombre']) ?></a>
-            <?php endif; ?>
-          </article>
-          <?php endforeach; ?>
         </div>
 
         <p class="reveal text-center mt-8 text-xs text-slate-400">¿Tienes dudas? <a href="#faq" class="text-teal-600 font-semibold hover:underline">Lee las preguntas frecuentes</a> o <a href="<?= htmlspecialchars($login_url) ?>" class="text-teal-600 font-semibold hover:underline">contáctanos</a>.</p>
@@ -1612,6 +1475,83 @@ $faq_schema = [
         });
       });
 
+      // ── Cargar planes dinámicamente desde API ────────────────────────────
+      (function loadPlanes() {
+        var apiUrl = <?= json_encode($join_url($base, 'api/public/planes.php')) ?>;
+        var container = document.getElementById('planes-container');
+        var loginUrl = <?= json_encode($login_url) ?>;
+
+        fetch(apiUrl)
+          .then(function(r) { return r.json(); })
+          .then(function(res) {
+            if (!res || !res.success || !Array.isArray(res.data) || res.data.length === 0) {
+              container.innerHTML = '<div class="md:col-span-3 text-center py-8 text-slate-500">No hay planes disponibles en este momento.</div>';
+              return;
+            }
+
+            var html = res.data.map(function(p, idx) {
+              var isFree = p.precio_mensual <= 0;
+              var isFeatured = idx === 1; // El del medio es destacado
+              var featuredClass = isFeatured ? 'featured' : '';
+              var badge = isFeatured ? '<span class="plan-badge">Más popular</span>' : '';
+
+              // Precios
+              var priceHtml;
+              if (isFree) {
+                priceHtml = '<div class="plan-price-val text-slate-900">Gratis</div><div class="text-xs text-slate-400 mt-1">Para siempre</div>';
+              } else {
+                priceHtml = '<div class="flex items-end gap-1.5">' +
+                  '<span class="plan-price-val text-slate-900" data-price-monthly="' + p.precio_mensual + '" data-price-yearly="' + p.precio_anual + '">Q' + Math.round(p.precio_mensual).toLocaleString('es-GT') + '</span>' +
+                  '<span class="text-slate-400 font-semibold mb-1.5 price-period">/mes</span>' +
+                  '</div>' +
+                  '<div class="text-xs text-slate-400 mt-1 plan-annual-note">' +
+                  'O <strong class="text-teal-600">Q' + Math.round(p.precio_anual).toLocaleString('es-GT') + '</strong>/año (ahorra Q' + Math.round((p.precio_mensual * 12) - p.precio_anual).toLocaleString('es-GT') + ')' +
+                  '</div>';
+              }
+
+              // Features
+              var feats = [
+                [p.max_sucursales + ' ' + (p.max_sucursales === 1 ? 'Sucursal' : 'Sucursales'), 'building-2'],
+                [p.max_empleados + ' Profesionales', 'users'],
+                [p.max_servicios + ' Servicios', 'list'],
+                [p.max_clientes.toLocaleString('es-GT') + ' Clientes', 'user-check']
+              ];
+              var bonus = [];
+              if (!isFree) bonus.push(['Blog integrado', 'file-text']);
+              if (idx >= 2) bonus.push(['Sucursales ilimitadas disponibles', 'building']);
+
+              var featsHtml = feats.concat(bonus).map(function(f) {
+                return '<li class="plan-feat"><div class="w-4 h-4 rounded-full bg-teal-50 grid place-items-center flex-shrink-0"><i data-lucide="check" class="w-2.5 h-2.5 text-teal-600"></i></div><span class="text-slate-600">' + f[0] + '</span></li>';
+              }).join('');
+
+              if (isFree) {
+                featsHtml += '<li class="plan-feat text-slate-400"><div class="w-4 h-4 rounded-full bg-slate-50 grid place-items-center flex-shrink-0"><i data-lucide="x" class="w-2.5 h-2.5 text-slate-300"></i></div><span>Blog (plan de pago)</span></li>';
+              }
+
+              var ctaText = isFree ? 'Comenzar gratis' : 'Elegir plan';
+
+              return '<article class="plan-card reveal delay-' + (idx + 1) + ' ' + featuredClass + '">' +
+                badge +
+                '<div class="mb-6"><h3 class="text-xl font-extrabold text-slate-900">' + p.nombre + '</h3><p class="text-sm text-slate-500 mt-1">' + p.descripcion + '</p></div>' +
+                '<div class="mb-8 pb-8 border-b border-slate-100">' + priceHtml + '</div>' +
+                '<ul class="space-y-2.5 mb-8 flex-grow">' + featsHtml + '</ul>' +
+                '<a href="' + loginUrl + '" class="plan-cta-primary">' + ctaText + '</a>' +
+                '</article>';
+            }).join('');
+
+            container.innerHTML = html;
+            if (window.lucide) lucide.createIcons();
+
+            // Re-inicializar precios después de cargar
+            initPriceToggle();
+          })
+          .catch(function(err) {
+            console.error('Error cargando planes:', err);
+            container.innerHTML = '<div class="md:col-span-3 text-center py-8 text-slate-500">Error al cargar los planes. Intenta recargar la página.</div>';
+          });
+      })();
+
+      function initPriceToggle() {
       // ── Plans toggle monthly/annual ───────────────────────────────────────
       var btnM = document.getElementById('btn-mensual');
       var btnA = document.getElementById('btn-anual');
@@ -1634,7 +1574,7 @@ $faq_schema = [
 
       if (btnA) {
         btnA.addEventListener('click', function() {
-          btnA.classList.add('active'); 
+          btnA.classList.add('active');
           btnM.classList.remove('active');
           prices.forEach(function(el) {
             var v = parseFloat(el.dataset.priceYearly) || 0;
@@ -1644,6 +1584,7 @@ $faq_schema = [
           annNotes.forEach(function(el) { el.style.display = ''; });
         });
       }
+      } // end initPriceToggle
 
       // ── Hero mini-calendar ────────────────────────────────────────────────
       (function initHeroCalendar() {

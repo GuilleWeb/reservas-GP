@@ -2,6 +2,12 @@
 require_once __DIR__ . '/../../includes/bootstrap.php';
 $role = $user['rol'] ?? null;
 $id_e = request_id_e();
+$allowed_roles = ['superadmin', 'admin', 'gerente'];
+if (!$user || !in_array($role, $allowed_roles, true)) {
+  http_response_code(403);
+  include __DIR__ . '/../../includes/errors/403.php';
+  exit;
+}
 $module = 'clientes';
 include __DIR__ . '/../../includes/topbar.php';
 ?>
@@ -10,18 +16,19 @@ include __DIR__ . '/../../includes/topbar.php';
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
 
   <div class="lg:col-span-4">
-      <div class="bg-white rounded-2xl shadow p-5 border">
+      <div class="bg-white rounded-2xl shadow p-5 border dark:bg-gray-800 dark:border-gray-700">
     <div class="text-xs text-gray-500 font-semibold tracking-wider uppercase mb-1">Empresa</div>
-    <div class="text-xl font-extrabold text-gray-900 mb-6">Gestionar Cliente</div>
-    <div class="mb-3 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2">Los clientes se crean automáticamente por autogestión o registro de citas. Aquí solo puedes editar/inhabilitar existentes.</div>
+    <div class="text-xl font-extrabold text-gray-900 mb-6 dark:text-gray-200">Gestionar Cliente</div>
+    <div class="mb-3 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2 dark:text-amber-200 dark:bg-amber-950/40 dark:border-amber-900/60">Los clientes serán generados automáticamente al agendar una cita. Datos personales adicionales se completan después en la ficha del cliente.</div>
 
     <form id="formCliente" class="space-y-4">
       <input type="hidden" id="cliente_id" name="id" value="0">
 
       <div>
-        <label class="block text-sm font-medium text-gray-700">Nombre Completo <span
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nombre Completo <span
             class="text-red-500">*</span></label>
         <input type="text" id="nombre" name="nombre"
+          class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" required
           class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500" required
           placeholder="Ej: Juan Pérez">
       </div>
@@ -39,6 +46,12 @@ include __DIR__ . '/../../includes/topbar.php';
           <input type="text" id="telefono" name="telefono"
             class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="Ej: +502 ...">
         </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Dirección</label>
+        <input type="text" id="direccion" name="direccion"
+          class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="Dirección del cliente">
       </div>
 
       <div>
@@ -66,8 +79,8 @@ include __DIR__ . '/../../includes/topbar.php';
       <div id="formAlert" class="hidden rounded p-3 text-sm"></div>
 
       <div class="pt-4 flex items-center justify-between border-t border-gray-100">
-        <button type="button" disabled
-          class="text-sm text-gray-400 border border-gray-200 rounded-lg px-2 py-2 cursor-not-allowed">Nuevo</button>
+        <button type="button" <?= in_array($role, ['admin','superadmin'], true) ? '' : 'disabled' ?>
+          class="text-sm <?= in_array($role, ['admin','superadmin'], true) ? 'text-gray-700 hover:bg-gray-50' : 'text-gray-400 cursor-not-allowed' ?> border border-gray-200 rounded-lg px-2 py-2" onclick="resetForm()">Nuevo</button>
         <button type="submit"
           class="bg-teal-600 hover:bg-teal-700 text-white px-2 py-2 rounded-lg font-semibold transition"
           id="btnSave">Guardar Cliente</button>
@@ -200,6 +213,7 @@ include __DIR__ . '/../../includes/topbar.php';
         $('#nombre').val(d.nombre);
         $('#email').val(d.email);
         $('#telefono').val(d.telefono);
+        $('#direccion').val(d.direccion);
         $('#fecha_nacimiento').val(d.fecha_nacimiento);
         $('#notas').val(d.notas);
 
@@ -229,8 +243,10 @@ include __DIR__ . '/../../includes/topbar.php';
 
     $('#formCliente').on('submit', function (e) {
       e.preventDefault();
-      if (parseInt($('#cliente_id').val() || '0', 10) === 0) {
-        showCustomAlert('No se pueden crear clientes manualmente desde este módulo.', 5000, 'warning');
+      const id = parseInt($('#cliente_id').val() || '0', 10);
+      const canCreate = <?= json_encode(in_array($role, ['admin', 'superadmin'], true)) ?>;
+      if (id === 0 && !canCreate) {
+        showCustomAlert('No autorizado: solo Admin puede crear clientes manualmente.', 5000, 'warning');
         return;
       }
       let data = $(this).serializeArray();

@@ -85,6 +85,7 @@ include __DIR__ . '/../../includes/topbar.php';
   <section id="homeSections" class="space-y-14">
     <div id="homeLoading" class="bg-white rounded-2xl border p-6 text-gray-500">Cargando contenido...</div>
   </section>
+  
 </div>
 
 <script>
@@ -98,97 +99,193 @@ include __DIR__ . '/../../includes/topbar.php';
       return $('<div>').text(v ?? '').html();
     }
 
-    function sectionTitle(icon, title) {
-      return `
-        <div class="flex items-center gap-2 mb-6">
-          <i data-lucide="${icon}" class="text-teal-600"></i>
-          <h2 class="text-3xl font-bold text-teal-700">${esc(title)}</h2>
-        </div>
-      `;
-    }
-
+    // Templates variados para cada tipo de sección
     function renderBlog(sec) {
       if (!sec.items || !sec.items.length) return '';
-      const cards = sec.items.map(p => {
+      const cards = sec.items.map((p, idx) => {
         const image = p.imagen_path ? `/${p.imagen_path.replace(/^\/+/, '')}` : 'https://images.unsplash.com/photo-1550831107-1553da8c8464?auto=format&fit=crop&q=80&w=900';
         const preview = (p.contenido || '').replace(/<[^>]+>/g, '').slice(0, 120);
         const baseBlogUrl = <?= json_encode(view_url('vistas/public/blog.php', $empresa_slug ?: $empresa_id)) ?>;
         const url = baseBlogUrl.replace(/\/$/, '') + '/' + encodeURIComponent(p.slug || p.id);
+        const isLarge = idx === 0; // Primera card más grande
         return `
-          <article class="w-full max-w-md bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition">
-            <div class="h-48 bg-gray-100"><img src="${esc(image)}" class="w-full h-full object-cover" alt="${esc(p.titulo)}"></div>
-            <div class="p-5">
-              <h3 class="text-lg font-bold text-gray-800">${esc(p.titulo)}</h3>
-              <p class="text-sm text-gray-500 mt-2">${esc(preview)}...</p>
-              <a href="${esc(url)}" class="inline-flex items-center text-teal-600 font-semibold text-sm mt-4">Leer más</a>
+          <article class="${isLarge ? 'md:col-span-2 md:row-span-2' : ''} group relative bg-white rounded-3xl overflow-hidden shadow-xl transition-all duration-300 border border-slate-100">
+            <div class="${isLarge ? 'h-64 md:h-80' : 'h-48'} overflow-hidden">
+              <img src="${esc(image)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="${esc(p.titulo)}">
+            </div>
+            <div class="p-6 ${isLarge ? 'md:p-8' : ''}">
+              <div class="flex items-center gap-2 text-xs text-slate-400 mb-3">
+                <i data-lucide="calendar" class="w-3 h-3"></i>
+                <span>${esc(p.publicado_at || p.created_at || 'Reciente')}</span>
+              </div>
+              <h3 class="${isLarge ? 'text-xl md:text-2xl' : 'text-lg'} font-bold text-slate-800 group-hover:text-teal-600 transition-colors">${esc(p.titulo)}</h3>
+              <p class="text-sm text-slate-500 mt-3 line-clamp-2">${esc(preview)}...</p>
+              <a href="${esc(url)}" class="inline-flex items-center gap-1 text-teal-600 font-semibold text-sm mt-4 group-hover:gap-2 transition-all">
+                Leer más <i data-lucide="arrow-right" class="w-4 h-4"></i>
+              </a>
             </div>
           </article>
         `;
       }).join('');
       const blogUrl = <?= json_encode(view_url('vistas/public/blog.php', $empresa_slug ?: $empresa_id)) ?>;
-      return `<section>${sectionTitle('newspaper', sec.titulo)}<div class="flex flex-wrap justify-center gap-6">${cards}</div><div class="mt-6 text-center"><a href="${esc(blogUrl)}" class="inline-flex items-center px-5 py-2.5 rounded-xl bg-teal-600 text-white font-semibold hover:bg-teal-700">Ver blog completo</a></div></section>`;
+      return `
+        <section class="py-8">
+          <div class="flex items-center justify-between mb-8">
+            <div>
+              <span class="text-teal-600 font-semibold text-sm uppercase tracking-wide">Publicaciones</span>
+              <h2 class="text-3xl font-bold text-slate-900 mt-1">${esc(sec.titulo)}</h2>
+            </div>
+            <a href="${esc(blogUrl)}" class="hidden md:inline-flex items-center gap-2 text-slate-600 hover:text-teal-600 font-medium transition">
+              Ver todas <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </a>
+          </div>
+          <div class="grid md:grid-cols-3 gap-6">${cards}</div>
+          <div class="mt-6 text-center md:hidden">
+            <a href="${esc(blogUrl)}" class="inline-flex items-center px-5 py-2.5 rounded-xl bg-teal-600 text-white font-semibold hover:bg-teal-700">Ver blog completo</a>
+          </div>
+        </section>`;
     }
 
     function renderUsuarios(sec) {
       if (!sec.items || !sec.items.length) return '';
       const cards = sec.items.map(u => {
-        const img = u.foto_path ? `/${String(u.foto_path).replace(/^\/+/, '')}` : <?= json_encode(app_url('assets/logo.avif')) ?>;
+        const img = u.foto_path ? `/${String(u.foto_path).replace(/^\/+/, '')}` : 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop';
         return `
-          <div class="w-full max-w-sm bg-white rounded-2xl border border-gray-100 shadow-sm p-5 text-center">
-            <img src="${esc(img)}" class="w-24 h-24 rounded-full object-cover mx-auto border-4 border-teal-100" alt="${esc(u.nombre)}">
-            <div class="mt-4 font-bold text-gray-800">${esc(u.nombre)}</div>
-            <div class="text-sm text-teal-600 capitalize">${esc(u.rol || 'miembro')}</div>
+          <div class="group text-center">
+            <div class="relative w-32 h-32 mx-auto mb-4">
+              <div class="absolute inset-0 rounded-full bg-gradient-to-br from-teal-400 to-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -m-1"></div>
+              <img src="${esc(img)}" class="relative w-full h-full rounded-full object-cover border-4 border-white shadow-lg" alt="${esc(u.nombre)}">
+              <div class="absolute -bottom-1 -right-1 w-8 h-8 bg-teal-500 rounded-full flex items-center justify-center text-white shadow-md">
+                <i data-lucide="check" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <h3 class="font-bold text-slate-900">${esc(u.nombre)}</h3>
+            <p class="text-sm text-teal-600 capitalize font-medium">${esc(u.rol || 'profesional')}</p>
           </div>
         `;
       }).join('');
-      return `<section>${sectionTitle('users', sec.titulo)}<div class="flex flex-wrap justify-center gap-6">${cards}</div></section>`;
+      return `
+        <section class="py-12  bg-teal-200 rounded-3xl px-8">
+          <div class="text-center mb-10">
+            <span class="text-teal-600 font-semibold text-sm uppercase tracking-wide">Nuestro equipo</span>
+            <h2 class="text-3xl font-bold text-slate-900 mt-2">${esc(sec.titulo)}</h2>
+            <p class="text-slate-500 mt-3 max-w-lg mx-auto">Profesionales dedicados a brindarte la mejor experiencia</p>
+          </div>
+          <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">${cards}</div>
+        </section>`;
     }
 
     function renderResenas(sec) {
       if (!sec.items || !sec.items.length) return '';
       const cards = sec.items.map(r => {
         const rating = Math.max(1, Math.min(5, parseInt(r.rating || 5, 10)));
-        const stars = Array.from({ length: 5 }, (_, i) => `<i data-lucide="star" class="${i < rating ? 'text-yellow-500' : 'text-yellow-200'} w-4 h-4"></i>`).join('');
+        const stars = Array.from({ length: 5 }, (_, i) => `<i data-lucide="star" class="${i < rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200'} w-4 h-4"></i>`).join('');
         return `
-          <div class="w-full max-w-md bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <div class="flex items-center gap-1">${stars}</div>
-            <p class="mt-3 text-sm text-gray-600">"${esc(String(r.comentario || '').slice(0, 100))}"</p>
-            <div class="mt-4 font-semibold text-gray-800">${esc(r.autor_nombre || 'Cliente')}</div>
+          <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 relative">
+            <div class="absolute -top-3 left-6 w-6 h-6 bg-teal-500 rounded-lg flex items-center justify-center shadow-lg">
+              <i data-lucide="quote" class="w-3 h-3 text-white"></i>
+            </div>
+            <div class="flex gap-1 mt-2">${stars}</div>
+            <p class="mt-4 text-slate-600 text-sm leading-relaxed">"${esc(String(r.comentario || '').slice(0, 150))}"</p>
+            <div class="mt-4 pt-4 border-t border-slate-100 flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">
+                ${esc((r.autor_nombre || 'C').charAt(0))}
+              </div>
+              <div>
+                <div class="font-semibold text-slate-900 text-sm">${esc(r.autor_nombre || 'Cliente')}</div>
+                <div class="text-xs text-slate-400">Cliente verificado</div>
+              </div>
+            </div>
           </div>
         `;
       }).join('');
-      return `<section>${sectionTitle('message-square-heart', sec.titulo)}<div class="flex flex-wrap justify-center gap-6">${cards}</div></section>`;
+      return `
+        <section class="py-12">
+          <div class="text-center mb-10">
+            <span class="text-teal-600 font-semibold text-sm uppercase tracking-wide">Testimonios</span>
+            <h2 class="text-3xl font-bold text-slate-900 mt-2">${esc(sec.titulo)}</h2>
+          </div>
+          <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">${cards}</div>
+        </section>`;
     }
 
     function renderServicios(sec) {
       if (!sec.items || !sec.items.length) return '';
-      const cards = sec.items.map(s => `
-        <div class="w-full max-w-md bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-          <div class="text-lg font-bold text-gray-900">${esc(s.nombre)}</div>
-          <p class="text-sm text-gray-500 mt-2">${esc(s.descripcion || '')}</p>
-          <div class="mt-4 text-sm text-teal-700 font-semibold">$${Number(s.precio_base || 0).toFixed(2)} · ${esc(s.duracion_minutos)} min</div>
+      const cards = sec.items.map((s, idx) => `
+        <div class="group bg-white rounded-2xl p-6 border border-slate-100 hover:border-teal-200 hover:shadow-lg transition-all duration-300 ${idx === 0 ? 'md:col-span-2 bg-gradient-to-br from-teal-50 to-white' : ''}">
+          <div class="flex items-start justify-between">
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-2">
+                <div class="w-8 h-8 rounded-lg bg-teal-100 flex items-center justify-center text-teal-600">
+                  <i data-lucide="${idx % 2 === 0 ? 'sparkles' : 'zap'}" class="w-4 h-4"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900">${esc(s.nombre)}</h3>
+              </div>
+              <p class="text-sm text-slate-500 mt-2 line-clamp-2">${esc(s.descripcion || 'Servicio profesional de alta calidad')}</p>
+            </div>
+            <div class="text-right ml-4">
+              <div class="text-2xl font-bold text-teal-600">$${Number(s.precio_base || 0).toFixed(0)}</div>
+              <div class="text-xs text-slate-400">${esc(s.duracion_minutos)} min</div>
+            </div>
+          </div>
+          <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
+            <span class="text-xs text-slate-400 flex items-center gap-1">
+              <i data-lucide="clock" class="w-3 h-3"></i> ${esc(s.duracion_minutos)} minutos
+            </span>
+            <button class="text-sm font-semibold text-teal-600 hover:text-teal-700 flex items-center gap-1 group-hover:gap-2 transition-all">
+              Agendar <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </button>
+          </div>
         </div>
       `).join('');
       const serviciosUrl = <?= json_encode(view_url('vistas/public/servicios.php', $empresa_slug ?: $empresa_id)) ?>;
-      return `<section>${sectionTitle('stethoscope', sec.titulo)}<div class="flex flex-wrap justify-center gap-6">${cards}</div><div class="mt-6 text-center"><a href="${esc(serviciosUrl)}" class="inline-flex items-center px-5 py-2.5 rounded-xl bg-teal-600 text-white font-semibold hover:bg-teal-700">Ver todos los servicios</a></div></section>`;
+      return `
+        <section class="py-12 rounded-3xl px-8">
+          <div class="flex items-center justify-between mb-8">
+            <div>
+              <span class="text-teal-600 font-semibold text-sm uppercase tracking-wide">Catálogo</span>
+              <h2 class="text-3xl font-bold text-slate-900 mt-1">${esc(sec.titulo)}</h2>
+            </div>
+            <a href="${esc(serviciosUrl)}" class="hidden md:inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 font-medium hover:border-teal-300 hover:text-teal-600 transition">
+              Ver todos <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </a>
+          </div>
+          <div class="grid md:grid-cols-2 gap-4">${cards}</div>
+          <div class="mt-6 text-center md:hidden">
+            <a href="${esc(serviciosUrl)}" class="inline-flex items-center px-5 py-2.5 rounded-xl bg-teal-600 text-white font-semibold hover:bg-teal-700">Ver todos los servicios</a>
+          </div>
+        </section>`;
     }
 
     function renderSucursales(sec) {
       if (!sec.items || !sec.items.length) return '';
-      const cards = sec.items.map(s => {
+      const cards = sec.items.map((s, idx) => {
         const img = s.foto_path ? `/${String(s.foto_path).replace(/^\/+/, '')}` : 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=900';
         return `
-        <div class="w-full max-w-md bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-          <div class="h-44 rounded-xl overflow-hidden bg-gray-100 mb-4">
-            <img src="${esc(img)}" class="w-full h-full object-cover" alt="${esc(s.nombre || 'sucursal')}">
+        <div class="group relative rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 ${idx === 0 ? 'md:col-span-2 md:row-span-2' : ''}">
+          <div class="${idx === 0 ? 'h-64 md:h-80' : 'h-48'} relative">
+            <img src="${esc(img)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="${esc(s.nombre || 'sucursal')}">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+            <div class="absolute bottom-0 left-0 right-0 p-6 text-white">
+              <h3 class="font-bold text-lg ${idx === 0 ? 'md:text-xl' : ''}">${esc(s.nombre)}</h3>
+              <p class="text-sm text-white/80 mt-1 flex items-center gap-1">
+                <i data-lucide="map-pin" class="w-3 h-3"></i> ${esc(s.direccion || 'Dirección no disponible')}
+              </p>
+              ${s.telefono ? `<p class="text-sm text-white/70 mt-1 flex items-center gap-1"><i data-lucide="phone" class="w-3 h-3"></i> ${esc(s.telefono)}</p>` : ''}
+            </div>
           </div>
-          <div class="font-bold text-gray-900">${esc(s.nombre)}</div>
-          <div class="text-sm text-gray-500 mt-2">${esc(s.direccion || 'Dirección no disponible')}</div>
-          <div class="text-sm text-gray-500 mt-1">${esc(s.telefono || '')}</div>
         </div>
       `;
       }).join('');
-      return `<section>${sectionTitle('map-pin', sec.titulo)}<div class="flex flex-wrap justify-center gap-6">${cards}</div></section>`;
+      return `
+        <section class="py-12">
+          <div class="text-center mb-10">
+            <span class="text-teal-600 font-semibold text-sm uppercase tracking-wide">Ubicaciones</span>
+            <h2 class="text-3xl font-bold text-slate-900 mt-2">${esc(sec.titulo)}</h2>
+            <p class="text-slate-500 mt-3">Visítanos en cualquiera de nuestras sedes</p>
+          </div>
+          <div class="grid md:grid-cols-3 gap-6">${cards}</div>
+        </section>`;
     }
 
     function renderSection(sec) {
