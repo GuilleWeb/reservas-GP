@@ -50,7 +50,8 @@ include __DIR__ . '/../../includes/topbar.php';
                     </div>
                     <div>
                         <label class="text-xs text-gray-500">Imagen (URL o ruta)</label>
-                        <input id="hero_imagen" class="w-full border rounded-lg p-2" placeholder="https://...">
+                        <input type="hidden" id="hero_imagen" value="">
+                        <input type="file" id="hero_imagen_file" accept="image/*" class="w-full border rounded-lg p-2 bg-white">
                     </div>
                 </div>
                 <div>
@@ -110,7 +111,7 @@ include __DIR__ . '/../../includes/topbar.php';
                 <div class="flex items-center gap-3 pr-4 border-r border-gray-100 hidden md:flex">
                     <input type="hidden" class="sec-estado" value="1">
                     <button type="button" class="sec-switch relative inline-flex h-6 w-11 items-center rounded-full bg-gray-300 transition-all shadow-inner">
-                        <span class="sec-knob inline-block h-4 w-4 translate-x-1 rounded-full bg-white shadow-md transition-transform"></span>
+                        <span class="sec-knob inline-block h-4 w-4 translate-x-0 rounded-full bg-white shadow-md transition-transform"></span>
                     </button>
                 </div>
                 <i data-lucide="chevron-down" class="w-5 h-5 text-gray-400 transition-transform chevron"></i>
@@ -188,12 +189,14 @@ $(function () {
         $('#heroVisibleLabel').text(active ? 'Activo' : 'Inactivo');
     }
 
+    let heroPreviewUrl = '';
+
     function heroPreviewHtml(){
         const tipo = parseInt($('#hero_tipo').val() || '1', 10);
         const titulo = $('<div>').text($('#hero_titulo').val() || 'Título hero').html();
         const subt = $('<div>').text($('#hero_subtitulo').val() || 'Descripción hero').html();
         const btn = $('<div>').text($('#hero_btn_texto').val() || 'Acción').html();
-        const img = ($('#hero_imagen').val() || '').trim() || 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=1200';
+        const img = (heroPreviewUrl || ($('#hero_imagen').val() || '').trim()) || 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=1200';
         if (tipo === 2) {
             return `<div class="relative h-[210px]"><img src="${img}" class="absolute inset-0 w-full h-full object-cover"><div class="absolute inset-0 bg-black/45"></div><div class="absolute inset-0 p-4 text-white flex flex-col justify-center"><div class="text-lg font-bold">${titulo}</div><div class="text-sm opacity-90 mt-1">${subt}</div><span class="inline-flex mt-3 px-3 py-1.5 rounded-lg bg-teal-500 text-white text-xs font-semibold w-fit">${btn}</span></div></div>`;
         }
@@ -218,9 +221,19 @@ $(function () {
             $('#hero_btn_texto').val(d.hero_btn_texto || '');
             $('#hero_btn_link').val(d.hero_btn_link || '');
             $('#hero_imagen').val(d.hero_imagen || '');
+            $('#hero_imagen_file').val('');
+            heroPreviewUrl = '';
             refreshHeroPreview();
         }, 'json');
     }
+
+    $('#hero_imagen_file').on('change', function(){
+        const f = this.files && this.files[0] ? this.files[0] : null;
+        if (f) {
+            heroPreviewUrl = URL.createObjectURL(f);
+        }
+        refreshHeroPreview();
+    });
 
     function updateSwitchUI(box, val) {
         const active = String(val) === '1';
@@ -370,31 +383,6 @@ $(function () {
         }, 'json');
     }
 
-    $('#heroVisibleSwitch').on('click', function(){
-        setHeroSwitch($('#hero_visible').val() === '1' ? '0' : '1');
-    });
-    $('#hero_tipo,#hero_titulo,#hero_subtitulo,#hero_btn_texto,#hero_btn_link,#hero_imagen').on('input change', refreshHeroPreview);
-    $('#btnSaveHero').on('click', function(){
-        const payload = {
-            action: 'save_hero',
-            hero_visible: parseInt($('#hero_visible').val() || '0', 10),
-            hero_tipo: parseInt($('#hero_tipo').val() || '1', 10),
-            hero_titulo: $('#hero_titulo').val() || '',
-            hero_subtitulo: $('#hero_subtitulo').val() || '',
-            hero_btn_texto: $('#hero_btn_texto').val() || '',
-            hero_btn_link: $('#hero_btn_link').val() || '',
-            hero_imagen: $('#hero_imagen').val() || ''
-        };
-        $.post(API_PAGE, payload, function(res){
-            if(res && res.success) showCustomAlert('Hero actualizado.', 3000, 'success');
-            else showCustomAlert((res && res.message) || 'No se pudo guardar el hero.', 5000, 'error');
-        }, 'json');
-    });
-
-    loadHero();
-    loadSections();
-});
-</script>
 
 <style>
     .rotate-180 { transform: rotate(180deg); }

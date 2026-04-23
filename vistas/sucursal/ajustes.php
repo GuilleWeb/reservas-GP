@@ -18,7 +18,7 @@ include __DIR__ . '/../../includes/topbar.php';
     </div>
 
     <div class="p-5">
-      <form id="formSucursal" class="space-y-4">
+      <form id="formSucursal" class="space-y-4" enctype="multipart/form-data">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label class="block text-sm font-medium text-gray-700">Nombre sucursal</label>
@@ -26,7 +26,8 @@ include __DIR__ . '/../../includes/topbar.php';
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">Foto (URL o ruta)</label>
-            <input id="s_foto_path" name="foto_path" class="border rounded-lg p-2 w-full" placeholder="assets/sucursal.jpg">
+            <input type="hidden" id="s_foto_path" name="foto_path">
+            <input type="file" id="s_foto_file" name="foto_file" accept="image/*" class="border rounded-lg p-2 w-full bg-white">
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">Teléfono</label>
@@ -52,7 +53,7 @@ include __DIR__ . '/../../includes/topbar.php';
         </div>
       </form>
 
-      <form id="formPerfil" class="space-y-4 hidden">
+      <form id="formPerfil" class="space-y-4 hidden" enctype="multipart/form-data">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label class="block text-sm font-medium text-gray-700">Nombre</label>
@@ -68,7 +69,8 @@ include __DIR__ . '/../../includes/topbar.php';
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">Foto (URL o ruta)</label>
-            <input id="p_foto_path" name="foto_path" class="border rounded-lg p-2 w-full">
+            <input type="hidden" id="p_foto_path" name="foto_path">
+            <input type="file" id="p_foto_file" name="foto_file" accept="image/*" class="border rounded-lg p-2 w-full bg-white">
           </div>
           <div class="md:col-span-2">
             <label class="block text-sm font-medium text-gray-700">Nueva contraseña (opcional)</label>

@@ -1116,7 +1116,12 @@ include __DIR__ . '/../../includes/topbar.php';
                 }
 
             } catch (e) {
-                alert("Error: " + e.message);
+                const msg = (e && e.message) ? e.message : 'No se pudo crear la cita.';
+                if (typeof showCustomAlert === 'function') {
+                    showCustomAlert(msg, 6000, 'error');
+                } else {
+                    alert('Error: ' + msg);
+                }
                 btn.prop('disabled', false).html('Confirmar Cita');
             }
         }

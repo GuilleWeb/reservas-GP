@@ -105,7 +105,7 @@ include __DIR__ . '/../../includes/topbar.php';
             <thead class="bg-gray-50 text-gray-700">
               <tr>
                 <th class="text-left px-4 py-3 select-none">Entrada</th>
-                <th class="text-left px-4 py-3 select-none">Autor / Fecha</th>
+                <th class="text-left px-4 py-3 select-none">Fecha</th>
                 <th class="text-left px-4 py-3 select-none">Estado</th>
                 <th class="text-right px-4 py-3">Acciones</th>
               </tr>
@@ -205,8 +205,7 @@ include __DIR__ . '/../../includes/topbar.php';
                 </div>
             </td>
             <td class="px-4 py-3 text-xs text-gray-600">
-                <div><i data-lucide="user" class="text-gray-400 w-4"></i> ${item.autor || 'N/A'}</div>
-                <div class="mt-1"><i data-lucide="calendar" class="text-gray-400 w-4"></i> ${item.created_at.split(' ')[0]}</div>
+                <div><i data-lucide="calendar" class="text-gray-400 w-4"></i> ${String(item.created_at || '').split(' ')[0] || '-'}</div>
             </td>
             <td class="px-4 py-3">${badge}</td>
             <td class="px-4 py-3">

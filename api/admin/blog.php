@@ -123,9 +123,6 @@ switch ($action) {
         $publicado = isset($_POST['publicado']) ? (int) $_POST['publicado'] : 0;
         $show_in_home = isset($_POST['show_in_home']) ? (int) $_POST['show_in_home'] : 0;
         $slug = '';
-        $stmt = $pdo->prepare('SELECT nombre FROM empresas WHERE id = ? LIMIT 1');
-        $stmt->execute([$empresa_id]);
-        $autor = (string) ($stmt->fetchColumn() ?: 'Empresa');
 
         if ($titulo === '')
             json_response(['success' => false, 'message' => 'Título obligatorio']);
@@ -151,8 +148,8 @@ switch ($action) {
                 if (!$stmt->fetch())
                     json_response(['success' => false, 'message' => 'No autorizado'], 403);
 
-                $sql = "UPDATE blog_posts SET titulo=?, contenido=?, publicado=?, slug=?, autor=? " . ($imagen_path ? ", imagen_path=?" : "") . " WHERE id=? AND empresa_id=?";
-                $params = [$titulo, $contenido, $publicado, $slug, $autor];
+                $sql = "UPDATE blog_posts SET titulo=?, contenido=?, publicado=?, slug=? " . ($imagen_path ? ", imagen_path=?" : "") . " WHERE id=? AND empresa_id=?";
+                $params = [$titulo, $contenido, $publicado, $slug];
                 if ($imagen_path)
                     $params[] = $imagen_path;
                 $params[] = $id;
@@ -161,8 +158,8 @@ switch ($action) {
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute($params);
             } else {
-                $stmt = $pdo->prepare("INSERT INTO blog_posts (empresa_id, titulo, slug, autor, contenido, imagen_path, publicado, publicado_at) VALUES (?,?,?,?,?,?,?,?)");
-                $stmt->execute([$empresa_id, $titulo, $slug, $autor, $contenido, $imagen_path, $publicado, $publicado ? date('Y-m-d H:i:s') : null]);
+                $stmt = $pdo->prepare("INSERT INTO blog_posts (empresa_id, titulo, slug, contenido, imagen_path, publicado, publicado_at) VALUES (?,?,?,?,?,?,?)");
+                $stmt->execute([$empresa_id, $titulo, $slug, $contenido, $imagen_path, $publicado, $publicado ? date('Y-m-d H:i:s') : null]);
                 $id = (int) $pdo->lastInsertId();
             }
             home_page_sync_item($empresa_id, 'blog', (int) $id, $show_in_home === 1);

@@ -49,6 +49,21 @@ try {
   }
 }
 
+// ── Stats landing (datos reales) ─────────────────────────────────────────────
+$lp_empresas_activas = 0;
+$lp_citas_total = 0;
+$lp_satisfaccion_pct = 0;
+try {
+  $lp_empresas_activas = (int) ($pdo->query('SELECT COUNT(*) FROM empresas WHERE activo = 1')->fetchColumn() ?: 0);
+  $lp_citas_total = (int) ($pdo->query('SELECT COUNT(*) FROM citas')->fetchColumn() ?: 0);
+  $lp_citas_completadas = (int) ($pdo->query("SELECT COUNT(*) FROM citas WHERE estado = 'completada'")->fetchColumn() ?: 0);
+  $lp_satisfaccion_pct = $lp_citas_total > 0 ? (int) round(($lp_citas_completadas / $lp_citas_total) * 100) : 0;
+} catch (Throwable $e) {
+  $lp_empresas_activas = 0;
+  $lp_citas_total = 0;
+  $lp_satisfaccion_pct = 0;
+}
+
 // Calcular precio anual si la columna no existe (fallback: -15 %)
 foreach ($plans as &$p) {
   if (empty($p['precio_anual']) && (float)$p['precio'] > 0) {
@@ -397,12 +412,53 @@ $faq_schema = [
     [data-counter] { will-change: contents; }
 
     /* ── Horizontal marquee ──────────────────────────────────────────────── */
-    .marquee-wrap { overflow:hidden; }
-    .marquee-track { display:flex; gap:2.5rem; width:max-content; animation:marquee 28s linear infinite; }
-    @keyframes marquee { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
-    .marquee-item { display:inline-flex; align-items:center; gap:.65rem; font-size:.8rem; font-weight:700; color:var(--muted); white-space:nowrap; padding:.5rem 1.2rem; border-radius:9999px; border:1px solid var(--border); background:#fff; }
-    .marquee-logo-item { display:inline-flex; align-items:center; justify-content:center; padding:.5rem 1.5rem; border-radius:1rem; background:#fff; border:1px solid var(--border); filter:grayscale(100%); opacity:.7; transition:all .3s ease; }
-    .marquee-logo-item:hover { filter:grayscale(0%); opacity:1; transform:scale(1.05); box-shadow:0 4px 20px rgba(13,148,136,.12); }
+ /* Contenedor con desvanecimiento en los bordes */
+.marquee-wrap {
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+    /* Máscara para bordes suaves */
+    mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+}
+
+.marquee-track {
+    display: flex;
+    width: max-content;
+    gap: 2rem; /* Mantén el gap consistente */
+    animation: marquee-scroll 10s linear infinite;
+}
+
+/* Pausar al pasar el mouse (opcional, pero profesional) */
+.marquee-track:hover {
+    animation-play-state: paused;
+}
+
+@keyframes marquee-scroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); } /* Mueve exactamente la mitad del track duplicado */
+}
+
+.marquee-logo-item {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 2rem;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    filter: grayscale(100%);
+    opacity: 0.6;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.marquee-logo-item:hover {
+    filter: grayscale(0%);
+    opacity: 1;
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
   </style>
 </head>
 <body class="mesh-bg">
@@ -561,53 +617,58 @@ $faq_schema = [
 
     <!-- ── MARQUEE LOGOS / EMPRESAS ───────────────────────────────────────── -->
     <?php
-    // Obtener empresas con logos para el marquee
-    $empresas_logos = [];
-    try {
-      if (isset($pdo_lp)) {
-        $stmt = $pdo_lp->query("SELECT id, nombre, logo_path FROM empresas WHERE activo = 1 AND logo_path IS NOT NULL AND logo_path <> '' ORDER BY RAND() LIMIT 20");
-        $empresas_logos = $stmt->fetchAll() ?: [];
-      }
-    } catch (Throwable $e) {
-      $empresas_logos = [];
+      $empresas_originales = [];
+      try {
+          if (isset($pdo_lp)) {
+              $stmt = $pdo_lp->query("SELECT id, nombre, logo_path FROM empresas WHERE activo = 1 AND logo_path IS NOT NULL AND logo_path <> '' ORDER BY RAND() LIMIT 20");
+              $empresas_originales = $stmt->fetchAll() ?: [];
+          }
+      } catch (Throwable $e) { $empresas_originales = []; }
+
+      // Si no hay datos, usamos los fallbacks
+      if (!empty($empresas_logos)) {
+        $count = count($empresas_logos);
+        // Si tienes muy pocos logos, multiplícalos más veces
+        // Necesitamos que el track sea MUCHO más ancho que el viewport
+        $multiplier = ($count < 5) ? 10 : 4; 
+        $marquee_items = [];
+        for ($i = 0; $i < $multiplier; $i++) {
+            $marquee_items = array_merge($marquee_items, $empresas_logos);
+        }
+    } else {
+        // Fallback con los textos
+        $items = ['Multisucursal','Reservas 24/7','Confirmación email','Panel métricas','Gestión reseñas'];
+        $marquee_items = [];
+        for ($i = 0; $i < 10; $i++) { $marquee_items = array_merge($marquee_items, $items); }
     }
-    // Si hay logos, duplicar 4 veces para efecto infinito perfecto
-    if (!empty($empresas_logos)) {
-      $empresas_logos = array_merge($empresas_logos, $empresas_logos, $empresas_logos, $empresas_logos);
-    }
+
+      // DUPLICAR EXACTAMENTE UNA VEZ PARA EL LOOP INFINITO
+      $marquee_items = array_merge($empresas_originales, $empresas_originales);
     ?>
-    <div class="marquee-container py-8 border-y border-slate-100 bg-gradient-to-r from-slate-50 via-white to-slate-50">
-      <p class="text-center text-sm text-slate-500 mb-4 font-medium">Confían en nosotros negocios líderes de Guatemala</p>
-      <div class="marquee-wrap overflow-hidden">
-        <div class="marquee-track" style="animation-duration: 40s;">
-          <?php if (!empty($empresas_logos)): ?>
-            <?php foreach ($empresas_logos as $emp):
-              $logo_path = trim((string) ($emp['logo_path'] ?? ''));
-              if ($logo_path === '') {
-                continue;
-              }
-              $logo_url = preg_match('/^https?:\/\//i', $logo_path)
-                ? $logo_path
-                : $join_url($base, ltrim($logo_path, '/'));
-            ?>
-            <div class="marquee-logo-item flex-shrink-0 mx-4" title="<?= htmlspecialchars($emp['nombre']) ?>">
-              <img src="<?= htmlspecialchars($logo_url) ?>" alt="<?= htmlspecialchars($emp['nombre']) ?>" class="h-12 w-auto object-contain max-w-[120px]">
+
+    <div class="marquee-container py-12 bg-white">
+        <p class="text-center text-xs uppercase tracking-widest text-slate-400 mb-8 font-bold">Empresas que confían en nuestra tecnología</p>
+        
+        <div class="marquee-wrap">
+            <div class="marquee-track">
+                <?php foreach ($marquee_items as $emp): ?>
+                    <?php if (isset($emp['is_fallback'])): ?>
+                        <div class="marquee-item border px-6 py-3 rounded-full flex items-center gap-2 shadow-sm text-slate-600 font-semibold">
+                            <span class="w-2 h-2 bg-teal-500 rounded-full"></span>
+                            <?= $emp['nombre'] ?>
+                        </div>
+                    <?php else: 
+                        $logo_url = preg_match('/^https?:\/\//i', $emp['logo_path']) ? $emp['logo_path'] : $join_url($base, ltrim($emp['logo_path'], '/'));
+                    ?>
+                        <div class="marquee-logo-item" title="<?= htmlspecialchars($emp['nombre']) ?>">
+                            <img src="<?= htmlspecialchars($logo_url) ?>" 
+                                alt="<?= htmlspecialchars($emp['nombre']) ?>" 
+                                class="h-10 w-auto grayscale-0 object-contain">
+                        </div>
+                    <?php endif; ?>
+                <?php endforeach; ?>
             </div>
-            <?php endforeach; ?>
-          <?php else: ?>
-            <?php
-            // Fallback a features si no hay logos - duplicar 4 veces
-            $items = ['Multisucursal','Reservas 24/7','Confirmación email','Panel métricas','Gestión reseñas','Blog integrado','Personalización marca','Control roles','Página web propia','Catálogo servicios'];
-            $icons = ['building-2','clock','mail','bar-chart-2','star','file-text','palette','shield-check','globe','list'];
-            $all_items = array_merge($items, $items, $items, $items);
-            foreach($all_items as $k=>$it):
-              $ic = $icons[$k % count($icons)];
-            ?>
-            <span class="marquee-item flex-shrink-0"><i data-lucide="<?= $ic ?>" class="w-4 h-4 text-teal-600"></i><?= $it ?></span>
-            <?php endforeach; ?>
-          <?php endif; ?>
         </div>
-      </div>
     </div>
 
     <!-- ── TESTIMONIOS ─────────────────────────────────────────────────────── -->
@@ -671,12 +732,6 @@ $faq_schema = [
             <!-- Texto -->
             <p class="text-slate-600 leading-relaxed mb-6">"<?= $t['texto'] ?>"</p>
             
-            <!-- Métrica destacada -->
-            <div class="bg-teal-50 rounded-xl p-4 mb-6 text-center">
-              <div class="text-2xl font-black text-teal-600"><?= $t['metrica'] ?></div>
-              <div class="text-xs font-medium text-teal-700 uppercase tracking-wide"><?= $t['metrica_label'] ?></div>
-            </div>
-            
             <!-- Autor -->
             <div class="flex items-center gap-3 pt-4 border-t border-slate-100">
               <img src="<?= $t['foto'] ?>" alt="<?= $t['nombre'] ?>" class="w-12 h-12 rounded-full object-cover">
@@ -692,15 +747,15 @@ $faq_schema = [
         <!-- Stats de confianza -->
         <div class="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           <div class="reveal delay-1">
-            <div class="text-4xl font-black text-teal-600">500+</div>
+            <div class="text-4xl font-black text-teal-600"><?= number_format($lp_empresas_activas) ?></div>
             <div class="text-sm text-slate-500 mt-1">negocios activos</div>
           </div>
           <div class="reveal delay-2">
-            <div class="text-4xl font-black text-teal-600">50K+</div>
+            <div class="text-4xl font-black text-teal-600"><?= number_format($lp_citas_total) ?></div>
             <div class="text-sm text-slate-500 mt-1">citas agendadas</div>
           </div>
           <div class="reveal delay-3">
-            <div class="text-4xl font-black text-teal-600">98%</div>
+            <div class="text-4xl font-black text-teal-600"><?= (int) $lp_satisfaccion_pct ?>%</div>
             <div class="text-sm text-slate-500 mt-1">satisfacción</div>
           </div>
           <div class="reveal delay-4">
@@ -825,17 +880,6 @@ $faq_schema = [
       </div>
     </section>
 
-    <?php /* 
-    ═══════════════════════════════════════════════════════════════════════════
-    SECCIÓN COMENTADA: BENEFICIOS (Redundante con Características Avanzadas)
-    ═══════════════════════════════════════════════════════════════════════════
-    <!-- ── BENEFICIOS ──────────────────────────────────────────────────────── -->
-    <section id="beneficios" class="py-24 bg-white border-y border-slate-100">
-      ...
-    </section>
-    ═══════════════════════════════════════════════════════════════════════════
-    */ ?>
-
     <!-- ── POR QUÉ ELEGIRNOS ────────────────────────────────────────────────── -->
     <section id="por-que-nosotros" class="py-24 bg-gradient-to-br from-teal-600 via-teal-700 to-cyan-700 relative overflow-hidden">
       <!-- Background decoration -->
@@ -903,7 +947,7 @@ $faq_schema = [
               </div>
               <div>
                 <h3 class="text-xl font-bold text-white mb-2">Todo incluido desde el primer día</h3>
-                <p class="text-teal-100">No pagues extra por "plugins" o "add-ons". Reseñas, blog, múltiples sucursales y roles vienen incluidos en todos los planes.</p>
+                <p class="text-teal-100">No pagues extra por "plugins" o "add-ons". Reseñas, y roles vienen incluidos en todos los planes.</p>
               </div>
             </div>
             <div class="reveal delay-3 flex items-start gap-4">

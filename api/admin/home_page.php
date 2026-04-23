@@ -143,7 +143,22 @@ switch ($action) {
         $cfg['hero_subtitulo'] = trim((string) ($_POST['hero_subtitulo'] ?? ''));
         $cfg['hero_btn_texto'] = trim((string) ($_POST['hero_btn_texto'] ?? 'Agendar cita'));
         $cfg['hero_btn_link'] = trim((string) ($_POST['hero_btn_link'] ?? ''));
-        $cfg['hero_imagen'] = trim((string) ($_POST['hero_imagen'] ?? ''));
+        $cfg['hero_imagen'] = trim((string) ($_POST['hero_imagen'] ?? ($cfg['hero_imagen'] ?? '')));
+
+        if (!empty($_FILES['hero_imagen_file']['name'])) {
+            $dir = __DIR__ . '/../../assets/home/' . (int) $empresa_id . '/';
+            if (!is_dir($dir)) {
+                @mkdir($dir, 0777, true);
+            }
+            $ext = strtolower((string) pathinfo((string) $_FILES['hero_imagen_file']['name'], PATHINFO_EXTENSION));
+            if (!preg_match('/^(png|jpe?g|webp|gif)$/', $ext)) {
+                json_response(['success' => false, 'message' => 'Formato de imagen no válido.'], 200);
+            }
+            $filename = 'hero_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+            if (move_uploaded_file((string) $_FILES['hero_imagen_file']['tmp_name'], $dir . $filename)) {
+                $cfg['hero_imagen'] = 'assets/home/' . (int) $empresa_id . '/' . $filename;
+            }
+        }
         hp_save_home_config($empresa_id, $cfg);
         json_response(['success' => true]);
         break;

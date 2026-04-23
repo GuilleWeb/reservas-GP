@@ -497,7 +497,7 @@ switch ($action) {
                     $params[] = $email;
                 }
                 if ($telefono !== '') {
-                    $where[] = 'REPLACE(REPLACE(REPLACE(c.telefono, " ", ""), "-", ""), "(", "") = REPLACE(REPLACE(REPLACE(?, " ", ""), "-", ""), "(", "")';
+                    $where[] = "REPLACE(REPLACE(REPLACE(c.telefono, ' ', ''), '-', ''), '(', '') = REPLACE(REPLACE(REPLACE(?, ' ', ''), '-', ''), '(', '')";
                     $params[] = $telefono;
                 }
                 $sqlCli = "SELECT c.id
