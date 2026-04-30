@@ -434,16 +434,61 @@ if ($user && !$is_public) {
         <div class="p-4">
           <nav class="space-y-1" id="sidebarNav">
             <?php if ($user): ?>
-              <div class="w-100 flex justify-center mb-5">
-                <?php
-                  $user_photo = !empty($user['foto_path'])
-                    ? app_url(ltrim((string) $user['foto_path'], '/'))
-                    : app_url('assets/logo.avif');
-                ?>
-                <img
-                  src="<?= htmlspecialchars($user_photo) ?>"
-                  alt="Logo" class="h-16 w-16 rounded-full object-cover">
-              </div>
+              <?php
+                $user_photo = !empty($user['foto_path'])
+                  ? app_url(ltrim((string) $user['foto_path'], '/'))
+                  : app_url('assets/logo.avif');
+                $sidebar_sucursal_nombre = '';
+                $sidebar_sucursal_foto = '';
+                if ($sidebar_role === 'gerente') {
+                  $sid = (int) ($user['sucursal_id'] ?? 0);
+                  if ($sid <= 0) {
+                    $stmtS = $pdo->prepare('SELECT id, nombre, foto_path FROM sucursales WHERE empresa_id = ? AND activo = 1 ORDER BY id ASC LIMIT 1');
+                    $stmtS->execute([(int) $empresa_id]);
+                    $rowS = $stmtS->fetch(PDO::FETCH_ASSOC) ?: [];
+                    $sid = (int) ($rowS['id'] ?? 0);
+                    $sidebar_sucursal_nombre = (string) ($rowS['nombre'] ?? '');
+                    $sidebar_sucursal_foto = (string) ($rowS['foto_path'] ?? '');
+                  } else {
+                    $stmtS = $pdo->prepare('SELECT nombre, foto_path FROM sucursales WHERE id = ? AND empresa_id = ? LIMIT 1');
+                    $stmtS->execute([$sid, (int) $empresa_id]);
+                    $rowS = $stmtS->fetch(PDO::FETCH_ASSOC) ?: [];
+                    $sidebar_sucursal_nombre = (string) ($rowS['nombre'] ?? '');
+                    $sidebar_sucursal_foto = (string) ($rowS['foto_path'] ?? '');
+                  }
+                  if ($sidebar_sucursal_foto !== '') {
+                    $sidebar_sucursal_foto = app_url(ltrim($sidebar_sucursal_foto, '/'));
+                  }
+                }
+              ?>
+
+              <?php if ($sidebar_role === 'gerente'): ?>
+                <div class="mb-5">
+                  <div class="rounded-2xl border overflow-hidden bg-white dark:bg-slate-900">
+                    <div class="relative h-20 bg-gray-100">
+                      <?php if ($sidebar_sucursal_foto !== ''): ?>
+                        <img src="<?= htmlspecialchars($sidebar_sucursal_foto) ?>" alt="Portada" class="absolute inset-0 h-full w-full object-cover opacity-95" style="filter: blur(.5px); transform: scale(1.06);">
+                      <?php endif; ?>
+                      <div class="absolute inset-0 bg-gradient-to-t from-black/30 via-black/10 to-transparent"></div>
+                      <div class="absolute -bottom-7 left-1/2 -translate-x-1/2">
+                        <div class="h-16 w-16 rounded-full bg-white dark:bg-slate-900 p-1 shadow" style="box-shadow: 0 10px 22px rgba(0,0,0,.14);">
+                          <img src="<?= htmlspecialchars($user_photo) ?>" alt="Gerente" class="h-full w-full rounded-full object-cover" style="box-shadow: 0 0 0 2px rgba(255,255,255,.85);">
+                        </div>
+                      </div>
+                    </div>
+                    <div class="pt-10 pb-4 px-3 text-center">
+                      <div class="font-extrabold text-teal-700 dark:text-teal-400 leading-tight truncate"><?= htmlspecialchars($sidebar_sucursal_nombre !== '' ? $sidebar_sucursal_nombre : 'Mi sucursal') ?></div>
+                      <div class="text-xs text-gray-500 dark:text-slate-400 truncate"><?= htmlspecialchars((string) ($user['nombre'] ?? '')) ?></div>
+                    </div>
+                  </div>
+                </div>
+              <?php else: ?>
+                <div class="w-100 flex justify-center mb-5">
+                  <img
+                    src="<?= htmlspecialchars($user_photo) ?>"
+                    alt="Logo" class="h-16 w-16 rounded-full object-cover">
+                </div>
+              <?php endif; ?>
             <?php endif; ?>
 
             <?php if ($sidebar_role === 'superadmin' && !$id_e): ?>
@@ -548,6 +593,10 @@ if ($user && !$is_public) {
               <a href="<?= htmlspecialchars(view_url('vistas/sucursal/dashboard.php', $id_e)) ?>"
                 class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
                 <i data-lucide="pie-chart" class="w-5"></i><span class="ml-2 sidebar-label">Dashboard</span>
+              </a>
+              <a href="<?= htmlspecialchars(view_url('vistas/sucursal/mi-sucursal.php', $id_e)) ?>"
+                class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
+                <i data-lucide="building-2" class="w-5"></i><span class="ml-2 sidebar-label">Mi sucursal</span>
               </a>
               <a href="<?= htmlspecialchars(view_url('vistas/sucursal/usuarios.php', $id_e)) ?>"
                 class="nav-link flex items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-slate-200">
