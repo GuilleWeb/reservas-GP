@@ -86,6 +86,21 @@ switch ($action) {
         if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             json_response(['success' => false, 'message' => 'El email de la sucursal no es válido.'], 200);
         }
+
+        if (!empty($_FILES['foto_file']['name'])) {
+            $ext = strtolower((string) pathinfo((string) $_FILES['foto_file']['name'], PATHINFO_EXTENSION));
+            if (!preg_match('/^(png|jpe?g|webp|gif)$/', $ext)) {
+                json_response(['success' => false, 'message' => 'Formato de imagen no válido.'], 200);
+            }
+            $dir = __DIR__ . '/../../assets/sucursales/' . (int) $empresa_id . '/' . (int) $sucursal_id . '/';
+            if (!is_dir($dir)) {
+                @mkdir($dir, 0777, true);
+            }
+            $filename = 'sucursal_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+            if (move_uploaded_file((string) $_FILES['foto_file']['tmp_name'], $dir . $filename)) {
+                $foto_path = 'assets/sucursales/' . (int) $empresa_id . '/' . (int) $sucursal_id . '/' . $filename;
+            }
+        }
         $horarios_json = sucursal_horarios_normalize($_POST);
 
         $stmt = $pdo->prepare('UPDATE sucursales
@@ -109,6 +124,25 @@ switch ($action) {
         }
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             json_response(['success' => false, 'message' => 'Email inválido.'], 200);
+        }
+
+        if (!empty($_FILES['foto_file']['name'])) {
+            $ext = strtolower((string) pathinfo((string) $_FILES['foto_file']['name'], PATHINFO_EXTENSION));
+            if (!preg_match('/^(png|jpe?g|webp|gif)$/', $ext)) {
+                json_response(['success' => false, 'message' => 'Formato de imagen no válido.'], 200);
+            }
+            $dir = __DIR__ . '/../../assets/usuarios/' . (int) $empresa_id . '/' . (int) $usuario_id . '/';
+            if (!is_dir($dir)) {
+                @mkdir($dir, 0777, true);
+            }
+            $filename = 'perfil_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+            if (move_uploaded_file((string) $_FILES['foto_file']['tmp_name'], $dir . $filename)) {
+                $foto_path = 'assets/usuarios/' . (int) $empresa_id . '/' . (int) $usuario_id . '/' . $filename;
+            }
+        } elseif ($foto_path === '') {
+            $stmt = $pdo->prepare('SELECT foto_path FROM usuarios WHERE id = ? AND empresa_id = ? LIMIT 1');
+            $stmt->execute([$usuario_id, $empresa_id]);
+            $foto_path = (string) ($stmt->fetchColumn() ?: '');
         }
 
         $stmt = $pdo->prepare('UPDATE usuarios SET nombre = ?, email = ?, telefono = ?, foto_path = ? WHERE id = ? AND empresa_id = ?');

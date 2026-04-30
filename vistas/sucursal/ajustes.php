@@ -167,26 +167,44 @@ include __DIR__ . '/../../includes/topbar.php';
 
     $('#formSucursal').on('submit', function (e) {
       e.preventDefault();
-      $.post(API_URL, $(this).serialize() + '&action=save_branch', function (res) {
-        if (res && res.success) {
-          showCustomAlert('Sucursal actualizada correctamente.', 3000, 'success');
-          loadData();
-          return;
+      const fd = new FormData(this);
+      fd.append('action', 'save_branch');
+      $.ajax({
+        url: API_URL,
+        type: 'POST',
+        data: fd,
+        processData: false,
+        contentType: false,
+        success: function (res) {
+          if (res && res.success) {
+            showCustomAlert('Sucursal actualizada correctamente.', 3000, 'success');
+            loadData();
+            return;
+          }
+          showCustomAlert((res && res.message) || 'No se pudo actualizar la sucursal.', 5000, 'error');
         }
-        showCustomAlert((res && res.message) || 'No se pudo actualizar la sucursal.', 5000, 'error');
-      }, 'json');
+      });
     });
 
     $('#formPerfil').on('submit', function (e) {
       e.preventDefault();
-      $.post(API_URL, $(this).serialize() + '&action=save_profile', function (res) {
-        if (res && res.success) {
-          showCustomAlert('Perfil actualizado correctamente.', 3000, 'success');
-          loadData();
-          return;
+      const fd = new FormData(this);
+      fd.append('action', 'save_profile');
+      $.ajax({
+        url: API_URL,
+        type: 'POST',
+        data: fd,
+        processData: false,
+        contentType: false,
+        success: function (res) {
+          if (res && res.success) {
+            showCustomAlert('Perfil actualizado correctamente.', 3000, 'success');
+            loadData();
+            return;
+          }
+          showCustomAlert((res && res.message) || 'No se pudo actualizar el perfil.', 5000, 'error');
         }
-        showCustomAlert((res && res.message) || 'No se pudo actualizar el perfil.', 5000, 'error');
-      }, 'json');
+      });
     });
 
     setTab('sucursal');
