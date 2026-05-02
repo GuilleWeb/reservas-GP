@@ -223,10 +223,33 @@ include __DIR__ . '/../../includes/topbar.php';
 
   function switchView(mode){ currentView=mode; const isTable=mode==='table'; $('#tableView').toggleClass('hidden',!isTable); $('#calendarView').toggleClass('hidden',isTable); $('#tableRangeControls').toggleClass('hidden', !isTable); $('#btnViewTable').toggleClass('bg-teal-600 text-white',isTable).toggleClass('text-gray-700',!isTable); $('#btnViewCalendar').toggleClass('bg-teal-600 text-white',!isTable).toggleClass('text-gray-700',isTable); if(isTable) loadTable(currentPage || 1); else loadCalendarRange(); }
   function setCalendarMode(mode){ calendarMode=mode; $('#btnModeMonth').toggleClass('bg-teal-600 text-white',mode==='month').toggleClass('text-gray-700',mode!=='month'); $('#btnModeWeek').toggleClass('bg-teal-600 text-white',mode==='week').toggleClass('text-gray-700',mode!=='week'); $('#btnModeDay').toggleClass('bg-teal-600 text-white',mode==='day').toggleClass('text-gray-700',mode!=='day'); loadCalendarRange(); }
-  function openModal(item){ modalItemId=parseInt(item.id||0,10); const info=$('#modalInfo').empty(); const fecha=parseSqlDate(item.inicio), fin=item.fin?parseSqlDate(item.fin):null; const total=parseFloat(item.servicio_precio||0).toFixed(2); [['Cliente',item.cliente_nombre||'-'],['Servicio',item.servicio_nombre||'-'],['Detalle servicio',item.servicio_descripcion||'-'],['Duración',`${item.servicio_duracion_minutos || '-'} min`],['Total',`$${total}`],['Empleado',item.empleado_nombre||'-'],['Sucursal',item.sucursal_nombre||'-'],['Dirección sede',item.sucursal_direccion||'-'],['Fecha',fecha.toLocaleDateString()],['Hora',`${fecha.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}${fin?' - '+fin.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):''}`]].forEach(r=>info.append(`<div class="bg-gray-50 border rounded-lg p-2"><div class="text-xs text-gray-500">${r[0]}</div><div class="font-medium text-gray-800">${r[1]}</div></div>`)); $('#mEstado').val(item.estado||'pendiente').prop('disabled',true).removeClass('bg-white').addClass('bg-gray-50'); $('#mNotas').val(item.notas||'').prop('disabled',true).removeClass('bg-white').addClass('bg-gray-50'); $('#btnSaveModal').addClass('hidden'); $('#btnEditModal').removeClass('hidden'); $('#citaModal').removeClass('hidden').addClass('flex'); if(window.lucide) lucide.createIcons(); }
-  function viewDetails(id){ const local=byId[id]; if(local){ openModal(local); return; } $.get(API_URL,{action:'get',id},res=>{ if(res&&res.success&&res.data) openModal(res.data); },'json'); }
   function closeModal(){ $('#citaModal').addClass('hidden').removeClass('flex'); }
   function saveModal(){ if(modalItemId<=0) return; $.post(API_URL,{action:'update_status',id:modalItemId,estado:$('#mEstado').val(),notas:$('#mNotas').val()},function(res){ if(res&&res.success){ showCustomAlert('Cita actualizada.',3000,'success'); closeModal(); loadTable(currentPage); if(currentView==='calendar') loadCalendarRange(); } else showCustomAlert((res&&res.message)||'No se pudo actualizar.',5000,'error'); },'json'); }
+  function isEditableByGerencia(item) {
+    const st = String(item.estado || '');
+    return !(st === 'completada' || st === 'cancelada');
+  }
+
+  function openModal(item){
+    modalItemId=parseInt(item.id||0,10);
+    const info=$('#modalInfo').empty();
+    const fecha=parseSqlDate(item.inicio), fin=item.fin?parseSqlDate(item.fin):null;
+    const total=parseFloat(item.servicio_precio||0).toFixed(2);
+    [['Cliente',item.cliente_nombre||'-'],['Servicio',item.servicio_nombre||'-'],['Detalle servicio',item.servicio_descripcion||'-'],['Duración',`${item.servicio_duracion_minutos || '-'} min`],['Total',`$${total}`],['Empleado',item.empleado_nombre||'-'],['Sucursal',item.sucursal_nombre||'-'],['Dirección sede',item.sucursal_direccion||'-'],['Fecha',fecha.toLocaleDateString()],['Hora',`${fecha.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}${fin?' - '+fin.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):''}`]].forEach(r=>info.append(`<div class="bg-gray-50 border rounded-lg p-2"><div class="text-xs text-gray-500">${r[0]}</div><div class="font-medium text-gray-800">${r[1]}</div></div>`));
+    $('#mEstado').val(item.estado||'pendiente').prop('disabled',true).removeClass('bg-white').addClass('bg-gray-50');
+    $('#mNotas').val(item.notas||'').prop('disabled',true).removeClass('bg-white').addClass('bg-gray-50');
+    $('#btnSaveModal').addClass('hidden');
+    const canEdit = isEditableByGerencia(item);
+    $('#btnEditModal').toggleClass('hidden', !canEdit);
+    $('#citaModal').removeClass('hidden').addClass('flex');
+    if(window.lucide) lucide.createIcons();
+  }
+
+  function viewDetails(id){
+    const local=byId[id];
+    if(local){ openModal(local); return; }
+    $.get(API_URL,{action:'get',id},res=>{ if(res&&res.success&&res.data) openModal(res.data); },'json');
+  }
 
   $(function(){
     loadTable();

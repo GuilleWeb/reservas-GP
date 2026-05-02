@@ -14,10 +14,46 @@ if (!$user || $empresa_id <= 0 || !in_array($role, ['superadmin', 'admin', 'gere
 
 switch ($action) {
     case 'list':
-        $stmt = $pdo->prepare("SELECT * FROM servicios WHERE empresa_id = ? ORDER BY nombre ASC");
-        $stmt->execute([$empresa_id]);
+        $page = max(1, (int) ($_GET['page'] ?? 1));
+        $per = max(1, min(100, (int) ($_GET['per'] ?? 15)));
+        $search = trim((string) ($_GET['search'] ?? ''));
+        $activo = (string) ($_GET['activo'] ?? '');
+
+        $where = ['empresa_id = :eid'];
+        $params = [':eid' => $empresa_id];
+        if ($search !== '') {
+            $where[] = '(nombre LIKE :s OR descripcion LIKE :s)';
+            $params[':s'] = "%$search%";
+        }
+        if ($activo !== '' && ($activo === '0' || $activo === '1')) {
+            $where[] = 'activo = :a';
+            $params[':a'] = (int) $activo;
+        }
+        $whereSql = 'WHERE ' . implode(' AND ', $where);
+
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM servicios $whereSql");
+        foreach ($params as $k => $v) {
+            $stmt->bindValue($k, $v, is_int($v) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        $stmt->execute();
+        $total = (int) ($stmt->fetchColumn() ?: 0);
+        $total_pages = (int) ceil($total / $per);
+
+        $offset = ($page - 1) * $per;
+        $stmt = $pdo->prepare("SELECT id, empresa_id, nombre, precio_base, duracion_minutos, descripcion, activo
+                               FROM servicios
+                               $whereSql
+                               ORDER BY nombre ASC
+                               LIMIT :o,:p");
+        foreach ($params as $k => $v) {
+            $stmt->bindValue($k, $v, is_int($v) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        $stmt->bindValue(':o', $offset, PDO::PARAM_INT);
+        $stmt->bindValue(':p', $per, PDO::PARAM_INT);
+        $stmt->execute();
         $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        json_response(['success' => true, 'data' => $data, 'total' => count($data)]);
+
+        json_response(['success' => true, 'data' => $data, 'total' => $total, 'total_pages' => max(1, $total_pages)]);
         break;
 
     case 'get':
@@ -45,7 +81,7 @@ switch ($action) {
         $sql = "SELECT id, nombre, rol FROM usuarios
                 WHERE empresa_id = ?
                   AND activo = 1
-                  AND rol IN ('gerente','empleado')";
+                  AND rol IN ('empleado')";
         $params = [$empresa_id];
         if ($sucursal_id_filtro > 0) {
             $sql .= " AND sucursal_id = ?";
@@ -55,6 +91,26 @@ switch ($action) {
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
         json_response(['success' => true, 'empleados' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
+        break;
+
+    case 'delete':
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST')
+            json_response(['error' => 'invalid_method'], 405);
+        if ($role === 'gerente')
+            json_response(['success' => false, 'message' => 'No autorizado.'], 403);
+
+        $id = (int) ($_POST['id'] ?? 0);
+        if ($id <= 0)
+            json_response(['success' => false, 'message' => 'ID inválido.'], 200);
+
+        $stmt = $pdo->prepare('SELECT id FROM servicios WHERE id = ? AND empresa_id = ? LIMIT 1');
+        $stmt->execute([$id, $empresa_id]);
+        if (!$stmt->fetchColumn())
+            json_response(['success' => false, 'message' => 'Servicio no encontrado.'], 404);
+
+        $stmt = $pdo->prepare('UPDATE servicios SET activo = 0 WHERE id = ? AND empresa_id = ?');
+        $stmt->execute([$id, $empresa_id]);
+        json_response(['success' => true]);
         break;
 
     case 'save':
@@ -91,7 +147,7 @@ switch ($action) {
                 $id = (int) $pdo->lastInsertId();
             }
 
-            $sqlUsers = "SELECT id FROM usuarios WHERE empresa_id = ? AND activo = 1 AND rol IN ('gerente','empleado')";
+            $sqlUsers = "SELECT id FROM usuarios WHERE empresa_id = ? AND activo = 1 AND rol IN ('empleado')";
             $paramsUsers = [$empresa_id];
             if ($sucursal_id_filtro > 0) {
                 $sqlUsers .= " AND sucursal_id = ?";

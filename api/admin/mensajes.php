@@ -42,6 +42,9 @@ function admin_msg_fetch_inbox($empresa_id, $uid)
     $stmt->execute([(int) $empresa_id, (int) $uid]);
     foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
         $estado = (string) ($r['estado'] ?? 'enviado');
+        if ($estado === 'eliminado') {
+            continue;
+        }
         $items[] = [
             'tipo' => 'interno',
             'id' => (int) ($r['id'] ?? 0),
@@ -77,8 +80,11 @@ switch ($action) {
                                    ORDER BY mi.created_at DESC");
             $stmt->execute([$empresa_id, $uid]);
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-            $items = array_map(static function ($r) {
+            $items = array_values(array_filter(array_map(static function ($r) {
                 $raw = (string) ($r['estado'] ?? 'enviado');
+                if ($raw === 'eliminado') {
+                    return null;
+                }
                 return [
                     'tipo' => 'enviado',
                     'id' => (int) ($r['id'] ?? 0),
@@ -90,7 +96,7 @@ switch ($action) {
                     'estado' => $raw === 'enviado' ? 'nuevo' : $raw,
                     'created_at' => (string) ($r['created_at'] ?? ''),
                 ];
-            }, $rows);
+            }, $rows)));
         } else {
             $items = admin_msg_fetch_inbox($empresa_id, $uid);
         }
@@ -129,6 +135,9 @@ switch ($action) {
             $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
             if (!$row)
                 json_response(['success' => false, 'message' => 'Mensaje no encontrado.'], 404);
+            if ((string) ($row['estado'] ?? '') === 'eliminado') {
+                json_response(['success' => false, 'message' => 'Mensaje no encontrado.'], 404);
+            }
             $row['tipo'] = 'enviado';
             json_response(['success' => true, 'data' => $row]);
         }
@@ -155,6 +164,9 @@ switch ($action) {
         $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
         if (!$row)
             json_response(['success' => false, 'message' => 'Mensaje no encontrado.'], 404);
+        if ((string) ($row['estado'] ?? '') === 'eliminado') {
+            json_response(['success' => false, 'message' => 'Mensaje no encontrado.'], 404);
+        }
         $row['tipo'] = 'interno';
         $row['estado'] = ((string) ($row['estado'] ?? '') === 'enviado') ? 'nuevo' : (string) ($row['estado'] ?? '');
         json_response(['success' => true, 'data' => $row]);
@@ -166,19 +178,30 @@ switch ($action) {
         $id = (int) ($_POST['id'] ?? 0);
         $tipo = trim((string) ($_POST['tipo'] ?? ''));
         $estado = trim((string) ($_POST['estado'] ?? ''));
-        if ($id <= 0 || !in_array($tipo, ['interno', 'externo'], true) || !in_array($estado, ['nuevo', 'leido', 'archivado'], true)) {
+        $folder = trim((string) ($_POST['folder'] ?? 'inbox'));
+        if ($id <= 0 || !in_array($tipo, ['interno', 'externo'], true) || !in_array($estado, ['nuevo', 'leido', 'archivado', 'eliminado'], true)) {
             json_response(['success' => false, 'message' => 'Parámetros inválidos.'], 400);
         }
         if ($tipo === 'externo') {
+            if ($estado === 'eliminado') {
+                json_response(['success' => false, 'message' => 'Parámetros inválidos.'], 400);
+            }
             $stmt = $pdo->prepare("UPDATE mensajes_contacto SET estado = ? WHERE id = ? AND empresa_id = ?");
             $stmt->execute([$estado, $id, $empresa_id]);
             json_response(['success' => true]);
         }
         $map = $estado === 'nuevo' ? 'enviado' : $estado;
-        $stmt = $pdo->prepare("UPDATE mensajes_internos
-                               SET estado = ?
-                               WHERE id = ? AND empresa_id = ? AND (para_usuario_id = ? OR (para_usuario_id IS NULL AND para_rol='admin'))");
-        $stmt->execute([$map, $id, $empresa_id, $uid]);
+        if ($folder === 'sent') {
+            $stmt = $pdo->prepare("UPDATE mensajes_internos
+                                   SET estado = ?
+                                   WHERE id = ? AND empresa_id = ? AND de_usuario_id = ?");
+            $stmt->execute([$map, $id, $empresa_id, $uid]);
+        } else {
+            $stmt = $pdo->prepare("UPDATE mensajes_internos
+                                   SET estado = ?
+                                   WHERE id = ? AND empresa_id = ? AND (para_usuario_id = ? OR (para_usuario_id IS NULL AND para_rol='admin'))");
+            $stmt->execute([$map, $id, $empresa_id, $uid]);
+        }
         json_response(['success' => true]);
         break;
 

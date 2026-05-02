@@ -4,12 +4,22 @@ $module = 'mensajes';
 include __DIR__ . '/../../includes/topbar.php';
 ?>
 
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+
 <div class="max-w-7xl mx-auto">
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
     <div class="lg:col-span-4">
       <div class="bg-white rounded-2xl shadow p-5 border">
-        <div class="text-sm text-gray-500">Comunicación interna</div>
-        <div class="mt-1 text-2xl font-extrabold text-gray-900">Mensajes</div>
+        <div class="flex justify-between items-start">
+          <div>
+            <div class="text-sm text-gray-500">Comunicación interna</div>
+            <div class="mt-1 text-2xl font-extrabold text-gray-900">Mensajes</div>
+          </div>
+          <button type="button" onclick="toggleExpandForm()" class="text-gray-400 hover:text-teal-600 focus:outline-none p-2 rounded hover:bg-gray-100">
+            <i id="expandIcon" data-lucide="expand" class="text-lg"></i>
+          </button>
+        </div>
         <form id="sendForm" class="mt-4 space-y-3">
           <div>
             <label class="block text-sm font-medium text-gray-700">Modo</label>
@@ -26,9 +36,10 @@ include __DIR__ . '/../../includes/topbar.php';
             <label class="block text-sm font-medium text-gray-700">Título</label>
             <input name="titulo" class="border rounded-lg p-2 w-full" required>
           </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700">Mensaje</label>
-            <textarea name="cuerpo" rows="5" class="border rounded-lg p-2 w-full" required></textarea>
+          <div class="flex-1 flex flex-col">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Mensaje</label>
+            <div id="editor-container" class="bg-white min-h-[220px] flex-1 rounded-b-lg border"></div>
+            <input type="hidden" id="cuerpo" name="cuerpo">
           </div>
           <button type="submit" class="w-full px-3 py-2 rounded-lg bg-teal-600 text-white font-semibold">Enviar</button>
         </form>
@@ -94,10 +105,9 @@ include __DIR__ . '/../../includes/topbar.php';
       <div><span class="text-gray-500">Remitente / Destino:</span> <span id="mRemitente" class="font-semibold"></span></div>
       <div><span class="text-gray-500">Fecha:</span> <span id="mFecha"></span></div>
       <div><span class="text-gray-500">Mensaje:</span></div>
-      <div id="mCuerpo" class="border rounded-xl p-3 bg-gray-50 whitespace-pre-wrap"></div>
+      <div id="mCuerpo" class="border rounded-xl bg-gray-50 ql-editor"></div>
       <div class="pt-2 flex items-center justify-end gap-2">
-        <button id="btnMarkRead" class="px-3 py-2 rounded-lg border">Marcar leído</button>
-        <button id="btnArchive" class="px-3 py-2 rounded-lg border">Archivar</button>
+        <button id="btnDelete" class="px-3 py-2 rounded-lg border text-red-600">Eliminar</button>
         <button id="btnResend" class="px-3 py-2 rounded-lg bg-teal-600 text-white">Reenviar</button>
       </div>
     </div>
@@ -105,11 +115,71 @@ include __DIR__ . '/../../includes/topbar.php';
 </div>
 
 <script>
+  function toggleExpandForm() {
+    const formBox = document.querySelector('#sendForm')?.closest('div.bg-white');
+    const expandIcon = document.getElementById('expandIcon');
+    if (!formBox) return;
+    const isExpanded = formBox.classList.contains('fixed');
+
+    if (!isExpanded) {
+      formBox.classList.add('fixed', 'inset-4', 'z-[100]', 'border-2', 'border-teal-500', 'overflow-y-auto', 'flex', 'flex-col');
+      const overlay = document.createElement('div');
+      overlay.id = 'formOverlay';
+      overlay.className = 'fixed inset-0 bg-black/50 z-[90]';
+      document.body.appendChild(overlay);
+      expandIcon.setAttribute('data-lucide', 'minimize-2');
+      document.getElementById('sendForm').classList.add('flex-1', 'flex', 'flex-col');
+    } else {
+      formBox.classList.remove('fixed', 'inset-4', 'z-[100]', 'border-2', 'border-teal-500', 'overflow-y-auto', 'flex', 'flex-col');
+      const overlay = document.getElementById('formOverlay');
+      if (overlay) overlay.remove();
+      expandIcon.setAttribute('data-lucide', 'expand');
+      document.getElementById('sendForm').classList.remove('flex-1', 'flex', 'flex-col');
+    }
+    if (window.lucide) lucide.createIcons();
+  }
+
   $(function () {
     const API = <?= json_encode(app_url('api/sucursal/mensajes.php') . '?id_e=' . urlencode((string) request_id_e())) ?>;
     let page = 1, per = 10, search = '', estado = '', folder = 'inbox';
     let currentId = 0;
     let timer = null;
+
+    const quill = new Quill('#editor-container', {
+      theme: 'snow',
+      placeholder: 'Escribe aquí el mensaje...',
+      modules: {
+        toolbar: {
+          container: [
+            [{ 'header': [1, 2, 3, false] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            ['link', 'image'],
+            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+            ['clean']
+          ],
+          handlers: {
+            image: function () {
+              const input = document.createElement('input');
+              input.type = 'file';
+              input.accept = 'image/*';
+              input.onchange = () => {
+                const file = input.files && input.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => {
+                  const range = quill.getSelection(true);
+                  const index = range ? range.index : quill.getLength();
+                  quill.insertEmbed(index, 'image', reader.result);
+                  quill.setSelection(index + 1, 0);
+                };
+                reader.readAsDataURL(file);
+              };
+              input.click();
+            }
+          }
+        }
+      }
+    });
 
     function badge(s) {
       if (s === 'nuevo') return '<span class="px-2 py-0.5 rounded text-xs bg-teal-50 text-teal-700 border border-teal-100">Nuevo</span>';
@@ -153,11 +223,13 @@ include __DIR__ . '/../../includes/topbar.php';
     });
     $('#sendForm').on('submit', function (e) {
       e.preventDefault();
+      $('#cuerpo').val((quill && quill.root) ? quill.root.innerHTML : '');
       $.post(API, $(this).serialize() + '&action=send', function (res) {
         if (res && res.success) {
           showCustomAlert(`Enviado a ${res.sent} usuario(s).`, 3500, 'success');
           $('#sendForm')[0].reset();
           $('#targetWrap').addClass('hidden');
+          quill.setContents([]);
         } else showCustomAlert((res && res.message) || 'No se pudo enviar', 4500, 'error');
       }, 'json');
     });
@@ -177,25 +249,25 @@ include __DIR__ . '/../../includes/topbar.php';
         $('#mTitulo').text(d.titulo || '');
         $('#mRemitente').text(folder === 'sent' ? ('Yo → ' + (d.remitente || 'Destino')) : (d.remitente || ''));
         $('#mFecha').text(d.created_at || '');
-        $('#mCuerpo').text(d.cuerpo || '');
+        $('#mCuerpo').html(d.cuerpo || '');
         $('#msgModal').removeClass('hidden');
+        if (folder !== 'sent' && String(d.estado || '') === 'nuevo') {
+          $.post(API, { action: 'set_estado', id: currentId, estado: 'leido', folder }, function () { loadInbox(); }, 'json');
+        }
       }, 'json');
     });
     $('#btnCloseModal').on('click', function () { $('#msgModal').addClass('hidden'); });
     $('#msgModal').on('click', function (e) { if (e.target === this) $('#msgModal').addClass('hidden'); });
-    $('#btnMarkRead').on('click', function () {
-      if (!currentId || folder === 'sent') return;
-      $.post(API, { action: 'set_estado', id: currentId, estado: 'leido' }, function () { $('#msgModal').addClass('hidden'); loadInbox(); }, 'json');
-    });
-    $('#btnArchive').on('click', function () {
-      if (!currentId || folder === 'sent') return;
-      $.post(API, { action: 'set_estado', id: currentId, estado: 'archivado' }, function () { $('#msgModal').addClass('hidden'); loadInbox(); }, 'json');
+    $('#btnDelete').on('click', function () {
+      if (!currentId) return;
+      if (!confirm('¿Eliminar este mensaje?')) return;
+      $.post(API, { action: 'set_estado', id: currentId, estado: 'eliminado', folder }, function () { $('#msgModal').addClass('hidden'); loadInbox(); }, 'json');
     });
     $('#btnResend').on('click', function () {
       const titulo = ($('#mTitulo').text() || '').trim();
-      const cuerpo = ($('#mCuerpo').text() || '').trim();
+      const cuerpo = ($('#mCuerpo').html() || '').trim();
       if (titulo) $('#sendForm [name="titulo"]').val(titulo);
-      if (cuerpo) $('#sendForm [name="cuerpo"]').val(cuerpo);
+      if (cuerpo) quill.root.innerHTML = cuerpo;
       $('#msgModal').addClass('hidden');
       document.getElementById('sendForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
       showCustomAlert('Mensaje cargado para reenviar.', 3000, 'info');

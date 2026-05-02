@@ -5,12 +5,22 @@ include __DIR__ . '/../../includes/topbar.php';
 $empresas = $pdo->query('SELECT id, nombre, slug FROM empresas ORDER BY nombre ASC')->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+
 <div class="max-w-7xl mx-auto">
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
     <div class="lg:col-span-4">
       <div class="bg-white rounded-2xl shadow p-5 border">
-        <div class="text-sm text-gray-500">SuperAdmin</div>
-        <div class="mt-1 text-2xl font-extrabold text-gray-900">Mensajes</div>
+        <div class="flex justify-between items-start">
+          <div>
+            <div class="text-sm text-gray-500">SuperAdmin</div>
+            <div class="mt-1 text-2xl font-extrabold text-gray-900">Mensajes</div>
+          </div>
+          <button type="button" onclick="toggleExpandForm()" class="text-gray-400 hover:text-teal-600 focus:outline-none p-2 rounded hover:bg-gray-100">
+            <i id="expandIcon" data-lucide="expand" class="text-lg"></i>
+          </button>
+        </div>
         <form id="broadcastForm" class="mt-3 space-y-3">
           <div>
             <label class="block text-sm font-medium text-gray-700">Enviar a</label>
@@ -36,9 +46,10 @@ $empresas = $pdo->query('SELECT id, nombre, slug FROM empresas ORDER BY nombre A
             <label class="block text-sm font-medium text-gray-700">Título</label>
             <input id="titulo" name="titulo" class="border rounded-lg p-2 w-full" required>
           </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700">Mensaje</label>
-            <textarea id="cuerpo" name="cuerpo" class="border rounded-lg p-2 w-full" rows="6" required></textarea>
+          <div class="flex-1 flex flex-col">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Mensaje</label>
+            <div id="editor-container" class="bg-white min-h-[220px] flex-1 rounded-b-lg border"></div>
+            <input type="hidden" id="cuerpo" name="cuerpo">
           </div>
           <button type="submit" class="w-full px-2 py-2 bg-teal-600 text-white rounded-lg">Enviar</button>
         </form>
@@ -112,11 +123,9 @@ $empresas = $pdo->query('SELECT id, nombre, slug FROM empresas ORDER BY nombre A
       <div><span class="text-gray-500">Asunto:</span> <span id="mAsunto" class="font-semibold"></span></div>
       <div class="pt-2">
         <div class="text-gray-500">Mensaje:</div>
-        <div id="mCuerpo" class="mt-2 whitespace-pre-wrap border rounded-xl p-3 bg-gray-50"></div>
+        <div id="mCuerpo" class="mt-2 border rounded-xl bg-gray-50 ql-editor"></div>
       </div>
       <div class="pt-2 flex gap-2 justify-end">
-        <button id="btnLeido" class="px-3 py-2 rounded-lg border">Marcar leído</button>
-        <button id="btnArchivar" class="px-3 py-2 rounded-lg border">Archivar</button>
         <button id="btnResend" class="px-3 py-2 rounded-lg bg-teal-600 text-white">Reenviar</button>
       </div>
     </div>
@@ -124,10 +133,72 @@ $empresas = $pdo->query('SELECT id, nombre, slug FROM empresas ORDER BY nombre A
 </div>
 
 <script>
+  let quill;
+
+  function toggleExpandForm() {
+    const formBox = document.querySelector('#broadcastForm')?.closest('div.bg-white');
+    const expandIcon = document.getElementById('expandIcon');
+    if (!formBox) return;
+    const isExpanded = formBox.classList.contains('fixed');
+
+    if (!isExpanded) {
+      formBox.classList.add('fixed', 'inset-4', 'z-[100]', 'border-2', 'border-teal-500', 'overflow-y-auto', 'flex', 'flex-col');
+      const overlay = document.createElement('div');
+      overlay.id = 'formOverlay';
+      overlay.className = 'fixed inset-0 bg-black/50 z-[90]';
+      document.body.appendChild(overlay);
+      expandIcon.setAttribute('data-lucide', 'minimize-2');
+      document.getElementById('broadcastForm').classList.add('flex-1', 'flex', 'flex-col');
+    } else {
+      formBox.classList.remove('fixed', 'inset-4', 'z-[100]', 'border-2', 'border-teal-500', 'overflow-y-auto', 'flex', 'flex-col');
+      const overlay = document.getElementById('formOverlay');
+      if (overlay) overlay.remove();
+      expandIcon.setAttribute('data-lucide', 'expand');
+      document.getElementById('broadcastForm').classList.remove('flex-1', 'flex', 'flex-col');
+    }
+    if (window.lucide) lucide.createIcons();
+  }
+
   $(function () {
     const API = <?= json_encode(app_url('api/superadmin/mensajes.php')) ?>;
-    let page = 1, per = 10, search = '', estado = '', empresa_id = 0, folder = 'inbox';
+    let page = 1, per = 10, search = '', estado = '', empresa_id = 0, folder = 'inbox'; // inbox | sent
     let currentId = 0;
+
+    quill = new Quill('#editor-container', {
+      theme: 'snow',
+      placeholder: 'Escribe aquí el mensaje...',
+      modules: {
+        toolbar: {
+          container: [
+            [{ 'header': [1, 2, 3, false] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            ['link', 'image'],
+            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+            ['clean']
+          ],
+          handlers: {
+            image: function () {
+              const input = document.createElement('input');
+              input.type = 'file';
+              input.accept = 'image/*';
+              input.onchange = () => {
+                const file = input.files && input.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => {
+                  const range = quill.getSelection(true);
+                  const index = range ? range.index : quill.getLength();
+                  quill.insertEmbed(index, 'image', reader.result);
+                  quill.setSelection(index + 1, 0);
+                };
+                reader.readAsDataURL(file);
+              };
+              input.click();
+            }
+          }
+        }
+      }
+    });
 
     function badge(st) {
       if (st === 'nuevo' || st === 'enviado') return '<span class="px-2 py-1 rounded-full text-xs bg-teal-50 text-teal-800 border border-teal-100">Nuevo</span>';
@@ -135,6 +206,7 @@ $empresas = $pdo->query('SELECT id, nombre, slug FROM empresas ORDER BY nombre A
       if (st === 'archivado') return '<span class="px-2 py-1 rounded-full text-xs bg-yellow-50 text-yellow-800 border border-yellow-100">Archivado</span>';
       return st || '';
     }
+
     function loadTargets() {
       const empresa = parseInt($('#empresa_broadcast').val() || '0', 10);
       $.get(API, { action: 'list_targets', empresa_id: empresa }, function (res) {
@@ -180,11 +252,13 @@ $empresas = $pdo->query('SELECT id, nombre, slug FROM empresas ORDER BY nombre A
     $('#empresa_broadcast').on('change', function () { if ($('#modo').val() === 'one') loadTargets(); });
     $('#broadcastForm').on('submit', function (ev) {
       ev.preventDefault();
+      $('#cuerpo').val((quill && quill.root) ? quill.root.innerHTML : '');
       $.post(API, $(this).serialize() + '&action=send_interno', function (res) {
         if (res.success) {
           showCustomAlert(`Enviado a ${res.sent} admin(s).`, 5000, 'success');
           $('#broadcastForm')[0].reset();
           $('#targetWrap').addClass('hidden');
+          if (quill) quill.setContents([]);
         } else {
           showCustomAlert(res.message || 'Error', 5000, 'error');
         }
@@ -200,25 +274,20 @@ $empresas = $pdo->query('SELECT id, nombre, slug FROM empresas ORDER BY nombre A
         $("#mEmpresa").text((m.empresa_nombre || '') + ' (' + (m.id_e || '') + ')');
         $("#mNombre").text(folder === 'sent' ? ('Yo → ' + (m.nombre || m.remitente || 'Destino')) : (m.nombre || ''));
         $("#mAsunto").text(m.asunto || m.titulo || '');
-        $("#mCuerpo").text(m.mensaje || m.cuerpo || '');
+        $("#mCuerpo").html(m.mensaje || m.cuerpo || '');
         $("#msgModal").removeClass('hidden');
+        if (folder !== 'sent' && String(m.estado || '') === 'nuevo') {
+          $.post(API, { action: 'set_estado', id: currentId, estado: 'leido' }, function () { loadMensajes(); }, 'json');
+        }
       }, 'json');
     });
 
     $("#btnClose").click(() => $("#msgModal").addClass('hidden'));
-    $("#btnLeido").click(function () {
-      if (folder === 'sent') return;
-      $.post(API, { action: 'set_estado', id: currentId, estado: 'leido' }, function () { $("#msgModal").addClass('hidden'); loadMensajes(); }, 'json');
-    });
-    $("#btnArchivar").click(function () {
-      if (folder === 'sent') return;
-      $.post(API, { action: 'set_estado', id: currentId, estado: 'archivado' }, function () { $("#msgModal").addClass('hidden'); loadMensajes(); }, 'json');
-    });
     $("#btnResend").click(function () {
       const titulo = ($("#mAsunto").text() || '').trim();
-      const cuerpo = ($("#mCuerpo").text() || '').trim();
+      const cuerpo = ($("#mCuerpo").html() || '').trim();
       if (titulo) $('#titulo').val(titulo);
-      if (cuerpo) $('#cuerpo').val(cuerpo);
+      if (quill && cuerpo) quill.root.innerHTML = cuerpo;
       $("#msgModal").addClass('hidden');
       document.getElementById('broadcastForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
       showCustomAlert('Mensaje cargado para reenviar.', 3000, 'info');

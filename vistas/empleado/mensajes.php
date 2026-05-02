@@ -4,6 +4,8 @@ $module = 'mensajes';
 include __DIR__ . '/../../includes/topbar.php';
 ?>
 
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+
 <div class="max-w-7xl mx-auto">
   <div class="bg-white rounded-2xl shadow border p-5">
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
@@ -60,10 +62,9 @@ include __DIR__ . '/../../includes/topbar.php';
       <div><span class="text-gray-500">Remitente:</span> <span id="mRemitente" class="font-semibold"></span></div>
       <div><span class="text-gray-500">Fecha:</span> <span id="mFecha"></span></div>
       <div><span class="text-gray-500">Mensaje:</span></div>
-      <div id="mCuerpo" class="border rounded-xl p-3 bg-gray-50 whitespace-pre-wrap"></div>
+      <div id="mCuerpo" class="border rounded-xl bg-gray-50 ql-editor"></div>
       <div class="pt-2 flex items-center justify-end gap-2">
-        <button id="btnMarkRead" class="px-3 py-2 rounded-lg border">Marcar leído</button>
-        <button id="btnArchive" class="px-3 py-2 rounded-lg border">Archivar</button>
+        <button id="btnDelete" class="px-3 py-2 rounded-lg border text-red-600">Eliminar</button>
       </div>
     </div>
   </div>
@@ -128,23 +129,20 @@ include __DIR__ . '/../../includes/topbar.php';
         $('#mTitulo').text(d.titulo || '');
         $('#mRemitente').text(d.remitente || '');
         $('#mFecha').text(d.created_at || '');
-        $('#mCuerpo').text(d.cuerpo || '');
+        $('#mCuerpo').html(d.cuerpo || '');
         $('#msgModal').removeClass('hidden');
+        if (String(d.estado || '') === 'nuevo') {
+          $.post(API, { action: 'set_estado', id: currentId, estado: 'leido' }, function () { loadInbox(); }, 'json');
+        }
       }, 'json');
     });
 
     $('#btnCloseModal').on('click', function () { $('#msgModal').addClass('hidden'); });
     $('#msgModal').on('click', function (e) { if (e.target === this) $('#msgModal').addClass('hidden'); });
-    $('#btnMarkRead').on('click', function () {
+    $('#btnDelete').on('click', function () {
       if (!currentId) return;
-      $.post(API, { action: 'set_estado', id: currentId, estado: 'leido' }, function () {
-        $('#msgModal').addClass('hidden');
-        loadInbox();
-      }, 'json');
-    });
-    $('#btnArchive').on('click', function () {
-      if (!currentId) return;
-      $.post(API, { action: 'set_estado', id: currentId, estado: 'archivado' }, function () {
+      if (!confirm('¿Eliminar este mensaje?')) return;
+      $.post(API, { action: 'set_estado', id: currentId, estado: 'eliminado' }, function () {
         $('#msgModal').addClass('hidden');
         loadInbox();
       }, 'json');

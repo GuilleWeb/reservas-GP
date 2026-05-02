@@ -166,6 +166,10 @@ switch ($action) {
         if (!$cur) {
             json_response(['success' => false, 'message' => 'Cita no encontrada.']);
         }
+        $estado_actual = (string) ($cur['estado'] ?? '');
+        if (!in_array($actor_role, ['admin', 'superadmin'], true) && in_array($estado_actual, ['completada', 'cancelada'], true)) {
+            json_response(['success' => false, 'message' => 'Esta cita ya no puede ser modificada.']);
+        }
         $hoy = date('Y-m-d');
         $inicio_day = substr((string) ($cur['inicio'] ?? ''), 0, 10);
         $fin_time = strtotime((string) ($cur['fin'] ?? ''));

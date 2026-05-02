@@ -28,11 +28,15 @@ switch ($action) {
                                    ORDER BY mi.created_at DESC");
             $stmt->execute([$empresa_id, $uid]);
             $items = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-            $items = array_map(static function ($r) {
-                $r['estado'] = ((string) ($r['estado'] ?? '') === 'enviado') ? 'nuevo' : (string) ($r['estado'] ?? '');
+            $items = array_values(array_filter(array_map(static function ($r) {
+                $raw = (string) ($r['estado'] ?? 'enviado');
+                if ($raw === 'eliminado') {
+                    return null;
+                }
+                $r['estado'] = ($raw === 'enviado') ? 'nuevo' : $raw;
                 $r['es_mio'] = 1;
                 return $r;
-            }, $items);
+            }, $items)));
         } else {
             $stmt = $pdo->prepare("SELECT mi.id, mi.titulo, mi.cuerpo, mi.estado, mi.created_at,
                                           COALESCE(u.nombre,'Sistema') AS remitente
@@ -42,10 +46,14 @@ switch ($action) {
                                    ORDER BY mi.created_at DESC");
             $stmt->execute([$empresa_id, $uid]);
             $items = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-            $items = array_map(static function ($r) {
-                $r['estado'] = ((string) ($r['estado'] ?? '') === 'enviado') ? 'nuevo' : (string) ($r['estado'] ?? '');
+            $items = array_values(array_filter(array_map(static function ($r) {
+                $raw = (string) ($r['estado'] ?? 'enviado');
+                if ($raw === 'eliminado') {
+                    return null;
+                }
+                $r['estado'] = ($raw === 'enviado') ? 'nuevo' : $raw;
                 return $r;
-            }, $items);
+            }, $items)));
         }
         if ($estado !== '' && in_array($estado, ['nuevo', 'leido', 'archivado'], true)) {
             $items = array_values(array_filter($items, static fn($i) => (string) ($i['estado'] ?? '') === $estado));
@@ -84,6 +92,9 @@ switch ($action) {
         $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
         if (!$row)
             json_response(['success' => false, 'message' => 'No encontrado.'], 404);
+        if ((string) ($row['estado'] ?? '') === 'eliminado') {
+            json_response(['success' => false, 'message' => 'No encontrado.'], 404);
+        }
         $row['estado'] = ((string) ($row['estado'] ?? '') === 'enviado') ? 'nuevo' : (string) ($row['estado'] ?? '');
         json_response(['success' => true, 'data' => $row]);
         break;
@@ -93,13 +104,21 @@ switch ($action) {
             json_response(['error' => 'invalid_method'], 405);
         $id = (int) ($_POST['id'] ?? 0);
         $estado = trim((string) ($_POST['estado'] ?? ''));
-        if (!in_array($estado, ['nuevo', 'leido', 'archivado'], true))
+        $folder = trim((string) ($_POST['folder'] ?? 'inbox'));
+        if (!in_array($estado, ['nuevo', 'leido', 'archivado', 'eliminado'], true))
             json_response(['success' => false, 'message' => 'Estado inválido.'], 400);
         $raw = $estado === 'nuevo' ? 'enviado' : $estado;
-        $stmt = $pdo->prepare("UPDATE mensajes_internos
-                               SET estado = ?
-                               WHERE id = ? AND empresa_id = ? AND (para_usuario_id = ? OR (para_usuario_id IS NULL AND para_rol='gerente'))");
-        $stmt->execute([$raw, $id, $empresa_id, $uid]);
+        if ($folder === 'sent') {
+            $stmt = $pdo->prepare("UPDATE mensajes_internos
+                                   SET estado = ?
+                                   WHERE id = ? AND empresa_id = ? AND de_usuario_id = ?");
+            $stmt->execute([$raw, $id, $empresa_id, $uid]);
+        } else {
+            $stmt = $pdo->prepare("UPDATE mensajes_internos
+                                   SET estado = ?
+                                   WHERE id = ? AND empresa_id = ? AND (para_usuario_id = ? OR (para_usuario_id IS NULL AND para_rol='gerente'))");
+            $stmt->execute([$raw, $id, $empresa_id, $uid]);
+        }
         json_response(['success' => true]);
         break;
 

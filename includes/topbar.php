@@ -36,7 +36,7 @@ if (!$is_public && $empresa_id && empresa_is_basic_plan((int) $empresa_id)) {
 }
 $suscripcion_actual = null;
 $suscripcion_alert = null;
-if (!$is_public && $empresa_id && ($sidebar_role ?? '') !== 'cliente') {
+if (!$is_public && $empresa_id && ($sidebar_role ?? '') !== 'cliente' && ($sidebar_role ?? '') !== 'gerente') {
   $suscripcion_actual = get_empresa_suscripcion_actual((int) $empresa_id);
   if ($suscripcion_actual) {
     $estadoSus = (string) ($suscripcion_actual['estado'] ?? '');

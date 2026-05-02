@@ -411,7 +411,9 @@ include __DIR__ . '/../../includes/topbar.php';
     $('#mEstado').val(item.estado || 'pendiente').prop('disabled', true).removeClass('bg-white').addClass('bg-gray-50');
     $('#mNotas').val(item.notas || '').prop('disabled', true).removeClass('bg-white').addClass('bg-gray-50');
     $('#btnSaveModal').addClass('hidden');
-    $('#btnEditModal').removeClass('hidden');
+    const st = String(item.estado || '');
+    const canEdit = !(st === 'completada' || st === 'cancelada');
+    $('#btnEditModal').toggleClass('hidden', !canEdit);
     $('#citaModal').removeClass('hidden').addClass('flex');
     if (window.lucide) lucide.createIcons();
   }

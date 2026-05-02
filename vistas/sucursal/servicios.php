@@ -3,7 +3,7 @@ require_once __DIR__ . '/../../includes/bootstrap.php';
 $role = $user['rol'] ?? null;
 $is_gerente = ($role === 'gerente');
 $id_e = request_id_e();
-$module = 'servicios';
+$module = 'servicios_sucursal';
 include __DIR__ . '/../../includes/topbar.php';
 ?>
 
@@ -56,25 +56,49 @@ include __DIR__ . '/../../includes/topbar.php';
       </div>
     </div>
     <div class="lg:col-span-8">
-      <div class="bg-white rounded-2xl shadow border p-5">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-          <div>
-            <div class="font-semibold text-gray-900">Listado</div>
-            <div class="text-sm text-gray-500">Acciones: entrar, editar y eliminar.</div>
+      <div class="bg-white rounded-2xl shadow border">
+        <div class="p-5 border-b">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <div class="font-semibold text-gray-900">Listado</div>
+              <div class="text-sm text-gray-500">Acciones: editar y eliminar.</div>
+            </div>
+          </div>
+
+          <div class="mt-4 grid grid-cols-1 md:grid-cols-12 gap-3">
+            <input id="searchSrv" type="text" placeholder="Buscar servicio..." class="border rounded-lg p-2 md:col-span-5">
+            <select id="fActivoSrv" class="border rounded-lg p-2 md:col-span-3">
+              <option value="">Estado: todos</option>
+              <option value="1">Activos</option>
+              <option value="0">Inactivos</option>
+            </select>
+            <select id="perPageSrv" class="border rounded-lg p-2 md:col-span-2">
+              <option value="10">10 / pág</option>
+              <option value="15" selected>15 / pág</option>
+              <option value="25">25 / pág</option>
+              <option value="50">50 / pág</option>
+            </select>
+            <div class="md:col-span-2 flex items-center justify-end text-sm text-gray-500" id="totalSrv">&nbsp;</div>
           </div>
         </div>
-        <div class="flex-1 overflow-auto bg-gray-50 rounded-lg border border-gray-100">
+
+        <div class="overflow-auto bg-gray-50 rounded-b-2xl">
           <table class="w-full text-left border-collapse min-w-max">
             <thead class="bg-white border-b sticky top-0 z-10 shadow-sm">
               <tr>
                 <th class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Servicio</th>
                 <th class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Precio</th>
                 <th class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Duración</th>
+                <th class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Estado</th>
                 <th class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase text-right">Acciones</th>
               </tr>
             </thead>
             <tbody id="tableBody" class="divide-y divide-gray-100 bg-white"></tbody>
           </table>
+        </div>
+
+        <div class="p-4 border-t">
+          <div id="paginationSrv" class="flex flex-wrap gap-2 justify-end"></div>
         </div>
       </div>
     </div>
@@ -104,9 +128,23 @@ include __DIR__ . '/../../includes/topbar.php';
 
 <script>
   const API_URL = '<?= app_url('api/sucursal/servicios.php') ?>';
-  let currentPage = 1;
+  let page = 1;
+  let per = 15;
+  let search = '';
+  let activo = '';
+  let total = 0;
+  let totalPages = 1;
   let empleadosCatalog = [];
   let tempSelectedEmpleados = new Set();
+
+  function debounce(fn, ms) {
+    let t;
+    return function () {
+      clearTimeout(t);
+      const args = arguments;
+      t = setTimeout(() => fn.apply(null, args), ms);
+    };
+  }
 
   function updateEmpleadoSelectedInfo() {
     const selected = new Set(($('#empleado_ids').val() || []).map(String));
@@ -166,22 +204,51 @@ include __DIR__ . '/../../includes/topbar.php';
   function closeAssignModal() { $('#assignModal').addClass('hidden').removeClass('flex'); }
   function saveAssignModal() { $('#empleado_ids').val(Array.from(tempSelectedEmpleados)); updateEmpleadoSelectedInfo(); closeAssignModal(); }
 
-  function loadData(page = 1) {
-    currentPage = page;
-    $.get(API_URL, { action: 'list', page: currentPage, per: 15 }, function (res) {
+  function badgeActive(v) {
+    const a = parseInt(v || 0, 10) === 1;
+    return a
+      ? '<span class="inline-flex items-center px-2 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">Activo</span>'
+      : '<span class="inline-flex items-center px-2 py-1 rounded-full text-[11px] font-bold bg-slate-50 text-slate-600 border">Inactivo</span>';
+  }
+
+  function renderPagination() {
+    const pag = $('#paginationSrv').empty();
+    const tp = totalPages || 1;
+    for (let i = 1; i <= tp; i++) {
+      pag.append(`<button class="px-3 py-1 rounded ${i === page ? 'bg-teal-600 text-white' : 'border'}" data-page="${i}">${i}</button>`);
+    }
+  }
+
+  function loadData(p = 1) {
+    page = p;
+    $.get(API_URL, { action: 'list', page, per, search, activo }, function (res) {
       const tbody = $('#tableBody').empty();
-      if (res.success && res.data.length > 0) {
-        res.data.forEach(item => {
+      if (res && res.success && (res.data || []).length > 0) {
+        total = parseInt(res.total || 0, 10);
+        totalPages = parseInt(res.total_pages || 1, 10) || 1;
+        $('#totalSrv').text(`Total: ${total}`);
+        renderPagination();
+        (res.data || []).forEach(item => {
           tbody.append(`
           <tr class="hover:bg-teal-50/30 transition-colors">
             <td class="py-3 px-4 font-semibold text-gray-800 text-sm">${item.nombre}</td>
             <td class="py-3 px-4 text-sm text-gray-700 font-mono">$${parseFloat(item.precio_base).toFixed(2)}</td>
             <td class="py-3 px-4 text-sm text-gray-600">${item.duracion_minutos} min</td>
-            <td class="py-3 px-4 text-right"><button onclick="editItem(${item.id})" class="text-blue-500 hover:text-blue-700 bg-blue-50 px-2.5 py-1.5 rounded-lg border border-blue-200"><i data-lucide="pen"></i></button></td>
+            <td class="py-3 px-4">${badgeActive(item.activo)}</td>
+            <td class="py-3 px-4 text-right">
+              <div class="flex items-center justify-end gap-2">
+                <button class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-white editBtn" title="Editar" data-id="${item.id}"><i data-lucide="pen"></i></button>
+                ${<?= json_encode($is_gerente) ?> ? '' : `<button class="h-9 w-9 grid place-items-center rounded-lg border hover:bg-white text-red-600 delBtn" title="Eliminar" data-id="${item.id}"><i data-lucide="trash-2"></i></button>`}
+              </div>
+            </td>
           </tr>`);
         });
       } else {
-        tbody.html('<tr><td colspan="4" class="py-10 text-center text-gray-500">No hay servicios.</td></tr>');
+        total = parseInt((res && res.total) || 0, 10) || 0;
+        totalPages = parseInt((res && res.total_pages) || 1, 10) || 1;
+        $('#totalSrv').text(`Total: ${total}`);
+        renderPagination();
+        tbody.html('<tr><td colspan="5" class="py-10 text-center text-gray-500">No hay servicios.</td></tr>');
       }
       if (window.lucide) lucide.createIcons();
     }, 'json');
@@ -241,13 +308,41 @@ include __DIR__ . '/../../includes/topbar.php';
       $.post(API_URL + '?action=save', data, function (res) {
         if (res.success) {
           resetForm();
-          loadData(currentPage);
+          loadData(page);
         } else {
           alert(res.message || 'Error');
         }
       }, 'json');
     });
-    loadData();
+
+    $('#paginationSrv').on('click', 'button', function () {
+      const p = parseInt($(this).data('page') || '1', 10) || 1;
+      loadData(p);
+    });
+
+    const debounceLoad = debounce(() => loadData(1), 250);
+    $('#searchSrv').on('keyup', function () { search = $(this).val(); debounceLoad(); });
+    $('#fActivoSrv').on('change', function () { activo = $(this).val(); loadData(1); });
+    $('#perPageSrv').on('change', function () { per = parseInt($(this).val() || '15', 10) || 15; loadData(1); });
+
+    $('#tableBody').on('click', '.editBtn', function () {
+      const id = parseInt($(this).data('id') || '0', 10) || 0;
+      if (id > 0) editItem(id);
+    });
+    $('#tableBody').on('click', '.delBtn', function () {
+      const id = parseInt($(this).data('id') || '0', 10) || 0;
+      if (!id) return;
+      if (!confirm('¿Eliminar este servicio?')) return;
+      $.post(API_URL + '?action=delete', { id }, function (res) {
+        if (res && res.success) {
+          loadData(page);
+          return;
+        }
+        alert((res && res.message) || 'No se pudo eliminar.');
+      }, 'json');
+    });
+
+    loadData(1);
   });
 </script>
 

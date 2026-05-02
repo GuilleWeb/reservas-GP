@@ -4,6 +4,7 @@ header('Content-Type: application/json; charset=utf-8');
 
 $action = $_REQUEST['action'] ?? '';
 $user = current_user();
+$role = (string) ($user['rol'] ?? '');
 $id_e = request_id_e();
 
 $roles_permitidos = ['superadmin', 'admin', 'gerente'];
@@ -188,7 +189,11 @@ switch ($action) {
         $hoy = date('Y-m-d');
         $inicio_day = substr((string) ($cur['inicio'] ?? ''), 0, 10);
         $fin_time = strtotime((string) ($cur['fin'] ?? ''));
-        if ($role !== 'superadmin' && ($inicio_day < $hoy || ($fin_time !== false && $fin_time < time()) || (string) ($cur['estado'] ?? '') === 'completada')) {
+        $estado_actual = (string) ($cur['estado'] ?? '');
+        if (!in_array($role, ['admin', 'superadmin'], true) && in_array($estado_actual, ['completada', 'cancelada'], true)) {
+            json_response(['success' => false, 'message' => 'Esta cita ya no puede ser modificada.']);
+        }
+        if ($role !== 'superadmin' && ($inicio_day < $hoy || ($fin_time !== false && $fin_time < time()) || $estado_actual === 'completada')) {
             json_response(['success' => false, 'message' => 'Esta cita ya no puede ser modificada por gerente.']);
         }
         $actor_name = trim((string) ($user['nombre'] ?? $user['email'] ?? 'gerente'));
@@ -263,6 +268,17 @@ switch ($action) {
         $fin = date('Y-m-d H:i:s', $inicioTs + ($duracion * 60));
 
         if ($id > 0) {
+            $stmtCur = $pdo->prepare('SELECT estado FROM citas WHERE id = ? AND empresa_id = ?' . ($sucursal_id_filtro > 0 ? ' AND sucursal_id = ?' : '') . ' LIMIT 1');
+            $paramsCur = [$id, $empresa_id];
+            if ($sucursal_id_filtro > 0) {
+                $paramsCur[] = $sucursal_id_filtro;
+            }
+            $stmtCur->execute($paramsCur);
+            $estadoCur = (string) ($stmtCur->fetchColumn() ?: '');
+            if (!in_array($role, ['admin', 'superadmin'], true) && in_array($estadoCur, ['completada', 'cancelada'], true)) {
+                json_response(['success' => false, 'message' => 'Esta cita ya no puede ser editada.']);
+            }
+
             $stmt = $pdo->prepare('UPDATE citas SET sucursal_id=?, servicio_id=?, empleado_usuario_id=?, cliente_id=?, cliente_nombre=?, cliente_telefono=?, cliente_email=?, inicio=?, fin=?, estado=?, notas=? WHERE id=? AND empresa_id=?');
             $stmt->execute([$suc_id, $srv_id, $emp_id, $cliente_id > 0 ? $cliente_id : null, $cliente_nombre, $cliente_telefono, $cliente_email, $inicio, $fin, $estado, $notas, $id, $empresa_id]);
             audit_event('update', 'citas', $id, 'Edición de cita (gerencia)', $empresa_id);
